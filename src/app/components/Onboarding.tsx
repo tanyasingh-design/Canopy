@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { SunShapeSvg } from "./SunShapeSvg";
 
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 const INK = "#1C2E2A";
 const SNOW_WHITE = "#FAFAFA";
 

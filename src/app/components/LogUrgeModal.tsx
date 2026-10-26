@@ -27,12 +27,12 @@ const FOR_OPTIONS = [
 ];
 
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 const MONO = BODY;   // alias so existing usages still resolve
 const SERIF = HEAD;  // alias so existing usages still resolve
 const LABEL: React.CSSProperties = {
-  fontFamily: MONO, fontWeight: 600, fontSize: "10px",
-  color: "#8A827E", textTransform: "uppercase" as const, letterSpacing: "0.07em",
+  fontFamily: MONO, fontWeight: 600, fontSize: "11px",
+  color: "#8A827E", letterSpacing: "0.02em",
 };
 const UNDERLINE: React.CSSProperties = { borderBottom: "1px solid rgba(28,46,42,0.15)", paddingBottom: 6 };
 

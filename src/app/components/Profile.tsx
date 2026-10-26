@@ -1,255 +1,152 @@
-import { useState, useEffect } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Zap, ArrowUpRight, ArrowDownRight, Edit2, Check, RefreshCw } from "lucide-react";
 
-import imgExcited    from "../../imports/1.png";
-import imgIntentional from "../../imports/2.png";
-import imgBored      from "../../imports/3.png";
-import imgFOMO       from "../../imports/4.png";
-import imgStressed   from "../../imports/5.png";
-import imgCraving    from "../../imports/6.png";
+// ── Typography & Palette ──────────────────────────────────────────────────────
+const HEAD = "'Passion One', sans-serif";
+const BODY = "'Fraunces', serif";
 
-// ── Fonts ─────────────────────────────────────────────────────────────────────
-const HEAD  = "'Passion One', sans-serif";   // headers
-const BODY  = "'Slabo 13px', serif";          // everything else
+const INK = "#1C2E2A";
+const INK_SOFT = "rgba(28,46,42,0.62)";
+const INK_FAINT = "rgba(28,46,42,0.12)";
+const BG = "#FAFAFA";
+const CARD = "#FFFFFF";
+const BORDER = "rgba(28,46,42,0.08)";
+const KEPT = "#2F6B5E"; // single calm accent for money kept
+const SPENT = "#B5836A"; // muted clay for money spent
+const EMPTY = "#EFEEEA";
 
-// ── Palette ───────────────────────────────────────────────────────────────────
-const TEAL  = "#1C2E2A";
-const GREEN = "#4DAA57";
-const OLIVE = "#4DAA57";
-const RED   = "#C0463A";
-const BG    = "#FAFAFA";
-const MUTED = "rgba(28,46,42,0.42)";
-
-// Emotion → image
-const EMOTION_IMG: Record<string, string> = {
-  Excited:     imgExcited,
-  Intentional: imgIntentional,
-  Bored:       imgBored,
-  FOMO:        imgFOMO,
-  Stressed:    imgStressed,
-  Craving:     imgCraving,
+// Emotion colours — used ONLY for mood visuals
+const EMOTION_RGB: Record<string, [number, number, number]> = {
+  Stressed: [192, 70, 58],
+  Craving: [212, 134, 74],
+  FOMO: [155, 114, 207],
+  Bored: [212, 168, 83],
+  Excited: [96, 190, 120],
+  Intentional: [74, 154, 142],
+  Happy: [229, 194, 83],
+  Calm: [106, 181, 169],
+  Neutral: [94, 148, 203],
+  Anxious: [160, 115, 196],
 };
 
-// Watercolor band behind chart
-const BAND_FILL: Record<string, string> = {
-  Stressed:    "rgba(192,70,58,0.22)",
-  Bored:       "rgba(212,168,83,0.18)",
-  Excited:     "rgba(77,170,87,0.18)",
-  Intentional: "rgba(106,181,169,0.18)",
-  FOMO:        "rgba(155,114,207,0.18)",
-  Craving:     "rgba(212,134,74,0.20)",
-};
-const BAND_LABEL: Record<string, string> = {
-  Stressed:    "#C0463A",
-  Bored:       "#C49A30",
-  Excited:     "#4DAA57",
-  Intentional: "#4A9A8E",
-  FOMO:        "#7B52B0",
-  Craving:     "#C4663A",
-};
-
-// ── Types ─────────────────────────────────────────────────────────────────────
-type DayData = {
-  day: number;
-  date: Date;
-  saved: number;
-  spent: number;
-  emotion: string;
-  flowers: any[];
-};
-
-// ── Smooth-curve helper ───────────────────────────────────────────────────────
-function smoothLine(pts: [number, number][]): string {
-  if (pts.length < 2) return "";
-  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [x0, y0] = pts[i];
-    const [x1, y1] = pts[i + 1];
-    const cx = (x0 + x1) / 2;
-    d += ` C${cx.toFixed(1)},${y0.toFixed(1)} ${cx.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)}`;
+function hexToRgb(hex?: string): [number, number, number] | null {
+  if (!hex || typeof hex !== "string") return null;
+  const clean = hex.replace("#", "").trim();
+  if (clean.length === 3) {
+    const r = parseInt(clean[0] + clean[0], 16);
+    const g = parseInt(clean[1] + clean[1], 16);
+    const b = parseInt(clean[2] + clean[2], 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) return [r, g, b];
   }
-  return d;
+  if (clean.length === 6) {
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) return [r, g, b];
+  }
+  return null;
 }
 
-// ── Pattern Chart ─────────────────────────────────────────────────────────────
-// Y-axis always shows: 0 → 500 → 1000 → 2000
-const Y_TICKS = [0, 500, 1000, 2000];
+function resolveEmotionRgb(emotion?: { name?: string; hex?: string } | string | null): [number, number, number] | null {
+  if (!emotion) return null;
+  const name = typeof emotion === "string" ? emotion : emotion.name || "";
+  const hex = typeof emotion === "object" ? emotion.hex : undefined;
 
-function PatternChart({ days }: { days: DayData[] }) {
-  const W  = 340;
-  const H  = 210;
-  const pL = 46;   // wider left margin for $ labels
-  const pR = 10;
-  const pT = 12;
-  const pB = 24;
-  const cW = W - pL - pR;
-  const cH = H - pT - pB;
-  const n  = days.length || 1;
-  const colW = cW / n;
+  const foundKey = Object.keys(EMOTION_RGB).find(
+    (k) => k.toLowerCase() === name.trim().toLowerCase()
+  );
+  if (foundKey) return EMOTION_RGB[foundKey];
 
-  const maxY = 2000; // fixed scale top
-  const toX  = (i: number) => pL + i * colW + colW / 2;
-  const toY  = (v: number) => pT + cH - Math.min(v, maxY) / maxY * cH;
-  const baseY = pT + cH;
+  const fromHex = hexToRgb(hex);
+  if (fromHex) return fromHex;
 
-  const savedPts = days.map((d, i): [number, number] => [toX(i), toY(d.saved)]);
-  const spentPts = days.map((d, i): [number, number] => [toX(i), toY(d.spent)]);
+  return [106, 181, 169];
+}
 
-  const savedPath = smoothLine(savedPts);
-  const spentPath = smoothLine(spentPts);
+const rgbStr = (c: number[], a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
-  const savedArea = savedPath
-    ? `${savedPath} L${toX(n - 1).toFixed(1)},${baseY} L${toX(0).toFixed(1)},${baseY} Z`
-    : "";
-  const spentArea = spentPath
-    ? `${spentPath} L${toX(n - 1).toFixed(1)},${baseY} L${toX(0).toFixed(1)},${baseY} Z`
-    : "";
+// ── Types ─────────────────────────────────────────────────────────────────────
+type FlowerEntry = {
+  id: number;
+  emotion?: { name: string; hex?: string };
+  amount?: number;
+  laborHours?: number;
+  buyingReason?: string;
+  compostReason?: string;
+  date: string;
+  state?: "bloomed" | "wilted" | "parked";
+  status?: "bought" | "let_go" | "parked";
+  itemName?: string;
+  category?: string;
+  categories?: string[];
+  whoFor?: string;
+};
 
-  const hasData = days.some(d => d.saved > 0 || d.spent > 0);
+type DayData = {
+  day: number;
+  kept: number;
+  spent: number;
+  count: number;
+  color: [number, number, number] | null;
+  colors: [number, number, number][];
+};
 
-  // Format tick label nicely
-  function fmtTick(v: number) {
-    if (v === 0) return "$0";
-    if (v >= 1000) return `$${v / 1000}k`;
-    return `$${v}`;
-  }
+function categoryOf(f: FlowerEntry): string {
+  if (Array.isArray(f.categories) && f.categories.length > 0) return f.categories[0];
+  if (f.category) return f.category.split(",")[0].trim();
+  return "Other";
+}
 
+function isSpent(f: FlowerEntry) {
+  return f.state === "wilted" || f.status === "bought";
+}
+
+function isSameWeek(d1: Date, d2: Date) {
+  const one = new Date(d1);
+  const two = new Date(d2);
+  one.setHours(0, 0, 0, 0);
+  two.setHours(0, 0, 0, 0);
+  const day1 = (one.getDay() + 6) % 7;
+  const day2 = (two.getDay() + 6) % 7;
+  const monday1 = new Date(one.getTime() - day1 * 86400000);
+  const monday2 = new Date(two.getTime() - day2 * 86400000);
+  return monday1.getTime() === monday2.getTime();
+}
+
+const fmt = (n: number) => `₹${Math.round(n).toLocaleString()}`;
+
+// ── Card shell ────────────────────────────────────────────────────────────────
+function Card({ children, pad = 20 }: { children: React.ReactNode; pad?: number }) {
   return (
-    <svg
-      width="100%"
-      viewBox={`0 0 ${W} ${H}`}
-      style={{ fontFamily: BODY, overflow: "visible" }}
+    <div
+      className="w-full rounded-3xl"
+      style={{
+        background: CARD,
+        border: `1px solid ${BORDER}`,
+        boxShadow: "0 2px 12px rgba(28,46,42,0.04)",
+        padding: pad,
+      }}
     >
-      <defs>
-        <filter id="wc" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="3.5" />
-        </filter>
-      </defs>
-
-      {/* Watercolor emotion bands */}
-      <g filter="url(#wc)">
-        {days.map((d, i) =>
-          d.emotion ? (
-            <rect
-              key={`band-${i}`}
-              x={pL + i * colW - 1}
-              y={pT}
-              width={colW + 2}
-              height={cH}
-              fill={BAND_FILL[d.emotion] ?? "transparent"}
-            />
-          ) : null,
-        )}
-      </g>
-
-      {/* Y-axis grid + labels */}
-      {Y_TICKS.map((val) => {
-        const y = toY(val);
-        return (
-          <g key={`ytick-${val}`}>
-            <line
-              x1={pL} x2={W - pR}
-              y1={y} y2={y}
-              stroke={val === 0 ? "rgba(28,46,42,0.12)" : "rgba(28,46,42,0.07)"}
-              strokeDasharray={val === 0 ? "none" : "3 5"}
-            />
-            <text
-              x={pL - 5}
-              y={y + 3.5}
-              textAnchor="end"
-              fontSize={9}
-              fill={MUTED}
-              fontFamily={BODY}
-            >
-              {fmtTick(val)}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Area fills */}
-      {hasData && savedArea && (
-        <path d={savedArea} fill={OLIVE} fillOpacity={0.13} />
-      )}
-      {hasData && spentArea && (
-        <path d={spentArea} fill={RED} fillOpacity={0.1} />
-      )}
-
-      {/* Lines */}
-      {hasData && savedPath && (
-        <path
-          d={savedPath}
-          fill="none"
-          stroke={OLIVE}
-          strokeWidth={2.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-      {hasData && spentPath && (
-        <path
-          d={spentPath}
-          fill="none"
-          stroke={RED}
-          strokeWidth={2.2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
-
-      {/* Active dots */}
-      {hasData &&
-        days.map((d, i) => {
-          if (d.saved === 0 && d.spent === 0) return null;
-          return (
-            <g key={`dots-${i}`}>
-              {d.saved > 0 && (
-                <circle cx={toX(i)} cy={toY(d.saved)} r={3} fill={OLIVE} />
-              )}
-              {d.spent > 0 && (
-                <circle cx={toX(i)} cy={toY(d.spent)} r={3} fill={RED} />
-              )}
-            </g>
-          );
-        })}
-
-      {/* X-axis day labels */}
-      {days.map((d, i) => {
-        const show = i === 0 || i === n - 1 || d.day % 5 === 0;
-        return show ? (
-          <text
-            key={`x-${d.day}`}
-            x={toX(i)}
-            y={H - 6}
-            textAnchor="middle"
-            fontSize={9}
-            fill={MUTED}
-            fontFamily={BODY}
-          >
-            {d.day}
-          </text>
-        ) : null;
-      })}
-
-      {/* Empty state */}
-      {!hasData && (
-        <text
-          x={W / 2} y={H / 2}
-          textAnchor="middle"
-          fontSize={12}
-          fill={MUTED}
-          fontStyle="italic"
-          fontFamily={BODY}
-        >
-          log urges to see patterns
-        </text>
-      )}
-    </svg>
+      {children}
+    </div>
   );
 }
 
-// ── Monthly Mood Tracker ──────────────────────────────────────────────────────
-function MoodTracker({
+function Title({ children, hint }: { children: React.ReactNode; hint?: string }) {
+  return (
+    <div className="mb-4">
+      <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.1 }}>
+        {children}
+      </h2>
+      {hint && (
+        <p style={{ fontFamily: BODY, fontSize: 15, color: INK_SOFT, marginTop: 4 }}>{hint}</p>
+      )}
+    </div>
+  );
+}
+
+// ── Mood gradient ─────────────────────────────────────────────────────────────
+function MoodGradient({
   days,
   year,
   month,
@@ -258,508 +155,635 @@ function MoodTracker({
   year: number;
   month: number;
 }) {
-  const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
-  const DOW = ["S", "M", "T", "W", "T", "F", "S"];
+  const firstDow = new Date(year, month, 1).getDay();
+  const today = new Date();
+  const todayNum =
+    today.getMonth() === month && today.getFullYear() === year ? today.getDate() : -1;
+
+  function dayBg(d: DayData) {
+    if (d.colors.length === 0) return "transparent";
+    const cs = d.colors.length === 1 ? [d.colors[0], d.colors[0].map((v) => Math.min(255, v + 40))] : d.colors;
+    return `linear-gradient(135deg, ${cs.map((c) => rgbStr(c, 0.95)).join(", ")})`;
+  }
 
   return (
-    <div className="w-full">
-      {/* Day-of-week header */}
-      <div className="grid grid-cols-7 mb-1">
-        {DOW.map((d, i) => (
-          <div
-            key={`dh-${i}`}
-            className="text-center"
-            style={{
-              fontFamily: HEAD,
-              fontSize: 11,
-              color: MUTED,
-              letterSpacing: "0.5px",
-            }}
-          >
-            {d}
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-y-1">
-        {/* Empty offset */}
-        {Array.from({ length: firstDow }).map((_, i) => (
-          <div key={`empty-${i}`} />
-        ))}
-
-        {days.map((d) => {
-          const img = d.emotion ? EMOTION_IMG[d.emotion] : null;
-          const now = new Date();
-          const isToday =
-            d.day === now.getDate() &&
-            month === now.getMonth() &&
-            year === now.getFullYear();
-
-          return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <div className="grid grid-cols-7 mb-2">
+          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
             <div
-              key={`md-${d.day}`}
-              className="flex flex-col items-center justify-center"
-              style={{ minHeight: 42 }}
+              key={i}
+              className="text-center"
+              style={{ fontFamily: HEAD, fontSize: 15, color: INK_SOFT }}
             >
-              {img ? (
-                <div className="relative flex items-center justify-center" style={{ width: 38, height: 38 }}>
-                  <img
-                    src={img}
-                    alt={d.emotion}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      objectFit: "contain",
-                      filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.10))",
-                    }}
-                  />
-                </div>
-              ) : (
+              {d}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-2">
+          {Array.from({ length: firstDow }).map((_, i) => (
+            <div key={`e${i}`} />
+          ))}
+          {days.map((d) => {
+            const has = d.colors.length > 0;
+            return (
+              <div key={d.day} className="flex items-center justify-center">
                 <div
                   className="flex items-center justify-center rounded-full"
                   style={{
-                    width: 30,
-                    height: 30,
-                    border: isToday
-                      ? `1.5px solid ${TEAL}`
-                      : "1px solid rgba(28,46,42,0.09)",
-                    background: isToday
-                      ? "rgba(28,46,42,0.04)"
-                      : "transparent",
+                    width: 40,
+                    height: 40,
+                    background: dayBg(d),
+                    color: has ? "#fff" : d.day === todayNum ? INK : INK_FAINT,
+                    border: !has && d.day === todayNum ? `1.5px solid ${INK}` : "none",
+                    fontFamily: HEAD,
+                    fontSize: 19,
+                    letterSpacing: "0.3px",
+                    textShadow: has ? "0 1px 2px rgba(0,0,0,0.25)" : "none",
                   }}
                 >
-                  <span
-                    style={{
-                      fontFamily: BODY,
-                      fontSize: 10,
-                      color: isToday ? TEAL : MUTED,
-                    }}
-                  >
-                    {d.day}
-                  </span>
+                  {d.day}
                 </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Daily bars ────────────────────────────────────────────────────────────────
+function DailyBars({ days }: { days: DayData[] }) {
+  const max = Math.max(1, ...days.map((d) => d.kept + d.spent));
+  const H = 130;
+  const hasData = days.some((d) => d.kept + d.spent > 0);
+
+  if (!hasData) {
+    return (
+      <p style={{ fontFamily: BODY, fontSize: 16, color: INK_SOFT, padding: "24px 0", textAlign: "center" }}>
+        Nothing logged this month yet.
+      </p>
+    );
+  }
+
+  return (
+    <div>
+      <div className="grid items-end gap-[3px]" style={{ height: H, gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
+        {days.map((d) => {
+          const keptH = (d.kept / max) * H;
+          const spentH = (d.spent / max) * H;
+          return (
+            <div key={d.day} className="flex-1 flex flex-col justify-end" style={{ height: H }}>
+              {d.spent > 0 && (
+                <div style={{ height: Math.max(3, spentH), background: SPENT, borderRadius: "3px 3px 0 0" }} />
               )}
+              {d.kept > 0 && (
+                <div
+                  style={{
+                    height: Math.max(3, keptH),
+                    background: KEPT,
+                    borderRadius: d.spent > 0 ? 0 : "3px 3px 0 0",
+                  }}
+                />
+              )}
+              {d.kept + d.spent === 0 && <div style={{ height: 2, background: INK_FAINT }} />}
             </div>
           );
         })}
       </div>
-    </div>
-  );
-}
-
-// ── Callout card ──────────────────────────────────────────────────────────────
-function Callout({
-  icon,
-  label,
-  text,
-  accent,
-}: {
-  icon: string;
-  label: string;
-  text: string;
-  accent: string;
-}) {
-  return (
-    <div
-      className="w-full rounded-2xl px-5 py-4 flex flex-col gap-1.5"
-      style={{
-        background: "#FAFAFA",
-        border: "1px solid rgba(28,46,42,0.07)",
-        boxShadow: "0 1px 6px rgba(28,46,42,0.05)",
-      }}
-    >
-      <div className="flex items-center gap-2">
-        <span style={{ fontSize: 13 }}>{icon}</span>
-        <span
-          style={{
-            fontFamily: HEAD,
-            fontSize: 13,
-            letterSpacing: "1px",
-            color: accent,
-          }}
-        >
-          {label.toUpperCase()}
+      <div className="flex justify-between mt-2" style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT }}>
+        <span>1</span>
+        <span>{Math.ceil(days.length / 2)}</span>
+        <span>{days.length}</span>
+      </div>
+      <div className="flex gap-5 mt-4" style={{ fontFamily: BODY, fontSize: 15, color: INK }}>
+        <span className="flex items-center gap-2">
+          <i style={{ width: 12, height: 12, borderRadius: 4, background: KEPT, display: "inline-block" }} />
+          Let go
+        </span>
+        <span className="flex items-center gap-2">
+          <i style={{ width: 12, height: 12, borderRadius: 4, background: SPENT, display: "inline-block" }} />
+          Bought
         </span>
       </div>
-      <p
-        style={{
-          fontFamily: BODY,
-          fontSize: 14,
-          color: TEAL,
-          lineHeight: 1.6,
-        }}
-      >
-        {text}
-      </p>
     </div>
   );
 }
 
-// ── Section heading ───────────────────────────────────────────────────────────
-function SectionHead({ children }: { children: React.ReactNode }) {
-  return (
-    <h2
-      style={{
-        fontFamily: HEAD,
-        fontSize: 20,
-        fontWeight: 700,
-        color: TEAL,
-        letterSpacing: "0.5px",
-        marginBottom: 12,
-      }}
-    >
-      {children}
-    </h2>
-  );
-}
-
-// ── Main ──────────────────────────────────────────────────────────────────────
+// ── Main Profile Component ─────────────────────────────────────────────────────
 export function Profile() {
-  const [allFlowers, setAllFlowers] = useState<any[]>([]);
+  const [allFlowers, setAllFlowers] = useState<FlowerEntry[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  // Hourly Wage settings
+  const [hourlyWage, setHourlyWage] = useState<number>(() => {
+    return parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500;
+  });
+  const [isEditingWage, setIsEditingWage] = useState(false);
+  const [tempWage, setTempWage] = useState(String(hourlyWage));
+
+  function loadFlowers() {
+    try {
+      const raw = localStorage.getItem("gardenFlowers");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) {
+        setAllFlowers(parsed);
+      }
+    } catch {}
+  }
 
   useEffect(() => {
-    const raw = localStorage.getItem("gardenFlowers");
-    if (raw) {
-      try { setAllFlowers(JSON.parse(raw)); } catch {}
-    }
+    loadFlowers();
+    window.addEventListener("garden-updated", loadFlowers);
+    return () => window.removeEventListener("garden-updated", loadFlowers);
   }, []);
 
+  function saveWage() {
+    const parsed = Math.max(1, parseFloat(tempWage) || 500);
+    setHourlyWage(parsed);
+    localStorage.setItem("userHourlyWage", String(parsed));
+    setIsEditingWage(false);
+  }
+
+  const amt = (f: FlowerEntry) => Number(f.amount) || 0;
   const now = new Date();
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth();
+  const atCurrentMonth = month === now.getMonth() && year === now.getFullYear();
 
-  const [viewDate, setViewDate] = useState(
-    new Date(now.getFullYear(), now.getMonth(), 1),
+  function shiftMonth(delta: number) {
+    const d = new Date(year, month + delta, 1);
+    setSelectedDate(d);
+  }
+
+  const monthFlowers = useMemo(
+    () =>
+      allFlowers.filter((f) => {
+        const d = new Date(f.date);
+        return !isNaN(d.getTime()) && d.getMonth() === month && d.getFullYear() === year;
+      }),
+    [allFlowers, month, year],
   );
 
-  const year  = viewDate.getFullYear();
-  const month = viewDate.getMonth();
-  const isCurrentMonth =
-    month === now.getMonth() && year === now.getFullYear();
-
-  function prevMonth() {
-    setViewDate(new Date(year, month - 1, 1));
-  }
-  function goNow() {
-    setViewDate(new Date(now.getFullYear(), now.getMonth(), 1));
-  }
-
-  const monthLabel = viewDate.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const flowers = allFlowers.filter((f) => {
-    const d = new Date(f.date);
-    return d.getMonth() === month && d.getFullYear() === year;
-  });
-
-  // Per-day data
-  const days: DayData[] = Array.from({ length: daysInMonth }, (_, i) => {
-    const day = i + 1;
-    const df  = flowers.filter(
-      (f) => new Date(f.date).getDate() === day,
-    );
-    let saved = 0;
-    let spent = 0;
-    const emCount: Record<string, number> = {};
-    df.forEach((f) => {
-      const em = f.emotion?.name || "";
-      if (em) emCount[em] = (emCount[em] || 0) + 1;
-      if (f.state === "wilted") spent += f.amount || 0;
-      else saved += f.amount || 0;
+  const stats = useMemo(() => {
+    let kept = 0, spent = 0, keptN = 0, spentN = 0, planned = 0;
+    monthFlowers.forEach((f) => {
+      const a = amt(f);
+      const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
+      if (emName?.toLowerCase() === "intentional") planned++;
+      if (isSpent(f)) { spent += a; spentN++; }
+      else { kept += a; keptN++; }
     });
-    const emotion =
-      Object.keys(emCount).sort((a, b) => emCount[b] - emCount[a])[0] ?? "";
-    return {
-      day,
-      date: new Date(year, month, day),
-      saved,
-      spent,
-      emotion,
-      flowers: df,
-    };
-  });
+    const total = monthFlowers.length;
+    return { kept, spent, keptN, spentN, total, plannedPct: total ? Math.round((planned / total) * 100) : 0 };
+  }, [monthFlowers]);
 
-  // ── Callout 1: Trigger day ────────────────────────────────────────────────
-  const DOW_NAMES = [
-    "Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday",
-  ];
-  const wiltsByDow: Record<number, { count: number; emotions: Record<string, number> }> = {};
-  for (let i = 0; i < 7; i++) wiltsByDow[i] = { count: 0, emotions: {} };
+  const monthKeptHours = Math.round((stats.kept / hourlyWage) * 10) / 10;
+  const monthSpentHours = Math.round((stats.spent / hourlyWage) * 10) / 10;
 
-  flowers.forEach((f) => {
-    if (f.state === "wilted") {
-      const dow = new Date(f.date).getDay();
-      wiltsByDow[dow].count++;
-      const em = f.emotion?.name || "Unknown";
-      wiltsByDow[dow].emotions[em] = (wiltsByDow[dow].emotions[em] || 0) + 1;
-    }
-  });
+  // Weekly Labor Bar Calculations
+  const thisWeekFlowers = useMemo(() => {
+    const today = new Date();
+    return allFlowers.filter((f) => {
+      const d = new Date(f.date);
+      return !isNaN(d.getTime()) && isSameWeek(d, today);
+    });
+  }, [allFlowers]);
 
-  const totalWilts = flowers.filter((f) => f.state === "wilted").length;
-  const peakDow = Number(
-    Object.keys(wiltsByDow).sort(
-      (a, b) => wiltsByDow[+b].count - wiltsByDow[+a].count,
-    )[0],
+  const weekKeptAmt = useMemo(
+    () => thisWeekFlowers.filter((f) => !isSpent(f)).reduce((sum, f) => sum + amt(f), 0),
+    [thisWeekFlowers]
   );
-  const peakDowCount  = wiltsByDow[peakDow]?.count ?? 0;
-  const peakEmotion   =
-    Object.keys(wiltsByDow[peakDow]?.emotions ?? {}).sort(
-      (a, b) =>
-        (wiltsByDow[peakDow].emotions[b] ?? 0) -
-        (wiltsByDow[peakDow].emotions[a] ?? 0),
-    )[0] ?? "stressed";
-
-  const triggerText =
-    peakDowCount > 0
-      ? `You spent the most on ${peakEmotion.toLowerCase()} ${DOW_NAMES[peakDow]}s. ${peakDowCount} out of ${totalWilts} wilt${totalWilts !== 1 ? "s" : ""} happened then.`
-      : "Log more urges to reveal your trigger pattern.";
-
-  // ── Callout 2: Recovery ───────────────────────────────────────────────────
-  const wiltDaySet = new Set(
-    flowers
-      .filter((f) => f.state === "wilted")
-      .map((f) => new Date(f.date).getDate()),
+  const weekSpentAmt = useMemo(
+    () => thisWeekFlowers.filter(isSpent).reduce((sum, f) => sum + amt(f), 0),
+    [thisWeekFlowers]
   );
-  let recoveries  = 0;
-  let wiltDayCnt  = 0;
-  wiltDaySet.forEach((d) => {
-    if (d < daysInMonth) {
-      wiltDayCnt++;
-      const nextBloom = flowers.some(
-        (f) => f.state !== "wilted" && new Date(f.date).getDate() === d + 1,
-      );
-      if (nextBloom) recoveries++;
-    }
-  });
-  const recoveryPct =
-    wiltDayCnt > 0 ? Math.round((recoveries / wiltDayCnt) * 100) : 0;
-  const recoveryText =
-    wiltDayCnt > 0
-      ? `After a wilt, you bloomed the next day ${recoveryPct}% of the time.`
-      : "Log more to see your recovery rhythm.";
 
-  // ── Callout 3: Gut punch ──────────────────────────────────────────────────
-  const emWilt: Record<string, number> = {};
-  flowers.forEach((f) => {
-    if (f.state === "wilted" && (f.amount || 0) > 0) {
-      const em = f.emotion?.name || "unknown";
-      emWilt[em] = (emWilt[em] || 0) + (f.amount || 0);
-    }
-  });
-  const topEm    = Object.keys(emWilt).sort((a, b) => emWilt[b] - emWilt[a])[0];
-  const gutAmt   = topEm ? emWilt[topEm] : 0;
-  const gutText  =
-    gutAmt > 0
-      ? `If every ${topEm.toLowerCase()} urge had bloomed, you'd have $${gutAmt.toFixed(0)} more this month.`
-      : "No spent urges yet. Every urge so far has bloomed.";
+  const weekKeptHours = Math.round((weekKeptAmt / hourlyWage) * 10) / 10;
+  const weekSpentHours = Math.round((weekSpentAmt / hourlyWage) * 10) / 10;
+  const weekTotalHours = weekKeptHours + weekSpentHours || 0.01;
+  const weekKeptPct = Math.min(100, Math.round((weekKeptHours / weekTotalHours) * 100));
 
-  // Emotions present this month (for legend)
-  const emotionsPresent = [
-    ...new Set(days.filter((d) => d.emotion).map((d) => d.emotion)),
-  ];
+  const days: DayData[] = useMemo(() => {
+    const n = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: n }, (_, i) => {
+      const dayNum = i + 1;
+      const df = monthFlowers.filter((f) => new Date(f.date).getDate() === dayNum);
+      let kept = 0, spent = 0;
+      const sum = [0, 0, 0];
+      let w = 0;
+      const dayColors: [number, number, number][] = [];
+      df.forEach((f) => {
+        const a = amt(f);
+        if (isSpent(f)) spent += a;
+        else kept += a;
+        const c = resolveEmotionRgb(f.emotion);
+        if (c) {
+          sum[0] += c[0];
+          sum[1] += c[1];
+          sum[2] += c[2];
+          w++;
+          if (!dayColors.some((x) => x[0] === c[0] && x[1] === c[1] && x[2] === c[2])) dayColors.push(c);
+        }
+      });
+      return {
+        day: dayNum,
+        kept,
+        spent,
+        count: df.length,
+        colors: dayColors,
+        color: w ? ([Math.round(sum[0] / w), Math.round(sum[1] / w), Math.round(sum[2] / w)] as [number, number, number]) : null,
+      };
+    });
+  }, [monthFlowers, year, month]);
+
+  const moodMix = useMemo(() => {
+    const counts: Record<string, { count: number; rgb: [number, number, number] }> = {};
+    monthFlowers.forEach((f) => {
+      const e = typeof f.emotion === "string" ? f.emotion : f.emotion?.name || "Other";
+      const rgb = resolveEmotionRgb(f.emotion) || [106, 181, 169];
+      if (!counts[e]) counts[e] = { count: 0, rgb };
+      counts[e].count += 1;
+    });
+    const total = Object.values(counts).reduce((s, c) => s + c.count, 0);
+    return Object.entries(counts)
+      .map(([name, data]) => ({
+        name,
+        count: data.count,
+        rgb: data.rgb,
+        pct: total ? Math.round((data.count / total) * 100) : 0,
+      }))
+      .filter((m) => m.count > 0)
+      .sort((a, b) => b.count - a.count);
+  }, [monthFlowers]);
+
+  const topCategories = useMemo(() => {
+    const map: Record<string, number> = {};
+    monthFlowers.forEach((f) => {
+      const c = categoryOf(f);
+      map[c] = (map[c] || 0) + amt(f);
+    });
+    const list = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    const top = list[0]?.[1] || 1;
+    return list.map(([name, total]) => ({ name, total, w: (total / top) * 100 }));
+  }, [monthFlowers]);
+
+  const monthLabel = selectedDate.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  const barTotal = stats.kept + stats.spent || 1;
+
+  const timeBuckets = useMemo(() => {
+    const b = [
+      { label: "Morning", range: "5am–12pm", count: 0, amount: 0 },
+      { label: "Afternoon", range: "12–5pm", count: 0, amount: 0 },
+      { label: "Evening", range: "5–9pm", count: 0, amount: 0 },
+      { label: "Late night", range: "9pm–5am", count: 0, amount: 0 },
+    ];
+    monthFlowers.forEach((f) => {
+      const h = new Date(f.date).getHours();
+      const i = h >= 5 && h < 12 ? 0 : h >= 12 && h < 17 ? 1 : h >= 17 && h < 21 ? 2 : 3;
+      b[i].count++;
+      b[i].amount += amt(f);
+    });
+    return b;
+  }, [monthFlowers]);
+  const peakTime = [...timeBuckets].sort((a, b) => b.count - a.count)[0];
+  const maxTime = Math.max(1, ...timeBuckets.map((t) => t.count));
+  const monthTotal = topCategories.reduce((s, c) => s + c.total, 0) || 1;
+
+  function exportData() {
+    const blob = new Blob([JSON.stringify(allFlowers, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "bloom-canopy-data.json";
+    a.click();
+  }
+
+  function resetData() {
+    ["gardenFlowers", "bloomData"].forEach((k) => localStorage.removeItem(k));
+    setAllFlowers([]);
+    setConfirmReset(false);
+  }
+
+  const arrowBtn = "w-10 h-10 flex items-center justify-center rounded-full active:scale-90 transition-transform disabled:opacity-20";
 
   return (
-    <div
-      className="min-h-screen flex flex-col w-full"
-      style={{ background: BG, color: TEAL }}
-    >
+    <div className="min-h-screen flex flex-col w-full pb-36" style={{ background: BG, color: INK }}>
       {/* Header */}
-      <div
-        className="px-5 pt-7 pb-4 flex items-center justify-between shrink-0"
-        style={{ borderBottom: "1px solid rgba(28,46,42,0.07)" }}
-      >
-        <h1
-          style={{
-            fontFamily: HEAD,
-            fontSize: 28,
-            fontWeight: 700,
-            color: TEAL,
-            letterSpacing: "0.5px",
-          }}
-        >
-          PATTERNS
+      <div className="px-5 pt-8 pb-5 flex items-center justify-between">
+        <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
+          Profile
         </h1>
-
-        {/* Month nav — no future allowed */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={prevMonth}
-            className="w-8 h-8 flex items-center justify-center rounded-full"
-            style={{ background: "rgba(28,46,42,0.06)" }}
-          >
-            <ChevronLeft size={16} color={TEAL} />
+        <div className="flex items-center gap-1">
+          <button onClick={() => shiftMonth(-1)} className={arrowBtn} style={{ background: "rgba(28,46,42,0.06)" }} aria-label="Previous month">
+            <ChevronLeft size={20} color={INK} />
           </button>
-
-          <span
-            style={{
-              fontFamily: BODY,
-              fontSize: 13,
-              color: TEAL,
-              minWidth: 110,
-              textAlign: "center" as const,
-            }}
-          >
+          <span style={{ fontFamily: HEAD, fontSize: 18, minWidth: 124, textAlign: "center", color: INK }}>
             {monthLabel}
           </span>
-
-          {!isCurrentMonth ? (
-            <button
-              onClick={goNow}
-              style={{
-                fontFamily: HEAD,
-                fontSize: 11,
-                background: "rgba(11,93,52,0.1)",
-                color: GREEN,
-                border: "1px solid rgba(11,93,52,0.2)",
-                borderRadius: 999,
-                padding: "2px 10px",
-                letterSpacing: "0.5px",
-              }}
-            >
-              NOW
-            </button>
-          ) : (
-            <div style={{ width: 48 }} />
-          )}
+          <button onClick={() => shiftMonth(1)} disabled={atCurrentMonth} className={arrowBtn} style={{ background: "rgba(28,46,42,0.06)" }} aria-label="Next month">
+            <ChevronRight size={20} color={INK} />
+          </button>
         </div>
       </div>
 
-      {/* Scrollable body */}
-      <div className="flex-1 overflow-y-auto px-5 pb-32 pt-6 flex flex-col gap-10">
-
-        {/* ── Monthly Mood Tracker ── */}
-        <div>
-          <SectionHead>MOOD THIS MONTH</SectionHead>
-          <div
-            className="w-full rounded-2xl p-4"
-            style={{
-              background: "#FAFAFA",
-              border: "1px solid rgba(28,46,42,0.07)",
-              boxShadow: "0 2px 10px rgba(28,46,42,0.05)",
-            }}
-          >
-            <MoodTracker days={days} year={year} month={month} />
+      <div className="px-5 flex flex-col gap-5">
+        {/* 1 · Summary hero (money + Life-Energy Reframe) */}
+        <Card pad={24}>
+          <div className="flex items-center justify-between">
+            <p style={{ fontFamily: BODY, fontSize: 16, color: INK_SOFT }}>Let go this month</p>
+            <span
+              className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+              style={{
+                background: "rgba(47,107,94,0.12)",
+                color: KEPT,
+                fontFamily: BODY,
+              }}
+            >
+              <Zap size={12} />
+              {monthKeptHours}h life force saved
+            </span>
           </div>
 
-          {/* Emotion key */}
-          {emotionsPresent.length > 0 && (
-            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 px-1">
-              {emotionsPresent.map((em) => (
-                <div key={em} className="flex items-center gap-1.5">
-                  <img
-                    src={EMOTION_IMG[em]}
-                    alt={em}
-                    style={{ width: 18, height: 18, objectFit: "contain" }}
-                  />
-                  <span
-                    style={{
-                      fontFamily: BODY,
-                      fontSize: 11,
-                      color: BAND_LABEL[em] ?? MUTED,
-                    }}
-                  >
-                    {em}
-                  </span>
-                </div>
+          <p style={{ fontFamily: HEAD, fontSize: 56, lineHeight: 1.05, color: KEPT, marginTop: 4 }}>
+            {fmt(stats.kept)}
+          </p>
+          <p style={{ fontFamily: BODY, fontSize: 15, color: INK, marginTop: 4 }}>
+            {stats.total} urges paused · {stats.plannedPct}% planned
+          </p>
+
+          <div className="flex w-full rounded-full overflow-hidden mt-5" style={{ height: 10, background: EMPTY }}>
+            <div style={{ width: `${(stats.kept / barTotal) * 100}%`, background: KEPT }} />
+            <div style={{ width: `${(stats.spent / barTotal) * 100}%`, background: SPENT }} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-5">
+            <div className="p-3.5 rounded-2xl" style={{ background: "rgba(47,107,94,0.05)", border: "1px solid rgba(47,107,94,0.12)" }}>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: KEPT, fontFamily: BODY }}>
+                  <ArrowUpRight size={14} /> Let go
+                </span>
+                <span className="text-[11px] opacity-75" style={{ fontFamily: BODY, color: KEPT }}>
+                  +{monthKeptHours}h
+                </span>
+              </div>
+              <p style={{ fontFamily: HEAD, fontSize: 24, color: INK, marginTop: 4 }}>{fmt(stats.kept)}</p>
+              <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>{stats.keptN} impulses diverted</p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl" style={{ background: "rgba(181,131,106,0.08)", border: "1px solid rgba(181,131,106,0.15)" }}>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: SPENT, fontFamily: BODY }}>
+                  <ArrowDownRight size={14} /> Bought
+                </span>
+                <span className="text-[11px] opacity-75" style={{ fontFamily: BODY, color: SPENT }}>
+                  -{monthSpentHours}h
+                </span>
+              </div>
+              <p style={{ fontFamily: HEAD, fontSize: 24, color: INK, marginTop: 4 }}>{fmt(stats.spent)}</p>
+              <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>{stats.spentN} impulses purchased</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* 2 · The Weekly Labor Bar (Life-Energy Conversion) */}
+        <Card pad={22}>
+          <div className="flex items-center justify-between mb-1">
+            <Title hint="Hours of this week's work saved vs spent on micro-indulgences">
+              Weekly labor bar
+            </Title>
+            <span
+              className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+              style={{
+                background: "rgba(28,46,42,0.06)",
+                color: INK,
+                fontFamily: BODY,
+              }}
+            >
+              @ ₹{hourlyWage}/hr
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between mb-2">
+            <div>
+              <span style={{ fontFamily: HEAD, fontSize: 28, color: KEPT }}>
+                {weekKeptHours}h
+              </span>
+              <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                life force preserved
+              </span>
+            </div>
+            <div>
+              <span style={{ fontFamily: HEAD, fontSize: 20, color: SPENT }}>
+                {weekSpentHours}h
+              </span>
+              <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                traded away
+              </span>
+            </div>
+          </div>
+
+          {/* Visual Bar */}
+          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 16, background: EMPTY }}>
+            {weekKeptHours > 0 && (
+              <div
+                className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{
+                  width: `${weekKeptPct}%`,
+                  background: KEPT,
+                  fontFamily: HEAD,
+                }}
+              >
+                {weekKeptPct > 15 ? `${weekKeptPct}%` : ""}
+              </div>
+            )}
+            {weekSpentHours > 0 && (
+              <div
+                className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{
+                  width: `${100 - weekKeptPct}%`,
+                  background: SPENT,
+                  fontFamily: HEAD,
+                }}
+              >
+                {(100 - weekKeptPct) > 15 ? `${100 - weekKeptPct}%` : ""}
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
+            <span>This week: {fmt(weekKeptAmt)} saved</span>
+            <span>{fmt(weekSpentAmt)} spent</span>
+          </div>
+
+          <p style={{ fontFamily: BODY, fontSize: 12.5, color: "rgba(28,46,42,0.55)", lineHeight: 1.5, marginTop: 10 }}>
+            {weekKeptHours >= weekSpentHours
+              ? "You are successfully preserving your life force. Every paused impulse protects hours of your future time."
+              : "Micro-indulgences took more labor hours than saved this week. Use the somatic drawing pause to re-engage System 2 logical evaluation."}
+          </p>
+        </Card>
+
+        {/* 3 · Mood gradient */}
+        <Card>
+          <Title hint="Each day is coloured by what you felt">Mood this month</Title>
+          <MoodGradient days={days} year={year} month={month} />
+          {moodMix.length > 0 && (
+            <div className="flex flex-wrap gap-x-5 gap-y-3 mt-6">
+              {moodMix.map((m) => (
+                <span key={m.name} className="flex items-center gap-2" style={{ fontFamily: BODY, fontSize: 16, color: INK }}>
+                  <i style={{ width: 14, height: 14, borderRadius: 5, background: rgbStr(m.rgb), display: "inline-block" }} />
+                  {m.name} {m.pct}%
+                </span>
               ))}
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* ── Pattern Chart ── */}
-        <div>
-          <SectionHead>SPEND & SAVE</SectionHead>
+        {/* 4 · Daily money */}
+        <Card>
+          <Title hint="What you let go vs bought, day by day">Daily money</Title>
+          <DailyBars days={days} />
+        </Card>
 
-          {/* Legend */}
-          <div className="flex items-center gap-5 mb-3">
-            <div className="flex items-center gap-1.5">
-              <span
-                style={{
-                  display: "inline-block",
-                  width: 22,
-                  height: 2.5,
-                  borderRadius: 2,
-                  background: OLIVE,
-                }}
-              />
-              <span style={{ fontFamily: BODY, fontSize: 11, color: MUTED }}>saved</span>
+        {/* 5 · Top categories */}
+        {topCategories.length > 0 && (
+          <Card>
+            <Title>Top categories</Title>
+            <div className="flex flex-col gap-5">
+              {topCategories.map((c) => (
+                <div key={c.name}>
+                  <div className="flex items-baseline justify-between">
+                    <span style={{ fontFamily: BODY, fontSize: 17, color: INK }}>{c.name}</span>
+                    <span style={{ fontFamily: HEAD, fontSize: 20, color: INK }}>{fmt(c.total)}</span>
+                  </div>
+                  <div className="w-full rounded-full overflow-hidden mt-2" style={{ height: 8, background: EMPTY }}>
+                    <div className="h-full rounded-full" style={{ width: `${c.w}%`, background: INK }} />
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-1.5">
-              <span
-                style={{
-                  display: "inline-block",
-                  width: 22,
-                  height: 2.5,
-                  borderRadius: 2,
-                  background: RED,
-                }}
-              />
-              <span style={{ fontFamily: BODY, fontSize: 11, color: MUTED }}>spent</span>
-            </div>
+          </Card>
+        )}
 
-            {/* Emotion swatches */}
-            {emotionsPresent.slice(0, 3).map((em) => (
-              <div key={em} className="flex items-center gap-1">
-                <span
-                  style={{
-                    display: "inline-block",
-                    width: 9,
-                    height: 9,
-                    borderRadius: 2,
-                    background: BAND_LABEL[em] ?? MUTED,
-                    opacity: 0.65,
+        {/* 6 · Patterns: when and what */}
+        {stats.total > 0 && (
+          <Card>
+            <Title hint={`You want things most in the ${peakTime.label.toLowerCase()} (${peakTime.range})`}>When it happens</Title>
+            <div className="flex flex-col gap-4">
+              {timeBuckets.map((t) => (
+                <div key={t.label}>
+                  <div className="flex items-baseline justify-between">
+                    <span style={{ fontFamily: BODY, fontSize: 17, color: INK }}>
+                      {t.label} <span style={{ fontSize: 14, color: INK_SOFT }}>{t.range}</span>
+                    </span>
+                    <span style={{ fontFamily: HEAD, fontSize: 18, color: INK }}>{t.count} · {fmt(t.amount)}</span>
+                  </div>
+                  <div className="w-full rounded-full overflow-hidden mt-2" style={{ height: 8, background: EMPTY }}>
+                    <div className="h-full rounded-full" style={{ width: `${(t.count / maxTime) * 100}%`, background: t === peakTime ? INK : "rgba(28,46,42,0.3)" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 pt-5 flex flex-col gap-3" style={{ borderTop: `1px solid ${BORDER}`, fontFamily: BODY, fontSize: 17, lineHeight: 1.5, color: INK }}>
+              {topCategories[0] && (
+                <p>
+                  <strong>{topCategories[0].name}</strong> is where most goes: {fmt(topCategories[0].total)} ({Math.round((topCategories[0].total / monthTotal) * 100)}% of this month).
+                </p>
+              )}
+              {moodMix[0] && (
+                <p>
+                  <strong>{moodMix[0].name}</strong> is your most common trigger ({moodMix[0].pct}% of moments).
+                </p>
+              )}
+            </div>
+          </Card>
+        )}
+
+        {/* 7 · Hourly Wage & Settings */}
+        <Card>
+          <Title hint="Calibrate your take-home rate for life-energy calculations">Hourly wage & settings</Title>
+          <div className="flex flex-col gap-3.5">
+            <div
+              className="rounded-2xl p-4 flex items-center justify-between"
+              style={{ background: EMPTY }}
+            >
+              <div>
+                <p style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>Take-home hourly wage</p>
+                {isEditingWage ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span style={{ fontFamily: HEAD, fontSize: 20, color: INK }}>₹</span>
+                    <input
+                      type="number"
+                      value={tempWage}
+                      onChange={(e) => setTempWage(e.target.value)}
+                      className="w-24 px-2 py-1 rounded-lg text-sm bg-white border border-gray-300 outline-none"
+                      style={{ fontFamily: HEAD, fontSize: 18 }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={saveWage}
+                      className="p-1.5 rounded-lg text-white"
+                      style={{ background: KEPT }}
+                      title="Save"
+                    >
+                      <Check size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <p style={{ fontFamily: HEAD, fontSize: 22, color: INK, marginTop: 2 }}>
+                    ₹{hourlyWage}/hr
+                  </p>
+                )}
+              </div>
+              {!isEditingWage && (
+                <button
+                  onClick={() => {
+                    setTempWage(String(hourlyWage));
+                    setIsEditingWage(true);
                   }}
-                />
-                <span
+                  className="px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all"
                   style={{
+                    background: CARD,
+                    color: INK,
                     fontFamily: BODY,
-                    fontSize: 10,
-                    color: BAND_LABEL[em] ?? MUTED,
+                    border: `1px solid ${BORDER}`,
                   }}
                 >
-                  {em.toLowerCase()}
-                </span>
-              </div>
-            ))}
+                  <Edit2 size={12} />
+                  Change wage
+                </button>
+              )}
+            </div>
+
+            <button onClick={exportData} className="w-full text-left rounded-2xl px-4 py-3" style={{ background: EMPTY, fontFamily: BODY, fontSize: 16, color: INK }}>
+              Export my data
+            </button>
+            <button onClick={() => setConfirmReset(true)} className="w-full text-left rounded-2xl px-4 py-3" style={{ background: EMPTY, fontFamily: BODY, fontSize: 16, color: SPENT }}>
+              Reset all data
+            </button>
           </div>
-
-          <div
-            className="w-full rounded-2xl overflow-hidden"
-            style={{
-              background: "#FAFAFA",
-              border: "1px solid rgba(28,46,42,0.07)",
-              boxShadow: "0 2px 12px rgba(28,46,42,0.05)",
-              padding: "14px 6px 8px 2px",
-            }}
-          >
-            <PatternChart days={days} />
-          </div>
-
-          <p
-            className="text-center mt-2"
-            style={{
-              fontFamily: BODY,
-              fontSize: 10,
-              color: MUTED,
-              letterSpacing: "0.3px",
-            }}
-          >
-            days of{" "}
-            {viewDate.toLocaleDateString("en-US", { month: "long" })}
-          </p>
-        </div>
-
-        {/* ── Three callouts ── */}
-        <div className="flex flex-col gap-3">
-          <SectionHead>INSIGHTS</SectionHead>
-          <Callout icon="📍" label="Trigger Day"  text={triggerText} accent={RED}     />
-          <Callout icon="🌱" label="Recovery"     text={recoveryText} accent={GREEN}  />
-          <Callout icon="💸" label="The Number"   text={gutText}      accent="#A07030" />
-        </div>
+        </Card>
       </div>
+
+      {confirmReset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ background: "rgba(28,46,42,0.45)" }} onClick={() => setConfirmReset(false)}>
+          <div className="w-full max-w-sm rounded-3xl p-6" style={{ background: BG }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ fontFamily: HEAD, fontSize: 26, color: INK }}>Reset all data?</h3>
+            <p style={{ fontFamily: BODY, fontSize: 16, lineHeight: 1.5, color: INK_SOFT, marginTop: 8 }}>
+              Every logged want, mood, reflection, and garden flower will be deleted. This cannot be undone.
+            </p>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setConfirmReset(false)} className="flex-1 py-3 rounded-2xl" style={{ fontFamily: HEAD, fontSize: 17, color: INK, background: EMPTY }}>
+                Cancel
+              </button>
+              <button onClick={resetData} className="flex-1 py-3 rounded-2xl" style={{ fontFamily: HEAD, fontSize: 17, color: "#FAFAFA", background: SPENT }}>
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

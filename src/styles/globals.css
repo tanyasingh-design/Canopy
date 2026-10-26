@@ -1,3 +1,32 @@
+/* Mobile Native Tuning & iOS Safari Zoom Prevention */
+html, body {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  font-family: 'Fraunces', serif;
+}
+
+/* Enforce minimum 16px font size on inputs to permanently block iOS Safari auto-zoom */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+@media screen and (max-width: 768px), (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Range input thumb styling for scale slider */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -19,4 +48,16 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   box-shadow: 0 1px 6px rgba(0, 102, 85, 0.35);
   border: 2px solid #FCFCFC;
+}
+
+/* Hide scrollbar across all browsers */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }

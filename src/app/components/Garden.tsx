@@ -4,8 +4,10 @@ import {
   useState,
   useCallback,
 } from "react";
+import { useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
+import { trimDrawingImage } from "../utils/trimDrawing";
 import {
   buildZIndexMap,
   flowerPct,
@@ -34,7 +36,7 @@ const BG = "#FAFAFA";
 const TEAL = "#1C2E2A";
 const GREEN = "#4DAA57";
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 
 const DAY_1 = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -282,6 +284,7 @@ export function GardenHeader({
   onToggleMode,
   hideDivider = false,
 }: HeaderProps) {
+  const navigate = useNavigate();
   const shortDate = selectedDate.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -408,7 +411,11 @@ export function GardenHeader({
               )}
           </div>
 
-          <div className="flex items-center gap-[8px] shrink-0">
+          <div
+            onClick={() => navigate("/profile")}
+            className="flex items-center gap-[8px] shrink-0 cursor-pointer active:scale-95 transition-transform"
+            title="View Profile & Insights"
+          >
             <div className="flex flex-col items-end">
               <AnimatePresence mode="wait">
                 <motion.p
@@ -694,10 +701,41 @@ export function Garden() {
     }
 
     setAllFlowers(flowers);
+
+    // Auto-trim any legacy drawings so shadows are not pushed far below
+    Promise.all(
+      flowers.map(async (f: any) => {
+        if (f.drawing && typeof f.drawing === "string" && f.drawing.startsWith("data:image")) {
+          const trimmed = await trimDrawingImage(f.drawing);
+          if (trimmed && trimmed !== f.drawing) {
+            return { ...f, drawing: trimmed };
+          }
+        }
+        return f;
+      })
+    ).then((updated) => {
+      const changed = updated.some((f, idx) => f.drawing !== flowers[idx]?.drawing);
+      if (changed) {
+        localStorage.setItem("gardenFlowers", JSON.stringify(updated));
+        setAllFlowers(updated);
+      }
+    });
+
+    function handleGardenUpdated() {
+      const g = localStorage.getItem("gardenFlowers");
+      if (g) {
+        try {
+          setAllFlowers(JSON.parse(g));
+        } catch {}
+      }
+    }
+    window.addEventListener("garden-updated", handleGardenUpdated);
+    return () => window.removeEventListener("garden-updated", handleGardenUpdated);
   }, []);
 
   const flowersByDate = new Map<string, number>();
   allFlowers.forEach((f) => {
+    if (f.state === "parked" || (f as any).status === "parked") return;
     const k = dateKey(new Date(f.date));
     flowersByDate.set(k, (flowersByDate.get(k) ?? 0) + 1);
   });
@@ -705,9 +743,10 @@ export function Garden() {
   // Day mode → flowers from the selected day. Week mode → all flowers
   // in the same Monday-anchored ISO week as the selected day.
   const visibleFlowers = allFlowers.filter((f) =>
-    viewMode === "week"
+    (f.state === "bloomed" || f.state === "wilted" || !f.state) &&
+    (viewMode === "week"
       ? sameWeek(new Date(f.date), activeDate)
-      : sameDay(new Date(f.date), activeDate),
+      : sameDay(new Date(f.date), activeDate))
   );
 
   const daySaved = visibleFlowers
@@ -744,7 +783,7 @@ export function Garden() {
       textEl.style.left = "0";
       textEl.style.width = "100%";
       textEl.style.textAlign = "center";
-      textEl.style.fontFamily = "'Slabo 13px', serif";
+      textEl.style.fontFamily = "'Fraunces', serif";
       textEl.style.fontSize = "12px";
       textEl.style.color = "#4DAA57";
       textEl.style.letterSpacing = "0.05em";
@@ -1212,21 +1251,6 @@ function GardenFlower({
             }}
           />
         )}
-        {/* Shadow */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: "58%",
-            transform: "translateX(-38%)",
-            width: shadowW,
-            height: shadowH,
-            borderRadius: "50%",
-            background: "rgba(0,30,15,0.07)",
-            filter: "blur(1px)",
-            zIndex: 1,
-          }}
-        />
       </motion.button>
     </div>
   );

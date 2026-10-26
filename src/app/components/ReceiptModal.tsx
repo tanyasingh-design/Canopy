@@ -8,7 +8,7 @@ const TEAL = "#1C2E2A";
 const GREEN = "#4DAA57";
 const RED = "#D94539";
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 const RULE = "#A3A3A3";
 
 interface ReceiptModalProps {

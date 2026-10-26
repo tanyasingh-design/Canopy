@@ -8,7 +8,7 @@ const TEAL = "#1C2E2A";
 const GREEN = "#4DAA57";
 const MUTED = "rgba(28,46,42,0.42)";
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 
 export function Success() {
   const navigate = useNavigate();
@@ -87,7 +87,7 @@ export function Success() {
             marginBottom: "8px",
           }}
         >
-          {boughtAnyway ? "still here with you" : "beautifully done"}
+          {boughtAnyway ? "Urge Composted" : "Life Force Reclaimed"}
         </h1>
         <p
           style={{
@@ -99,8 +99,8 @@ export function Success() {
           }}
         >
           {boughtAnyway
-            ? "your flower is planted — awareness matters"
-            : "your flower has been planted in the garden"}
+            ? "Anterior insula pain acknowledged — awareness breaks mindless autopilot."
+            : "Your urge was released and secured into your Locked Savings Pot."}
         </p>
 
         {!boughtAnyway && savedAmount > 0 && (
@@ -125,7 +125,7 @@ export function Success() {
                 marginBottom: "4px",
               }}
             >
-              resisted
+              Locked Savings Pot
             </p>
             <p
               style={{
@@ -135,7 +135,17 @@ export function Success() {
                 fontWeight: 400,
               }}
             >
-              ${savedAmount.toFixed(0)}
+              ₹{savedAmount.toLocaleString()}
+            </p>
+            <p
+              style={{
+                fontFamily: BODY,
+                fontSize: "12px",
+                color: TEAL,
+                marginTop: "4px",
+              }}
+            >
+              ⚡ +{(savedAmount / (parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500)).toFixed(1)}h of life force preserved
             </p>
           </motion.div>
         )}

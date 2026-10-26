@@ -131,7 +131,7 @@ function VariantJournal({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => v
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: "#FAF7F2", fontFamily: "'Cormorant Garant', serif" }}
+      style={{ background: "#FAF7F2", fontFamily: "'Fraunces', serif" }}
     >
       <div className="px-7 pt-10 pb-6 flex items-start gap-4">
         <button onClick={() => navigate(-1)} style={{ marginTop: 3 }}>
@@ -186,7 +186,7 @@ function VariantJournal({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => v
                 }}>
                   {e.name}
                 </p>
-                <p style={{ fontSize: 12, color: "#B5A08A", letterSpacing: "0.04em", marginTop: 1, fontFamily: "'Inter', sans-serif", fontStyle: "normal", fontWeight: 300 }}>
+                <p style={{ fontSize: 12, color: "#B5A08A", letterSpacing: "0.04em", marginTop: 1, fontFamily: "'Fraunces', serif", fontStyle: "normal", fontWeight: 300 }}>
                   {e.label}
                 </p>
               </div>
@@ -222,7 +222,7 @@ function VariantGrid({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => void
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: "#F5F3EF", fontFamily: "'DM Sans', sans-serif" }}
+      style={{ background: "#F5F3EF", fontFamily: "'Fraunces', serif" }}
     >
       <div className="px-6 pt-10 pb-2 flex items-center gap-3">
         <button onClick={() => navigate(-1)}>
@@ -309,7 +309,7 @@ function VariantTypo({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => void
   return (
     <div
       className="min-h-screen flex flex-col overflow-hidden"
-      style={{ background: "#FFFCF7", fontFamily: "'Instrument Serif', serif" }}
+      style={{ background: "#FFFCF7", fontFamily: "'Fraunces', serif" }}
     >
       {/* Colored stripe top */}
       <AnimatePresence>
@@ -372,7 +372,7 @@ function VariantTypo({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => void
                 color: isSelected ? e.hex : "transparent",
                 letterSpacing: "0.06em",
                 textTransform: "uppercase",
-                fontFamily: "'Inter', sans-serif",
+                fontFamily: "'Fraunces', serif",
                 fontStyle: "normal",
                 transition: "color 0.3s",
                 flexShrink: 0,
@@ -386,7 +386,7 @@ function VariantTypo({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => void
 
       <div className="px-8 pb-8">
         <div style={{ height: 1, background: "rgba(180,155,120,0.2)", marginBottom: 16 }} />
-        <p style={{ fontSize: 11, color: "#C4B09A", letterSpacing: "0.04em", fontFamily: "'Inter', sans-serif" }}>
+        <p style={{ fontSize: 11, color: "#C4B09A", letterSpacing: "0.04em", fontFamily: "'Fraunces', serif" }}>
           labeling emotion reduces craving by up to 50%
         </p>
       </div>
@@ -402,7 +402,7 @@ function VariantBotanical({ onSelect }: { onSelect: (e: (typeof emotions)[0]) =>
   return (
     <div
       className="min-h-screen flex flex-col"
-      style={{ background: "#F0EDE6", fontFamily: "'Playfair Display', serif" }}
+      style={{ background: "#F0EDE6", fontFamily: "'Fraunces', serif" }}
     >
       <div className="px-6 pt-10 pb-8 flex items-start gap-4">
         <button onClick={() => navigate(-1)} style={{ marginTop: 4 }}>
@@ -413,7 +413,7 @@ function VariantBotanical({ onSelect }: { onSelect: (e: (typeof emotions)[0]) =>
             What are you<br />
             <span style={{ fontStyle: "italic", color: "#7C6A55" }}>carrying right now?</span>
           </h1>
-          <p style={{ fontSize: 12, color: "#A69880", marginTop: 8, fontFamily: "'Inter', sans-serif", fontWeight: 300, letterSpacing: "0.02em" }}>
+          <p style={{ fontSize: 12, color: "#A69880", marginTop: 8, fontFamily: "'Fraunces', serif", fontWeight: 300, letterSpacing: "0.02em" }}>
             Choose the feeling that fits closest
           </p>
         </div>
@@ -469,7 +469,7 @@ function VariantBotanical({ onSelect }: { onSelect: (e: (typeof emotions)[0]) =>
                     fontSize: 11,
                     color: isSelected ? "rgba(255,255,255,0.72)" : "#A69880",
                     marginTop: 2,
-                    fontFamily: "'Inter', sans-serif",
+                    fontFamily: "'Fraunces', serif",
                     fontWeight: 300,
                     letterSpacing: "0.02em",
                   }}>
@@ -516,7 +516,7 @@ function VariantMinimal({ onSelect }: { onSelect: (e: (typeof emotions)[0]) => v
       className="min-h-screen flex flex-col transition-colors"
       style={{
         background: activeColor ? `${activeColor}12` : "#FAFAF8",
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: "'Fraunces', serif",
         transition: "background 0.5s",
       }}
     >
@@ -649,7 +649,7 @@ export function EmotionSelectVariations() {
           borderBottom: "1px solid rgba(180,160,130,0.16)",
         }}
       >
-        <span style={{ fontSize: 10, color: "#B0A090", letterSpacing: "0.1em", textTransform: "uppercase", marginRight: 6, whiteSpace: "nowrap", fontFamily: "'Inter', sans-serif" }}>
+        <span style={{ fontSize: 10, color: "#B0A090", letterSpacing: "0.1em", textTransform: "uppercase", marginRight: 6, whiteSpace: "nowrap", fontFamily: "'Fraunces', serif" }}>
           variant:
         </span>
         {VARIANTS.map((v) => (
@@ -661,7 +661,7 @@ export function EmotionSelectVariations() {
               background: activeVariant === v.id ? "#3D3228" : "transparent",
               color: activeVariant === v.id ? "#FAF7F2" : "#9A8E82",
               fontSize: 12,
-              fontFamily: "'Inter', sans-serif",
+              fontFamily: "'Fraunces', serif",
               letterSpacing: "0.02em",
               border: "1px solid",
               borderColor: activeVariant === v.id ? "#3D3228" : "rgba(180,160,130,0.3)",

@@ -1,0 +1,47 @@
+/* Canopy design tokens — single source of truth for color, spacing, type, radius.
+   Spacing is a 4px scale; screens use --space-5 (20px) side gutters. */
+:root {
+  /* Color */
+  --c-ink: #1c2e2a;
+  --c-ink-soft: rgba(28, 46, 42, 0.62);
+  --c-ink-faint: rgba(28, 46, 42, 0.12);
+  --c-bg: #fafafa;
+  --c-surface: #ffffff;
+  --c-line: rgba(28, 46, 42, 0.08);
+  --c-sunken: #efeeea;
+  --c-kept: #2f6b5e;
+  --c-spent: #b5836a;
+
+  /* Mood palette (used only for mood visuals) */
+  --m-stressed: #c0463a;
+  --m-craving: #d4864a;
+  --m-fomo: #9b72cf;
+  --m-bored: #d4a853;
+  --m-excited: #60be78;
+  --m-intentional: #4a9a8e;
+
+  /* Spacing (4px scale) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  /* Fonts & Type scale (Passion One = main display, Fraunces = all body / other) */
+  --font-head: 'Passion One', sans-serif;
+  --font-body: 'Fraunces', serif;
+  --fs-caption: 14px;
+  --fs-body: 16px;
+  --fs-lead: 18px;
+  --fs-title: 24px;
+  --fs-display: 38px;
+  --fs-hero: 56px;
+}

@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router";
 import { Undo2, Trash2, Check, X, Eraser, Search, Plus, Minus } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { cropCanvasToArtwork } from "../utils/trimDrawing";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Point {
@@ -10,7 +11,7 @@ interface Point {
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const SPACE = "'Victor Mono', monospace";
+const SPACE = "'Fraunces', serif";
 const INK = "#1C2E2A";
 const BG = "#FAFAFA";
 
@@ -651,14 +652,40 @@ export function DrawingCanvas() {
   const price =
     parseFloat(localStorage.getItem("purchaseCost") || "0") ||
     0;
-  const duration = price > 500 ? 110 : 60;
+  const laborHours =
+    localStorage.getItem("laborHours") ||
+    (price > 0 ? (price / 500).toFixed(1) : "0");
+
+  const somaticDuration = useMemo(() => {
+    if (price <= 50) return Math.min(75, Math.max(60, Math.round(60 + price * 0.3)));
+    if (price <= 1000) return Math.min(75, Math.max(60, Math.round(60 + (price / 1000) * 15)));
+    if (price <= 5000) return Math.min(120, Math.max(75, Math.round(75 + ((price - 1000) / 4000) * 45)));
+    return Math.min(240, Math.max(120, Math.round(120 + ((price - 5000) / 10000) * 120)));
+  }, [price]);
+
+  const somaticTask = useMemo(() => {
+    if (price < 1000) return "Draw a single flower or calming spiral to soothe System 1 impulse.";
+    if (price <= 5000) return "Draw a wildflower cluster — feel the physical friction of each stroke.";
+    return "Draw an imagination tree or free scribble — grounding your nervous system.";
+  }, [price]);
+
+  const duration = somaticDuration;
   const moodHex =
     typeof emotion?.hex === "string" &&
     emotion.hex.startsWith("#")
       ? emotion.hex
       : "#5A9469";
 
-  const palette = [moodHex, "#1C1C1A", "#C1392B", "#5B8FD4", "#F4A93B"];
+  // Curated 6 colors: ink, mood color, warm terracotta, amber, calm blue, chalk white
+  const SIX_PALETTE = useMemo(() => {
+    const list = ["#1C2E2A", moodHex, "#C45B38", "#F4A93B", "#5B8FD4", "#FAFAFA"];
+    const unique = Array.from(new Set(list));
+    const backup = ["#4DAA57", "#8E44AD", "#D4708A", "#7B4A2D"];
+    for (const b of backup) {
+      if (unique.length < 6 && !unique.includes(b)) unique.push(b);
+    }
+    return unique.slice(0, 6);
+  }, [moodHex]);
 
   const [activeColor, setActiveColor] = useState(moodHex);
   const [activeWidth, setActiveWidth] = useState("M");
@@ -672,6 +699,13 @@ export function DrawingCanvas() {
   const [timeLeft, setTimeLeft] = useState(duration);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const panRef = useRef(pan);
+  panRef.current = pan;
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const canvasLogicalWidth = useRef(0);
+  const canvasLogicalHeight = useRef(0);
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   const prompt = useRef(getPrompt()).current;
@@ -714,13 +748,12 @@ export function DrawingCanvas() {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
+    canvasLogicalWidth.current = rect.width;
+    canvasLogicalHeight.current = rect.height;
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     canvas.getContext("2d")!.scale(dpr, dpr);
   }, []);
-
-  const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
 
   // Multi-touch pinch-to-zoom tracking
   const pointersRef = useRef<
@@ -729,18 +762,28 @@ export function DrawingCanvas() {
   const pinchRef = useRef<{
     dist: number;
     zoom: number;
+    midX: number;
+    midY: number;
+    panX: number;
+    panY: number;
   } | null>(null);
+
   function pinchDistance() {
     const pts = [...pointersRef.current.values()];
     if (pts.length < 2) return 0;
     return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
   }
 
-  function getPoint(e: PointerEvent): Point {
-    const rect = canvasRef.current!.getBoundingClientRect();
+  function getPoint(e: { clientX: number; clientY: number }): Point {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return { x: 0, y: 0 };
+    const normX = (e.clientX - rect.left) / rect.width;
+    const normY = (e.clientY - rect.top) / rect.height;
     return {
-      x: (e.clientX - rect.left) / zoomRef.current,
-      y: (e.clientY - rect.top) / zoomRef.current,
+      x: normX * (canvasLogicalWidth.current || rect.width),
+      y: normY * (canvasLogicalHeight.current || rect.height),
     };
   }
 
@@ -763,42 +806,94 @@ export function DrawingCanvas() {
         .putImageData(snap, 0, 0);
   }
 
-  // ── Pointer events ──
+  // ── Pointer & Touch events ──
   useEffect(() => {
     const canvas = canvasRef.current!;
 
-    function onDown(e: PointerEvent) {
-      e.preventDefault();
-      canvas.setPointerCapture(e.pointerId);
-
-      // Track this pointer for pinch detection
-      pointersRef.current.set(e.pointerId, {
-        x: e.clientX,
-        y: e.clientY,
-      });
-
-      // Second finger down → start pinch-zoom, abort any in-progress stroke
-      if (pointersRef.current.size === 2) {
+    function onTouchStart(e: TouchEvent) {
+      if (e.touches.length >= 2) {
         if (isDown.current) {
-          restoreStrokeStart(); // undo the partial dab
+          restoreStrokeStart();
           isDown.current = false;
           currentPts.current = [];
           firstPt.current = null;
           lastPt.current = null;
         }
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const midX = (t1.clientX + t2.clientX) / 2;
+        const midY = (t1.clientY + t2.clientY) / 2;
         pinchRef.current = {
-          dist: pinchDistance(),
+          dist,
           zoom: zoomRef.current,
+          midX,
+          midY,
+          panX: panRef.current.x,
+          panY: panRef.current.y,
         };
+      }
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      if (e.touches.length >= 2 && pinchRef.current) {
+        e.preventDefault();
+        const t1 = e.touches[0];
+        const t2 = e.touches[1];
+        const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+        const midX = (t1.clientX + t2.clientX) / 2;
+        const midY = (t1.clientY + t2.clientY) / 2;
+        if (dist > 0 && pinchRef.current.dist > 0) {
+          const scaleFactor = dist / pinchRef.current.dist;
+          const nextZoom = Math.max(
+            0.5,
+            Math.min(3.5, +(pinchRef.current.zoom * scaleFactor).toFixed(2)),
+          );
+          const deltaX = midX - pinchRef.current.midX;
+          const deltaY = midY - pinchRef.current.midY;
+          setZoom(nextZoom);
+          setPan({
+            x: Math.round(pinchRef.current.panX + deltaX),
+            y: Math.round(pinchRef.current.panY + deltaY),
+          });
+        }
+      }
+    }
+
+    function onTouchEnd(e: TouchEvent) {
+      if (e.touches.length < 2) {
+        pinchRef.current = null;
+      }
+    }
+
+    function onDown(e: PointerEvent) {
+      e.preventDefault();
+      if (e.pointerType === "mouse") {
+        try {
+          canvas.setPointerCapture(e.pointerId);
+        } catch {}
+      }
+
+      pointersRef.current.set(e.pointerId, {
+        x: e.clientX,
+        y: e.clientY,
+      });
+
+      if (pointersRef.current.size >= 2 || pinchRef.current) {
+        if (isDown.current) {
+          restoreStrokeStart();
+          isDown.current = false;
+          currentPts.current = [];
+          firstPt.current = null;
+          lastPt.current = null;
+        }
         return;
       }
-      // Ignore 3rd+ fingers
-      if (pointersRef.current.size > 2) return;
 
       if (!hasStartedRef.current) setHasStarted(true);
 
       const pt = getPoint(e);
-      saveSnapshot(); // this is the undo point for this stroke
+      saveSnapshot();
       isDown.current = true;
       firstPt.current = pt;
       lastPt.current = pt;
@@ -849,7 +944,6 @@ export function DrawingCanvas() {
     }
 
     function onMove(e: PointerEvent) {
-      // Update tracked pointer position
       if (pointersRef.current.has(e.pointerId)) {
         pointersRef.current.set(e.pointerId, {
           x: e.clientX,
@@ -857,24 +951,7 @@ export function DrawingCanvas() {
         });
       }
 
-      // Pinch-zoom in progress
-      if (pinchRef.current && pointersRef.current.size >= 2) {
-        e.preventDefault();
-        const dist = pinchDistance();
-        if (dist > 0 && pinchRef.current.dist > 0) {
-          const next = Math.max(
-            0.5,
-            Math.min(
-              3,
-              pinchRef.current.zoom *
-                (dist / pinchRef.current.dist),
-            ),
-          );
-          setZoom(next);
-        }
-        return;
-      }
-
+      if (pinchRef.current || pointersRef.current.size >= 2) return;
       if (!isDown.current || !lastPt.current) return;
       e.preventDefault();
 
@@ -896,8 +973,6 @@ export function DrawingCanvas() {
         currentPts.current.push(pt);
         lastPt.current = pt;
 
-        // Restore the pre-stroke snapshot then redraw the whole stroke — this is
-        // what makes the stroke perfectly smooth (no accumulated rendering artifacts).
         restoreStrokeStart();
         renderCrayonStroke(
           ctx,
@@ -977,7 +1052,11 @@ export function DrawingCanvas() {
     }
 
     function onUp(e: PointerEvent) {
-      // Release pinch tracking for this finger
+      if (e.pointerType === "mouse") {
+        try {
+          canvas.releasePointerCapture(e.pointerId);
+        } catch {}
+      }
       pointersRef.current.delete(e.pointerId);
       if (pointersRef.current.size < 2) pinchRef.current = null;
 
@@ -990,10 +1069,10 @@ export function DrawingCanvas() {
 
       if (
         !eraserRef.current &&
-        pts.length >= 2 &&
+        pts.length >= 1 &&
         firstPt.current
       ) {
-        if (brushModeRef.current === "classic") {
+        if (brushModeRef.current === "classic" && pts.length >= 2) {
           restoreStrokeStart();
           renderCrayonStroke(
             ctx,
@@ -1016,6 +1095,11 @@ export function DrawingCanvas() {
       lastPt.current = null;
     }
 
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd);
+    canvas.addEventListener("touchcancel", onTouchEnd);
+
     canvas.addEventListener("pointerdown", onDown, {
       passive: false,
     });
@@ -1024,7 +1108,13 @@ export function DrawingCanvas() {
     });
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointercancel", onUp);
+
     return () => {
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
+      canvas.removeEventListener("touchcancel", onTouchEnd);
+
       canvas.removeEventListener("pointerdown", onDown);
       canvas.removeEventListener("pointermove", onMove);
       canvas.removeEventListener("pointerup", onUp);
@@ -1072,55 +1162,15 @@ export function DrawingCanvas() {
 
   async function handleDone() {
     const canvas = canvasRef.current!;
-    const strokes = vecStrokes.current;
     let drawingDataUrl = "";
 
-    if (strokes.length > 0) {
-      const all = strokes.flatMap((s) => s.points);
-      const pad = 22,
-        dpr = window.devicePixelRatio || 1;
-      const minX = Math.max(
-        0,
-        Math.min(...all.map((p: Point) => p.x)) - pad,
-      );
-      const minY = Math.max(
-        0,
-        Math.min(...all.map((p: Point) => p.y)) - pad,
-      );
-      const maxX = Math.min(
-        canvas.clientWidth,
-        Math.max(...all.map((p: Point) => p.x)) + pad,
-      );
-      const maxY = Math.min(
-        canvas.clientHeight,
-        Math.max(...all.map((p: Point) => p.y)) + pad,
-      );
-      const w = maxX - minX,
-        h = maxY - minY;
-      const maxW = 400;
-      let finalW = w,
-        finalH = h;
-      if (w > maxW) {
-        finalW = maxW;
-        finalH = h * (maxW / w);
+    if (hasDrawn) {
+      drawingDataUrl = cropCanvasToArtwork(canvas);
+      if (drawingDataUrl) {
+        localStorage.setItem("currentDrawing", drawingDataUrl);
+      } else {
+        localStorage.removeItem("currentDrawing");
       }
-      const tmp = document.createElement("canvas");
-      tmp.width = Math.round(finalW);
-      tmp.height = Math.round(finalH);
-      const ctx = tmp.getContext("2d")!;
-      ctx.drawImage(
-        canvas,
-        Math.round(minX * dpr),
-        Math.round(minY * dpr),
-        Math.round(w * dpr),
-        Math.round(h * dpr),
-        0,
-        0,
-        tmp.width,
-        tmp.height,
-      );
-      drawingDataUrl = tmp.toDataURL("image/png");
-      localStorage.setItem("currentDrawing", drawingDataUrl);
     } else {
       localStorage.removeItem("currentDrawing");
     }
@@ -1169,42 +1219,102 @@ export function DrawingCanvas() {
     >
       <canvas
         ref={canvasRef}
-        className="absolute inset-0 w-full h-full origin-center"
+        className="absolute inset-0 w-full h-full"
         style={{
           touchAction: "none",
           cursor: isEraser ? "cell" : "crosshair",
           display: "block",
-          transform: `scale(${zoom})`,
+          transformOrigin: "center center",
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
           willChange: "transform",
         }}
       />
 
+      {/* Floating zoom/pan indicator & reset button when zoomed or panned */}
+      {(zoom !== 1 || pan.x !== 0 || pan.y !== 0) && (
+        <div className="absolute top-20 right-4 z-40 pointer-events-auto">
+          <motion.button
+            initial={{ opacity: 0, scale: 0.88 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.88 }}
+            whileTap={{ scale: 0.94 }}
+            onClick={() => {
+              setZoom(1);
+              setPan({ x: 0, y: 0 });
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-md transition-colors hover:bg-[rgba(28,46,42,0.04)]"
+            style={{
+              ...floatCard,
+              borderColor: "rgba(77, 170, 87, 0.4)",
+            }}
+            title="Reset canvas zoom & position"
+          >
+            <span
+              style={{
+                fontFamily: SPACE,
+                fontSize: 10,
+                fontWeight: 600,
+                color: INK,
+                letterSpacing: "0.04em",
+              }}
+            >
+              {Math.round(zoom * 100)}%
+            </span>
+            <span
+              style={{
+                fontFamily: SPACE,
+                fontSize: 9,
+                fontWeight: 700,
+                color: "#4DAA57",
+                textTransform: "uppercase",
+                letterSpacing: "0.08em",
+              }}
+            >
+              Reset
+            </span>
+          </motion.button>
+        </div>
+      )}
+
       {/* Prompt placeholder */}
+      {/* Somatic Prompt placeholder */}
       {!hasDrawn && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-10 gap-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-8 gap-2">
           <p
             style={{
               fontFamily: SPACE,
-              fontSize: "clamp(8px, 2.2vw, 10px)",
-              color: "rgba(26,36,32,0.12)",
+              fontSize: "clamp(9px, 2.2vw, 11px)",
+              color: "#4DAA57",
               letterSpacing: "0.14em",
               textAlign: "center",
               textTransform: "uppercase",
+              fontWeight: 600,
             }}
           >
-            {getWeekTheme()}
+            Somatic Intervention · {duration}s Pause
+          </p>
+          <p
+            style={{
+              fontFamily: "'Passion One', sans-serif",
+              fontSize: "clamp(16px, 4vw, 22px)",
+              color: INK,
+              letterSpacing: "0.02em",
+              textAlign: "center",
+              lineHeight: 1.3,
+              maxWidth: 360,
+            }}
+          >
+            {somaticTask}
           </p>
           <p
             style={{
               fontFamily: SPACE,
-              fontSize: "clamp(11px, 3vw, 14px)",
-              color: "rgba(26,36,32,0.18)",
-              letterSpacing: "0.04em",
+              fontSize: 12,
+              color: "rgba(26,36,32,0.45)",
               textAlign: "center",
-              lineHeight: 1.7,
             }}
           >
-            {prompt}
+            ⚡ Costs {laborHours}h of your life force · Lowering cortisol
           </p>
         </div>
       )}
@@ -1375,7 +1485,10 @@ export function DrawingCanvas() {
                       </motion.button>
 
                       <button
-                        onClick={() => setZoom(1)}
+                        onClick={() => {
+                          setZoom(1);
+                          setPan({ x: 0, y: 0 });
+                        }}
                         className="px-2 py-1 my-0.5 rounded-lg transition-colors hover:bg-[rgba(28,46,42,0.06)]"
                         title="Reset zoom to 100%"
                       >
@@ -1478,7 +1591,7 @@ export function DrawingCanvas() {
                 />
               </motion.button>
 
-              {/* Color Popover */}
+              {/* Color Popover — Single clean row: 6 colors + custom color selector */}
               <AnimatePresence>
                 {popover === "color" && (
                   <div className="absolute bottom-[calc(100%+12px)] left-1/2 -translate-x-1/2 z-50 pointer-events-auto">
@@ -1491,58 +1604,94 @@ export function DrawingCanvas() {
                         damping: 26,
                         stiffness: 360,
                       }}
-                      className="rounded-[18px] px-3.5 py-2.5"
+                      className="rounded-2xl px-3 py-2 flex items-center gap-2.5 shadow-xl whitespace-nowrap"
                       style={{
                         ...floatCard,
                         boxShadow:
-                          "0 8px 40px rgba(28,46,42,0.14), 0 2px 12px rgba(28,46,42,0.08)",
+                          "0 8px 32px rgba(28,46,42,0.16), 0 2px 10px rgba(28,46,42,0.08)",
                       }}
                     >
-                      {/* Compact color row: 5 colors + picker */}
-                      <div className="flex items-center gap-2.5">
-                        {palette.map((hex, i) => {
-                          const isSel = activeColor === hex && !isEraser;
-                          return (
-                            <button
-                              key={i}
-                              onClick={() => {
-                                setActiveColor(hex);
+                      {SIX_PALETTE.map((hex, i) => {
+                        const isSel =
+                          activeColor.toLowerCase() === hex.toLowerCase() &&
+                          !isEraser;
+                        return (
+                          <button
+                            key={hex + i}
+                            type="button"
+                            onClick={() => {
+                              setActiveColor(hex);
+                              setIsEraser(false);
+                              setPopover(null);
+                            }}
+                            className="rounded-full transition-all duration-150 shrink-0 relative hover:scale-105 active:scale-95"
+                            style={{
+                              width: 26,
+                              height: 26,
+                              background: hex,
+                              boxShadow: isSel
+                                ? `0 0 0 2px ${BG}, 0 0 0 4px ${hex}`
+                                : `inset 0 -1px 2px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.08)`,
+                              transform: isSel ? "scale(1.15)" : "scale(1)",
+                              border:
+                                hex.toUpperCase() === "#FAFAFA" ||
+                                hex.toUpperCase() === "#FFFFFF"
+                                  ? "1px solid rgba(0,0,0,0.16)"
+                                  : "none",
+                            }}
+                            title={hex}
+                          />
+                        );
+                      })}
+
+                      {/* Custom color picker button */}
+                      {(() => {
+                        const isCustomSelected =
+                          !isEraser &&
+                          !SIX_PALETTE.some(
+                            (c) => c.toLowerCase() === activeColor.toLowerCase(),
+                          );
+                        return (
+                          <label
+                            className="relative rounded-full transition-all duration-150 shrink-0 cursor-pointer flex items-center justify-center overflow-hidden hover:scale-105 active:scale-95"
+                            style={{
+                              width: 26,
+                              height: 26,
+                              background: isCustomSelected
+                                ? activeColor
+                                : "conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+                              border: isCustomSelected
+                                ? "2px solid #FAFAFA"
+                                : "2px solid rgba(255,255,255,0.9)",
+                              boxShadow: isCustomSelected
+                                ? `0 0 0 2px ${BG}, 0 0 0 4px ${activeColor}`
+                                : "0 1px 4px rgba(0,0,0,0.18)",
+                              transform: isCustomSelected
+                                ? "scale(1.15)"
+                                : "scale(1)",
+                            }}
+                            title="Custom Color"
+                          >
+                            <input
+                              type="color"
+                              value={
+                                activeColor.startsWith("#")
+                                  ? activeColor
+                                  : "#4DAA57"
+                              }
+                              onChange={(e) => {
+                                setActiveColor(e.target.value);
                                 setIsEraser(false);
-                                setPopover(null);
                               }}
-                              className="rounded-full transition-all duration-150 shrink-0"
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full p-0 m-0 border-0"
                               style={{
-                                width: 28,
-                                height: 28,
-                                background: hex,
-                                boxShadow: isSel
-                                  ? `0 0 0 2px ${BG}, 0 0 0 3.5px ${hex}`
-                                  : `inset 0 -1px 2px rgba(0,0,0,0.12)`,
-                                transform: isSel ? "scale(1.15)" : "scale(1)",
-                                border:
-                                  hex === "#FAFAFA"
-                                    ? "1px solid rgba(0,0,0,0.1)"
-                                    : "none",
+                                appearance: "none",
+                                WebkitAppearance: "none",
                               }}
                             />
-                          );
-                        })}
-
-                        {/* Custom color picker button */}
-                        <button
-                          onClick={() => colorInputRef.current?.click()}
-                          className="rounded-full transition-all duration-150 shrink-0"
-                          style={{
-                            width: 28,
-                            height: 28,
-                            background:
-                              "conic-gradient(from 0deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
-                            border: "2px solid rgba(255,255,255,0.9)",
-                            boxShadow: "0 1px 4px rgba(0,0,0,0.15)",
-                          }}
-                          title="Custom color"
-                        />
-                      </div>
+                          </label>
+                        );
+                      })()}
                     </motion.div>
                   </div>
                 )}
@@ -1802,7 +1951,7 @@ export function DrawingCanvas() {
             >
               <p
                 style={{
-                  fontFamily: "'Special Elite', system-ui",
+                  fontFamily: "'Fraunces', serif",
                   fontSize: 20,
                   color: INK,
                   marginBottom: 8,

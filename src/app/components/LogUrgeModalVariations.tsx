@@ -12,9 +12,9 @@ import { useNavigate } from "react-router";
 import imgPaperTexture from "../../imports/watercolor_paper_texture.jpeg";
 
 // ─── Font tokens ───────────────────────────────────────────────────────────────
-const SLAB = "'Special Elite', system-ui";
-const MONO = "'Victor Mono', monospace";
-const SPACE = "'Victor Mono', monospace";
+const SLAB = "'Fraunces', serif";
+const MONO = "'Fraunces', serif";
+const SPACE = "'Fraunces', serif";
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
 const EMOTIONS = [

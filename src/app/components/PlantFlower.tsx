@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { trimDrawingImage } from "../utils/trimDrawing";
 import { Minus, Plus, Maximize2 } from "lucide-react";
 import ScribblePng from "../../imports/116.png";
 import { sameDay, sameWeek } from "./Garden";
@@ -15,14 +16,14 @@ interface Pos {
   x: number;
   y: number;
 }
-type Phase = "idle" | "asking" | "wilting";
+type Phase = "idle" | "asking" | "composting" | "wilting";
 
 // Same tokens as Garden
 const BG = "#FAFAFA";
 const TEAL = "#1C2E2A";
 const GREEN = "#4DAA57";
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 
 // Wilting animation
 function WiltSVG() {
@@ -91,8 +92,35 @@ export function PlantFlower() {
   const [scale, setScale] = useState(1.0);
   const [showSize, setShowSize] = useState(false);
 
-  const drawing = localStorage.getItem("currentDrawing");
-  const urgeItem = localStorage.getItem("urgeItem") || "";
+  const [drawing, setDrawing] = useState<string | null>(
+    localStorage.getItem("currentDrawing"),
+  );
+
+  useEffect(() => {
+    const raw = localStorage.getItem("currentDrawing");
+    if (raw) {
+      trimDrawingImage(raw).then((trimmed) => {
+        if (trimmed && trimmed !== raw) {
+          setDrawing(trimmed);
+          localStorage.setItem("currentDrawing", trimmed);
+        }
+      });
+    }
+  }, []);
+  const urgeItem = localStorage.getItem("urgeItem") || "this item";
+  const category = localStorage.getItem("currentCategory") || "Other";
+  const cost = parseFloat(localStorage.getItem("purchaseCost") || "0");
+  const laborHours =
+    localStorage.getItem("laborHours") ||
+    (cost > 0 ? (cost / 500).toFixed(1) : "1.0");
+  const buyingReason =
+    localStorage.getItem("buyingReason") || "an impulse trigger";
+
+  const [compostReason, setCompostReason] = useState("Quick dopamine spike");
+  const [customCompost, setCustomCompost] = useState("");
+
+  const futureReflection = "Will this purchase bring you meaningful value 30 days from now, or is it a 15-minute dopamine salve?";
+
   const emotion = localStorage.getItem("currentEmotion")
     ? JSON.parse(localStorage.getItem("currentEmotion")!)
     : null;
@@ -130,7 +158,7 @@ export function PlantFlower() {
       ? emotion.hex
       : "#4DAA57";
 
-  const wilting = phase === "wilting";
+  const wilting = phase === "wilting" || phase === "composting";
 
   // Convert a pointer event to % of the canvas element.
   function pctFromEvent(
@@ -168,7 +196,7 @@ export function PlantFlower() {
     setPhase("asking");
   }
 
-  function plantNow(bought: boolean) {
+  function plantNow(bought: boolean, compost?: string) {
     if (!pos || planted) return;
     setPlanted(true);
     const cost = parseFloat(
@@ -177,12 +205,17 @@ export function PlantFlower() {
     const garden: any[] = JSON.parse(
       localStorage.getItem("gardenFlowers") || "[]",
     );
+
     garden.push({
       id: Date.now(),
       emotion,
       amount: cost,
       date: new Date().toISOString(),
       state: bought ? "wilted" : "bloomed",
+      status: bought ? "bought" : "let_go",
+      laborHours: parseFloat(laborHours),
+      buyingReason,
+      compostReason: bought ? (compost || compostReason) : undefined,
       drawing: drawing || null,
       // x/y are percentages of the full viewport — identical to what
       // Garden uses, same anchor (bottom-center), no conversion needed.
@@ -192,6 +225,11 @@ export function PlantFlower() {
       itemName: localStorage.getItem("urgeItem") || undefined,
       whoFor:
         localStorage.getItem("currentWhoFor") || undefined,
+      category:
+        localStorage.getItem("currentCategory") || "Other",
+      categories: localStorage.getItem("currentCategories")
+        ? JSON.parse(localStorage.getItem("currentCategories")!)
+        : [localStorage.getItem("currentCategory") || "Other"],
       journal:
         localStorage.getItem("currentJournal") || undefined,
       voiceNote:
@@ -204,14 +242,21 @@ export function PlantFlower() {
       "gardenFlowers",
       JSON.stringify(garden),
     );
+    window.dispatchEvent(new Event("garden-updated"));
     [
       "currentJournal",
       "urgeItem",
+      "currentCategory",
+      "currentCategories",
       "currentWhoFor",
       "currentEmotion",
       "purchaseCost",
+      "laborHours",
+      "buyingReason",
       "currentVoiceNote",
       "currentPhotos",
+      "currentLink",
+      "coolingHours",
     ].forEach((k) => localStorage.removeItem(k));
     localStorage.setItem(
       "boughtAnyway",
@@ -222,10 +267,12 @@ export function PlantFlower() {
       localStorage.getItem("bloomData") ||
         '{"totalSaved":0,"flowersGrown":0,"currentStreak":0,"totalEntries":0}',
     );
-    bd.totalSaved = (bd.totalSaved || 0) + cost;
+    if (!bought) {
+      bd.totalSaved = (bd.totalSaved || 0) + cost;
+      bd.currentStreak = (bd.currentStreak || 0) + 1;
+    }
     bd.flowersGrown = (bd.flowersGrown || 0) + 1;
     bd.totalEntries = (bd.totalEntries || 0) + 1;
-    if (!bought) bd.currentStreak = (bd.currentStreak || 0) + 1;
     localStorage.setItem("bloomData", JSON.stringify(bd));
     setTimeout(() => navigate("/success"), 700);
   }
@@ -319,21 +366,6 @@ export function PlantFlower() {
                   }}
                 />
               )}
-              {/* Ground shadow — same as the Garden */}
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: "58%",
-                  transform: "translateX(-38%)",
-                  width: shW,
-                  height: shH,
-                  borderRadius: "50%",
-                  background: "rgba(0,30,15,0.07)",
-                  filter: "blur(1px)",
-                  zIndex: 1,
-                }}
-              />
             </div>
           );
         })}
@@ -389,7 +421,7 @@ export function PlantFlower() {
                         display: "block",
                         filter: wilting
                           ? "grayscale(0.8) brightness(0.65)"
-                          : "drop-shadow(4px 6px 10px rgba(28,46,42,0.22))",
+                          : "none",
                       }}
                     />
                     {wilting && (
@@ -409,23 +441,6 @@ export function PlantFlower() {
                     }}
                   />
                 )}
-                {/* Ground shadow — same as the Garden, marks the spot */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 0,
-                    left: "58%",
-                    transform: "translateX(-38%)",
-                    width: Math.round(previewSize * 0.62),
-                    height: Math.round(
-                      previewSize * 0.62 * 0.1,
-                    ),
-                    borderRadius: "50%",
-                    background: "rgba(0,30,15,0.07)",
-                    filter: "blur(1px)",
-                    zIndex: 1,
-                  }}
-                />
               </motion.div>
             </div>
           )}
@@ -645,46 +660,49 @@ export function PlantFlower() {
         </motion.button>
       </div>
 
-      {/* ── Decision modal ── */}
+      {/* ── Decision & Composting modal ── */}
       <AnimatePresence>
-        {(phase === "asking" || phase === "wilting") && (
+        {(phase === "asking" || phase === "composting" || phase === "wilting") && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 flex items-end justify-center px-4 pb-8"
+            className="fixed inset-0 flex items-end justify-center px-4 pb-6"
             style={{
               zIndex: 100000,
-              background: "rgba(250,250,250,0.85)",
-              backdropFilter: "blur(12px)",
+              background: phase === "composting" ? "rgba(18,22,20,0.72)" : "rgba(250,250,250,0.85)",
+              backdropFilter: "blur(14px)",
             }}
             onPointerDown={(e) => e.stopPropagation()}
           >
             <motion.div
-              initial={{ y: 80, opacity: 0 }}
+              initial={{ y: 90, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
+              exit={{ y: 90, opacity: 0 }}
               transition={{
                 type: "spring",
                 damping: 28,
                 stiffness: 300,
               }}
-              className="w-full max-w-sm rounded-3xl p-7"
+              className="w-full max-w-sm rounded-3xl p-6"
               style={{
                 background: "#FAFAFA",
-                boxShadow: "0 24px 72px rgba(28,46,42,0.18)",
+                boxShadow: "0 24px 72px rgba(28,46,42,0.22)",
                 border: "1px solid rgba(28,46,42,0.08)",
+                maxHeight: "90vh",
+                overflowY: "auto",
               }}
             >
               {phase === "wilting" ? (
-                <div className="flex flex-col items-center gap-4 py-4">
+                <div className="flex flex-col items-center gap-4 py-8">
                   <motion.div
                     animate={{
-                      scale: [1, 0.85, 0.7],
-                      rotate: [0, -6, -14],
+                      scale: [1, 0.85, 0.65],
+                      rotate: [0, -8, -18],
+                      opacity: [1, 0.9, 0.6],
                     }}
                     transition={{
-                      duration: 1.4,
+                      duration: 1.5,
                       ease: "easeIn",
                     }}
                   >
@@ -693,98 +711,263 @@ export function PlantFlower() {
                   <p
                     style={{
                       fontFamily: HEAD,
-                      fontStyle: "italic",
-                      fontSize: 15,
-                      color: "rgba(28,46,42,0.35)",
+                      fontSize: 18,
+                      color: TEAL,
                     }}
                   >
-                    withering…
+                    Composting into soil…
                   </p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-3 mb-5">
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        background: `${moodHex}22`,
-                        border: `1.5px solid ${moodHex}44`,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: moodHex,
-                        }}
-                      />
-                    </div>
-                    <p
-                      style={{
-                        fontFamily: HEAD,
-                        fontSize: 17,
-                        color: TEAL,
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      You drew through the urge.
-                    </p>
-                  </div>
                   <p
                     style={{
                       fontFamily: BODY,
                       fontSize: 12,
                       color: "rgba(28,46,42,0.55)",
-                      lineHeight: 1.8,
-                      marginBottom: 24,
-                      letterSpacing: "0.03em",
+                      textAlign: "center",
+                      lineHeight: 1.6,
                     }}
                   >
-                    That took real awareness. Are you still
-                    going to make this purchase?
+                    Anterior insula pain signal registered. Every paused urge builds neurological strength.
                   </p>
-                  <div className="flex flex-col gap-2.5">
+                </div>
+              ) : phase === "composting" ? (
+                <div>
+                  {/* Insula Pain Activation Header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span
+                      className="px-2.5 py-1 rounded-full text-[11px]"
+                      style={{
+                        background: "rgba(180,50,40,0.08)",
+                        color: "#9A3428",
+                        border: "1px solid rgba(180,50,40,0.18)",
+                        fontFamily: BODY,
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      Anterior Insula Activated
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: BODY,
+                        fontSize: 12,
+                        color: "rgba(28,46,42,0.4)",
+                      }}
+                    >
+                      Artwork Withered
+                    </span>
+                  </div>
+
+                  <h3
+                    style={{
+                      fontFamily: HEAD,
+                      fontSize: 22,
+                      color: TEAL,
+                      marginBottom: 4,
+                    }}
+                  >
+                    Compost the Urge
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: BODY,
+                      fontSize: 12.5,
+                      color: "rgba(28,46,42,0.65)",
+                      lineHeight: 1.5,
+                      marginBottom: 16,
+                    }}
+                  >
+                    What emotional need did this purchase serve?
+                  </p>
+
+                  {/* Emotion chips */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {[
+                      "Tired & low energy",
+                      "Reward after work",
+                      "Social obligation",
+                      "Boredom & stimulation",
+                      "Idealized self fantasy",
+                      "Quick dopamine salve",
+                    ].map((reason) => {
+                      const selected = compostReason === reason && !customCompost;
+                      return (
+                        <button
+                          key={reason}
+                          type="button"
+                          onClick={() => {
+                            setCompostReason(reason);
+                            setCustomCompost("");
+                          }}
+                          className="px-3 py-1.5 rounded-xl text-xs transition-all"
+                          style={{
+                            background: selected ? TEAL : "rgba(28,46,42,0.05)",
+                            color: selected ? "#FAFAFA" : TEAL,
+                            border: `1px solid ${selected ? TEAL : "rgba(28,46,42,0.1)"}`,
+                            fontFamily: BODY,
+                          }}
+                        >
+                          {reason}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <input
+                    type="text"
+                    value={customCompost}
+                    onChange={(e) => setCustomCompost(e.target.value)}
+                    placeholder="Or describe the underlying feeling..."
+                    className="w-full px-3.5 py-2.5 rounded-xl text-xs outline-none mb-5"
+                    style={{
+                      background: "rgba(28,46,42,0.04)",
+                      border: "1px solid rgba(28,46,42,0.12)",
+                      fontFamily: BODY,
+                      color: TEAL,
+                    }}
+                  />
+
+                  <div className="flex flex-col gap-2">
                     <button
-                      onClick={() => plantNow(false)}
-                      className="w-full py-4 rounded-2xl"
+                      type="button"
+                      onClick={() => {
+                        setPhase("wilting");
+                        setTimeout(() => plantNow(true, customCompost.trim() || compostReason), 1500);
+                      }}
+                      className="w-full py-3.5 rounded-2xl"
                       style={{
                         background: TEAL,
                         color: "#FAFAFA",
                         fontFamily: BODY,
                         fontSize: 13,
-                        letterSpacing: "0.08em",
-                        boxShadow:
-                          "0 6px 20px rgba(32,70,84,0.28)",
+                        fontWeight: 600,
+                        letterSpacing: "0.03em",
                       }}
                     >
-                      No — I don't have to
+                      Compost Urge & Record Purchase
                     </button>
                     <button
-                      onClick={() => {
-                        setPhase("wilting");
-                        setTimeout(() => plantNow(true), 1600);
-                      }}
-                      className="w-full py-4 rounded-2xl"
+                      type="button"
+                      onClick={() => setPhase("asking")}
+                      className="w-full py-2.5 rounded-2xl"
                       style={{
-                        background: "rgba(32,70,84,0.07)",
+                        background: "transparent",
+                        color: "rgba(28,46,42,0.6)",
+                        fontFamily: BODY,
+                        fontSize: 12,
+                      }}
+                    >
+                      Wait, I'll let it go instead
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* phase === "asking" Dynamic Reflection Generator */
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          background: GREEN,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontFamily: BODY,
+                          fontSize: 11,
+                          color: "rgba(28,46,42,0.5)",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        Somatic Pause Complete
+                      </span>
+                    </div>
+
+                    <span
+                      className="px-2.5 py-0.5 rounded-full text-[11px]"
+                      style={{
+                        background: `${GREEN}18`,
+                        color: "#286634",
+                        border: `1px solid ${GREEN}40`,
+                        fontFamily: BODY,
+                        fontWeight: 600,
+                      }}
+                    >
+                      ⚡ {laborHours}h life force
+                    </span>
+                  </div>
+
+                  {/* Future Utility Reflection Card */}
+                  <div
+                    className="p-4 rounded-2xl mb-4 transition-all"
+                    style={{
+                      background: "rgba(28,46,42,0.03)",
+                      border: "1px solid rgba(28,46,42,0.08)",
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: BODY,
+                        fontSize: 10,
+                        color: "rgba(28,46,42,0.45)",
+                        letterSpacing: "0.06em",
+                        marginBottom: 6,
+                        fontWeight: 600,
+                      }}
+                    >
+                      FUTURE UTILITY REFLECTION
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: BODY,
+                        fontSize: 13.5,
+                        color: TEAL,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      "{futureReflection}"
+                    </p>
+                  </div>
+
+                  {/* Dual Action Choices */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => plantNow(false)}
+                      className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2"
+                      style={{
+                        background: GREEN,
+                        color: "#FAFAFA",
+                        fontFamily: BODY,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        letterSpacing: "0.03em",
+                        boxShadow: `0 4px 18px ${GREEN}40`,
+                      }}
+                    >
+                      <span>Let It Go</span>
+                      <span className="opacity-80 text-xs">
+                        {cost > 0 ? `· Save ₹${cost} (${laborHours}h)` : `· Reclaim ${laborHours}h`}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhase("composting")}
+                      className="w-full py-2.5 rounded-2xl"
+                      style={{
+                        background: "rgba(28,46,42,0.05)",
                         color: TEAL,
                         fontFamily: BODY,
                         fontSize: 12,
-                        letterSpacing: "0.05em",
-                        border: "1px solid rgba(32,70,84,0.1)",
+                        border: "1px solid rgba(28,46,42,0.08)",
                       }}
                     >
-                      Yes — I'm buying it
+                      Buy Anyway (Trigger insula pain & compost)
                     </button>
                   </div>
-                </>
+                </div>
               )}
             </motion.div>
           </motion.div>

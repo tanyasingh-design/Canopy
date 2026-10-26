@@ -7,7 +7,7 @@ const TEAL = "#1C2E2A";
 const GREEN = "#4DAA57";
 const MUTED = "rgba(28,46,42,0.42)";
 const HEAD = "'Passion One', sans-serif";
-const BODY = "'Slabo 13px', serif";
+const BODY = "'Fraunces', serif";
 
 const emotions = [
   { name: "Cool Blue", label: "Stress / Anxiety", hex: "#60a5fa" },

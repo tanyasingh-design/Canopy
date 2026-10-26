@@ -1,25 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Canopy</title>
+    <meta name="description" content="Enables users to create and customize digital blooms for creative projects, enhancing visual storytelling with intuitive design tools." />
+    <meta name="robots" content="noindex, nofollow" />
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+        touch-action: manipulation;
+      }
+      #root {
+        height: 100%;
+      }
+      input, textarea, select {
+        font-size: 16px !important;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..800&family=Passion+One:wght@400;700;900&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="/assets/index-ClAwz2uY.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CgjtTabe.css">
+  </head>
 
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Canopy</title>
-      <meta name="description" content="Enables users to create and customize digital blooms for creative projects, enhancing visual storytelling with intuitive design tools." />
-      <meta name="robots" content="noindex, nofollow" />
-      <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-      <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&family=Slabo+13px&display=block" rel="stylesheet" />
-      <script type="module" crossorigin src="/assets/index-B3ZBNcbf.js"></script>
-      <link rel="stylesheet" crossorigin href="/assets/index-D6DcPp2h.css">
-    </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Prevent accidental double-tap and gesture zoom in iOS Safari
+      document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+      document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+      document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
 
-    <body>
-      
-      <div id="root"></div>
-      
-    </body>
-  </html>
-  
+      let lastTouchEnd = 0;
+      document.addEventListener('touchend', function(e) {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+          const target = e.target;
+          if (target && !['CANVAS', 'INPUT', 'TEXTAREA'].includes(target.tagName)) {
+            e.preventDefault();
+          }
+        }
+        lastTouchEnd = now;
+      }, false);
+    </script>
+  </body>
+</html>
