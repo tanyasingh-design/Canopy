@@ -202,15 +202,12 @@ function Card({ children, pad = 20, className = "" }: { children: React.ReactNod
   );
 }
 
-function Title({ children, hint }: { children: React.ReactNode; hint?: string }) {
+function Title({ children }: { children: React.ReactNode; hint?: string }) {
   return (
-    <div className="mb-4">
+    <div className="mb-3">
       <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.1 }}>
         {children}
       </h2>
-      {hint && (
-        <p style={{ fontFamily: BODY, fontSize: 15, color: INK_SOFT, marginTop: 4 }}>{hint}</p>
-      )}
     </div>
   );
 }
@@ -1391,7 +1388,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
 
   return (
     <Card pad={20}>
-      <Title hint="Day of the week when urges are most frequent">
+      <Title>
         Most Vulnerable Day of The Week
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
@@ -1513,7 +1510,7 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
 
   return (
     <Card pad={20}>
-      <Title hint="Time of day when shopping triggers peak">
+      <Title>
         Most Vulnerable Period of The Day
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
@@ -1623,7 +1620,7 @@ function CategoryDonutChart({ flowers }: { flowers: FlowerEntry[] }) {
   if (flowers.length === 0) {
     return (
       <Card pad={20}>
-        <Title hint="Categories where you paused purchases">Tag & Category Distribution</Title>
+        <Title>Tag & Category Distribution</Title>
         <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, textAlign: "center", padding: "20px 0" }}>
           No impulses logged in this period yet.
         </p>
@@ -1646,7 +1643,7 @@ function CategoryDonutChart({ flowers }: { flowers: FlowerEntry[] }) {
 
   return (
     <Card pad={20}>
-      <Title hint="Where desires and urges are concentrated">
+      <Title>
         Tag & Category Distribution
       </Title>
 
@@ -1740,7 +1737,7 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
 
   return (
     <Card pad={20}>
-      <Title hint="The temptations you paused to reflect on most often">
+      <Title>
         Favorite impulse species
       </Title>
       <div className="flex flex-col gap-4 mt-2">
@@ -2561,7 +2558,7 @@ export function Profile() {
         {timeScope === "month" && (
           <Card pad={20}>
             <div className="flex items-center justify-between mb-1">
-              <Title hint="Total money and work time preserved across the month">
+              <Title>
                 Diverted Spending & Time Distribution
               </Title>
               <span
@@ -2612,7 +2609,7 @@ export function Profile() {
         {timeScope === "week" && (
           <Card pad={20}>
             <div className="flex items-center justify-between mb-1">
-              <Title hint="Money and work time preserved across the 7 days">
+              <Title>
                 Diverted Spending & Time Distribution
               </Title>
               <span
@@ -2660,7 +2657,7 @@ export function Profile() {
 
         {timeScope === "day" && (
           <Card pad={22}>
-            <Title hint="Impulses paused vs indulged on this day">
+            <Title>
               Day impulse summary
             </Title>
             <div className="flex items-baseline justify-between mb-3">
@@ -2706,7 +2703,7 @@ export function Profile() {
         {/* ── 6. EMOTIONAL SPECTRUM & DRIVERS ─────────────────────────────────── */}
         {moodMix.length > 0 && (
           <Card pad={20}>
-            <Title hint="Dominant emotional states triggering your desires">
+            <Title>
               Emotional drivers & spectrum
             </Title>
             <div className="flex flex-wrap gap-x-3 gap-y-2.5">
@@ -2758,7 +2755,7 @@ export function Profile() {
         {/* ── 8. LABOR & VALUE BALANCE ────────────────────────────────────────── */}
         <Card pad={22}>
           <div className="flex items-center justify-between mb-1">
-            <Title hint="Hours of work saved vs traded on micro-indulgences">
+            <Title>
               Labor & value balance
             </Title>
             <span
@@ -2828,7 +2825,7 @@ export function Profile() {
         {/* ── 9. DAY REFLECTIONS (FOR DAY VIEW ONLY) ───────────────────────────── */}
         {timeScope === "day" && dayFlowers.length > 0 && (
           <Card pad={20}>
-            <Title hint="Logged urges, decisions & thoughts on this day">
+            <Title>
               Today's reflections ({dayFlowers.length})
             </Title>
             <div className="flex flex-col gap-3">
