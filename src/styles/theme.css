@@ -8,8 +8,40 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: #FAFAFA;
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #4DAA57;
-  --primary-foreground: oklch(1 0 0);
+  /* Radix Green Scale */
+  --green-1: #fbfefb;
+  --green-2: #f5fbf5;
+  --green-3: #e9f6e9;
+  --green-4: #dbf0db;
+  --green-5: #c9e8ca;
+  --green-6: #b4ddb5;
+  --green-7: #96ce99;
+  --green-8: #6bb971;
+  --green-9: #4ba555;
+  --green-10: #42984c;
+  --green-11: #307e3a;
+  --green-12: #223c24;
+
+  --green-a1: #00c00004;
+  --green-a2: #0099000a;
+  --green-a3: #00970016;
+  --green-a4: #00950024;
+  --green-a5: #00930536;
+  --green-a6: #018c044b;
+  --green-a7: #00880869;
+  --green-a8: #00870b94;
+  --green-a9: #00800eb4;
+  --green-a10: #00740ebd;
+  --green-a11: #00600ccf;
+  --green-a12: #001e02dd;
+
+  --green-contrast: #fff;
+  --green-surface: #f3faf3cc;
+  --green-indicator: #4ba555;
+  --green-track: #4ba555;
+
+  --primary: var(--green-9);
+  --primary-foreground: var(--green-contrast);
   --secondary: oklch(0.95 0.0058 264.53);
   --secondary-foreground: #030213;
   --muted: #ececf0;
@@ -183,3 +215,41 @@
     line-height: 1.5;
   }
 }
+
+@supports (color: color(display-p3 1 1 1)) {
+  @media (color-gamut: p3) {
+    :root, .light, .light-theme {
+      --green-1: oklch(99.4% 0.0052 145.8);
+      --green-2: oklch(98.2% 0.009 145.8);
+      --green-3: oklch(96.1% 0.0228 145.8);
+      --green-4: oklch(93.4% 0.0363 145.8);
+      --green-5: oklch(90.1% 0.052 145.8);
+      --green-6: oklch(85.8% 0.0702 145.8);
+      --green-7: oklch(79.8% 0.0934 145.8);
+      --green-8: oklch(71.6% 0.1279 145.8);
+      --green-9: oklch(64.7% 0.1444 145.8);
+      --green-10: oklch(60.7% 0.1392 145.8);
+      --green-11: oklch(52.7% 0.1275 145.8);
+      --green-12: oklch(32.7% 0.0526 145.8);
+
+      --green-a1: color(display-p3 0.2667 0.7569 0.0235 / 0.016);
+      --green-a2: color(display-p3 0.1216 0.6118 0.0235 / 0.04);
+      --green-a3: color(display-p3 0.0588 0.5765 0.0078 / 0.083);
+      --green-a4: color(display-p3 0.0667 0.5333 0.0078 / 0.134);
+      --green-a5: color(display-p3 0.0588 0.5294 0 / 0.2);
+      --green-a6: color(display-p3 0.0588 0.5098 0.0039 / 0.279);
+      --green-a7: color(display-p3 0.0431 0.4784 0.0039 / 0.381);
+      --green-a8: color(display-p3 0.0471 0.4667 0 / 0.53);
+      --green-a9: color(display-p3 0.0314 0.4275 0 / 0.632);
+      --green-a10: color(display-p3 0.0314 0.3882 0 / 0.671);
+      --green-a11: color(display-p3 0.0235 0.3059 0 / 0.742);
+      --green-a12: color(display-p3 0.0078 0.098 0 / 0.851);
+
+      --green-contrast: #fff;
+      --green-surface: color(display-p3 0.9569 0.9804 0.9569 / 0.8);
+      --green-indicator: oklch(64.7% 0.1444 145.8);
+      --green-track: oklch(64.7% 0.1444 145.8);
+    }
+  }
+}
+

@@ -42,9 +42,10 @@ const INK_FAINT = "rgba(28,46,42,0.12)";
 const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
 const BORDER = "rgba(28,46,42,0.08)";
-// Canopy brand & emotion color system (matching user's palette)
-const KEPT = "#2DC84D"; // Canopy Intentional green
-const FOREST = "#2DC84D"; // Canopy primary accent
+// Canopy defined green scale as primary color, Intentional strictly preserved as #2DC84D
+const PRIMARY_GREEN = "#4ba555"; // --green-9
+const KEPT = "#4ba555"; // primary green for kept / preserved
+const FOREST = "#4ba555"; // primary green accent
 const SPENT = "#FB5607"; // Canopy Craving orange for spent/bought
 const EMPTY = "#EFEEEA";
 
@@ -1321,10 +1322,11 @@ function describeArc(cx: number, cy: number, r1: number, r2: number, startAngle:
   return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${largeArcFlag} 0 ${p4.x} ${p4.y} Z`;
 }
 
-// ── Canopy Signature Vibrant Emotion Palette for Data Visuals ─────────────────
+// ── Canopy Signature Palette for Data Visuals (Primary green-9 + emotions) ─────
 const BOTANICAL_COLORS = [
-  "#2DC84D", // Intentional (Fresh Green)
+  "#4ba555", // Primary Green (--green-9)
   "#FB5607", // Craving (Vibrant Orange)
+  "#2DC84D", // Intentional (Fresh Green)
   "#619EFF", // Calm (Sky Blue)
   "#FF006E", // FOMO (Hot Pink)
   "#FFBE0B", // Bored (Bright Gold)
@@ -1503,8 +1505,8 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
         <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="forestAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2DC84D" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#2DC84D" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#4ba555" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#4ba555" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 

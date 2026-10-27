@@ -9,16 +9,17 @@
   --c-surface: #ffffff;
   --c-line: rgba(28, 46, 42, 0.08);
   --c-sunken: #efeeea;
-  --c-kept: #2f6b5e;
-  --c-spent: #b5836a;
+  --c-kept: var(--green-9, #4ba555);
+  --c-primary: var(--green-9, #4ba555);
+  --c-spent: #fb5607;
 
-  /* Mood palette (used only for mood visuals) */
-  --m-stressed: #c0463a;
-  --m-craving: #d4864a;
-  --m-fomo: #9b72cf;
-  --m-bored: #d4a853;
-  --m-excited: #60be78;
-  --m-intentional: #4a9a8e;
+  /* Mood palette (User emotion palette, Intentional kept as #2DC84D) */
+  --m-stressed: #E03C31;
+  --m-craving: #FB5607;
+  --m-fomo: #FF006E;
+  --m-bored: #FFBE0B;
+  --m-excited: #FF9C33;
+  --m-intentional: #2DC84D;
 
   /* Spacing (4px scale) */
   --space-1: 4px;
