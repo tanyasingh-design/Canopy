@@ -43,20 +43,21 @@ const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
 const BORDER = "transparent"; // borderless clean visual aesthetic
 
-// ── Canopy 60-30-10 Palette System ───────────────────────────────────────────
-// 30% Secondary: Radix Pink Scale (Plum, Muted Rose, Petal)
-const SEC_PLUM = "#2C1320";     // --pink-9 deep plum
-const SEC_ROSE = "#7D586A";     // --pink-11 muted rose for charts & text
-const SEC_PETAL = "#FCEBF2";    // --pink-3 soft blush surface / tracks / icons
-const SEC_BLUSH = "#F7E2EB";    // --pink-4 subtle rose border / badges
-const SEC_BORDER = "#DDABC2";   // --pink-8 soft rose lines
-const EMPTY = "#F7E2EB";        // --pink-4 bar track
-
-// 10% Primary: Radix Green Scale (Accent highlights & victories)
-const PRIMARY_GREEN = "#4BA555"; // --green-9
-const KEPT = "#4BA555";          // primary green for money saved / milestones
-const FOREST = "#4BA555";        // primary green accent
-const SPENT = "#FB5607";         // Canopy Craving orange for spent/bought
+// ── Canopy Profile Secondary Palette & Shades (Radix Pink/Plum System) ─────────
+const SEC_PLUM = "#2C1320";       // --pink-9 deep plum (primary focal ink & hero accents)
+const SEC_PLUM_HOVER = "#442937"; // --pink-10 warm deep plum (rank 2, secondary bars)
+const SEC_ROSE = "#7D586A";       // --pink-11 muted rose (charts, secondary labels, rank 3+)
+const SEC_BORDER = "#DDABC2";     // --pink-8 soft rose lines & node markers
+const SEC_MUTED = "#E8C3D4";      // --pink-7 gentle rose tint
+const SEC_TRACK = "#F7E2EB";      // --pink-4 rose blush for progress tracks
+const SEC_BLUSH = "#F7E2EB";      // --pink-4 subtle rose border / badges
+const SEC_PETAL = "#FCEBF2";      // --pink-3 soft blush surface / chips / badges
+const SEC_BG = "#FFF7FB";         // --pink-2 whisper background
+const EMPTY = "#F7E2EB";          // bar track
+const KEPT = "#2C1320";           // kept / diverted in deep plum
+const FOREST = "#2C1320";         // secondary deep plum
+const PRIMARY_GREEN = "#2C1320";  // secondary deep plum for profile
+const SPENT = "#FB5607";          // Canopy Craving orange for spent/bought
 
 // Emotion colours — vibrant pastel palette
 const EMOTION_RGB: Record<string, [number, number, number]> = {
@@ -996,7 +997,7 @@ function MoodGradientCalendar({
                     : !hasColors && isCurrentDay
                     ? `1.5px solid ${INK}`
                     : "1.5px solid transparent",
-                  boxShadow: isSelected ? "0 0 0 2px rgba(45,200,77,0.3), 0 3px 10px rgba(45,200,77,0.25)" : "none",
+                  boxShadow: isSelected ? "0 0 0 2px rgba(44,19,32,0.22), 0 3px 10px rgba(44,19,32,0.18)" : "none",
                   transform: isSelected ? "scale(1.08)" : "scale(1)",
                   pointerEvents: isFuture ? "none" : "auto",
                 }}
@@ -1331,18 +1332,18 @@ function describeArc(cx: number, cy: number, r1: number, r2: number, startAngle:
   return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${largeArcFlag} 0 ${p4.x} ${p4.y} Z`;
 }
 
-// ── Canopy Signature Palette for Data Visuals (30% Secondary + 10% Primary + Emotions) ─────
+// ── Canopy Signature Palette for Data Visuals (Secondary Plum & Rose + Emotions) ─────
 const BOTANICAL_COLORS = [
   "#2C1320", // Secondary Deep Plum (--pink-9)
-  "#4BA555", // Primary Green (--green-9)
   "#7D586A", // Secondary Muted Rose (--pink-11)
+  "#DDABC2", // Secondary Soft Rose (--pink-8)
+  "#442937", // Secondary Warm Plum (--pink-10)
   "#FB5607", // Craving (Vibrant Orange)
-  "#2DC84D", // Intentional (Fresh Green)
   "#619EFF", // Calm (Sky Blue)
   "#FF006E", // FOMO (Hot Pink)
   "#FFBE0B", // Bored (Bright Gold)
   "#8338EC", // Anxious (Deep Violet)
-  "#DDABC2", // Secondary Soft Rose (--pink-8)
+  "#2DC84D", // Intentional (Fresh Green)
 ];
 
 // ── Most Vulnerable Day of The Week (Line Chart matching Forest App) ──────────
@@ -1381,7 +1382,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
         Most impulses on{" "}
-        <strong style={{ color: PRIMARY_GREEN, fontWeight: 700 }}>
+        <strong style={{ color: SEC_PLUM, fontWeight: 700 }}>
           {allFlowers.length > 0 ? peakDayName : "—"}
         </strong>{" "}
         every week in general
@@ -1394,20 +1395,20 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
           <line x1="16" y1="55" x2="304" y2="55" stroke="rgba(28,46,42,0.06)" strokeDasharray="3 3" />
           <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
 
-          {/* Vertical dashed line at peak day (10% primary green accent) */}
+          {/* Vertical dashed line at peak day (secondary rose accent) */}
           {allFlowers.length > 0 && (
             <line
               x1={points[peakIndex].x}
               y1={points[peakIndex].y}
               x2={points[peakIndex].x}
               y2={84}
-              stroke="rgba(75, 165, 85, 0.5)"
+              stroke="rgba(125, 88, 106, 0.45)"
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
           )}
 
-          {/* Smooth connecting line (30% secondary rose) */}
+          {/* Smooth connecting line (secondary rose) */}
           <path
             d={pathD}
             fill="none"
@@ -1427,7 +1428,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                   cy={p.y}
                   r={isPeak ? 5.5 : 3.5}
                   fill={isPeak ? "#FFFFFF" : SEC_BORDER}
-                  stroke={isPeak ? PRIMARY_GREEN : SEC_ROSE}
+                  stroke={isPeak ? SEC_PLUM : SEC_ROSE}
                   strokeWidth={isPeak ? 3 : 1.5}
                 />
                 {isPeak && (
@@ -1435,7 +1436,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                     x={p.x}
                     y={p.y - 8}
                     textAnchor="middle"
-                    fill={PRIMARY_GREEN}
+                    fill={SEC_PLUM}
                     style={{ fontFamily: HEAD, fontSize: 13, fontWeight: 700 }}
                   >
                     {p.cnt}
@@ -1503,7 +1504,7 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
         Most impulses around{" "}
-        <strong style={{ color: PRIMARY_GREEN, fontWeight: 700 }}>
+        <strong style={{ color: SEC_PLUM, fontWeight: 700 }}>
           {allFlowers.length > 0 ? peakHourLabel : "—"}
         </strong>{" "}
         every day in general
@@ -1521,23 +1522,23 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
           {/* Horizontal base line */}
           <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
 
-          {/* Area fill (30% secondary rose glow) */}
+          {/* Area fill (secondary rose glow) */}
           {allFlowers.length > 0 && <path d={areaD} fill="url(#forestAreaGrad)" />}
 
-          {/* Vertical dashed line at peak hour (10% primary green accent) */}
+          {/* Vertical dashed line at peak hour (secondary rose accent) */}
           {allFlowers.length > 0 && (
             <line
               x1={points[peakHour].x}
               y1={points[peakHour].y}
               x2={points[peakHour].x}
               y2={84}
-              stroke="rgba(75, 165, 85, 0.5)"
+              stroke="rgba(125, 88, 106, 0.45)"
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
           )}
 
-          {/* Stroke line (30% secondary rose) */}
+          {/* Stroke line (secondary rose) */}
           <path
             d={pathD}
             fill="none"
@@ -1547,14 +1548,14 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
             strokeLinejoin="round"
           />
 
-          {/* Peak dot (10% primary green accent) */}
+          {/* Peak dot (secondary deep plum accent) */}
           {allFlowers.length > 0 && (
             <circle
               cx={points[peakHour].x}
               cy={points[peakHour].y}
               r={5}
               fill="#FFFFFF"
-              stroke={PRIMARY_GREEN}
+              stroke={SEC_PLUM}
               strokeWidth={3}
             />
           )}
@@ -1754,7 +1755,12 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${item.barWidth}%`,
-                    background: item.rank === 1 ? PRIMARY_GREEN : SEC_ROSE,
+                    background:
+                      item.rank === 1
+                        ? SEC_PLUM
+                        : item.rank === 2
+                        ? SEC_PLUM_HOVER
+                        : SEC_ROSE,
                   }}
                 />
               </div>
@@ -2717,7 +2723,7 @@ export function Profile() {
                     }}
                   />
                   <span>{m.name}</span>
-                  <strong style={{ fontFamily: HEAD, fontSize: 16 }}>{m.pct}%</strong>
+                  <strong style={{ fontFamily: HEAD, fontSize: 16, color: SEC_PLUM }}>{m.pct}%</strong>
                   <span style={{ color: SEC_ROSE, fontSize: 12 }}>({m.count})</span>
                 </span>
               ))}
@@ -2732,7 +2738,11 @@ export function Profile() {
                   lineHeight: 1.5,
                 }}
               >
-                Primary impulse trigger: <strong style={{ color: PRIMARY_GREEN }}>{moodMix[0].name}</strong>, accounting for {moodMix[0].pct}% of all logged moments in this period.
+                Primary impulse trigger:{" "}
+                <strong style={{ color: moodMix[0]?.rgb ? rgbStr(moodMix[0].rgb) : SEC_PLUM, fontWeight: 700 }}>
+                  {moodMix[0].name}
+                </strong>
+                , accounting for {moodMix[0].pct}% of all logged moments in this period.
               </p>
             )}
           </Card>
@@ -2761,7 +2771,7 @@ export function Profile() {
 
           <div className="flex items-baseline justify-between mb-2">
             <div>
-              <span style={{ fontFamily: HEAD, fontSize: 28, color: PRIMARY_GREEN }}>
+              <span style={{ fontFamily: HEAD, fontSize: 28, color: SEC_PLUM }}>
                 {activeKeptHours}h
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
@@ -2807,7 +2817,7 @@ export function Profile() {
 
           <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
             <span>
-              Saved: <strong style={{ color: PRIMARY_GREEN, fontWeight: 700 }}>{fmt(stats.kept)}</strong>
+              Saved: <strong style={{ color: SEC_PLUM, fontWeight: 700 }}>{fmt(stats.kept)}</strong>
             </span>
             <span>
               Spent: <strong style={{ color: INK, fontWeight: 600 }}>{fmt(stats.spent)}</strong>
