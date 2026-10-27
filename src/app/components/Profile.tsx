@@ -41,7 +41,7 @@ const INK_SOFT = "rgba(28,46,42,0.62)";
 const INK_FAINT = "rgba(28,46,42,0.12)";
 const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
-const BORDER = "rgba(28,46,42,0.08)";
+const BORDER = "transparent"; // borderless clean visual aesthetic
 // Canopy defined green scale as primary color, Intentional strictly preserved as #2DC84D
 const PRIMARY_GREEN = "#4ba555"; // --green-9
 const KEPT = "#4ba555"; // primary green for kept / preserved
@@ -194,7 +194,7 @@ function Card({ children, pad = 20, className = "" }: { children: React.ReactNod
       className={`w-full rounded-3xl ${className}`}
       style={{
         background: CARD,
-        border: `1px solid ${BORDER}`,
+        border: "none",
         boxShadow: "0 2px 14px rgba(28,46,42,0.04)",
         padding: pad,
       }}
@@ -646,7 +646,7 @@ function AestheticAuraCard({
           minHeight: 140,
           padding: "18px 20px",
           boxShadow: "0 4px 20px rgba(28,46,42,0.05)",
-          border: `1px solid ${BORDER}`,
+          border: "none",
         }}
         title="Tap to preview or save aesthetic art card"
       >

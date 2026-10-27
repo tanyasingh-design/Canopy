@@ -7,10 +7,11 @@
   --c-ink-faint: rgba(28, 46, 42, 0.12);
   --c-bg: #fafafa;
   --c-surface: #ffffff;
-  --c-line: rgba(28, 46, 42, 0.08);
+  --c-line: transparent;
   --c-sunken: #efeeea;
   --c-kept: var(--green-9, #4ba555);
   --c-primary: var(--green-9, #4ba555);
+  --c-secondary: var(--pink-9, #2c1320);
   --c-spent: #fb5607;
 
   /* Mood palette (User emotion palette, Intentional kept as #2DC84D) */
