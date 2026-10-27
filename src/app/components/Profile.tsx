@@ -215,12 +215,7 @@ function Title({ children, hint }: { children: React.ReactNode; hint?: string })
   );
 }
 
-// ── High-End Organic Luminous Aura Gradient Generator ────────────────────────
-export type AuraStyle = "bloom" | "halo" | "drift";
-
 // ── High-End Organic Luminous Halo Semi-Circle Gradient Generator ─────────────
-export type AuraStyle = "halo";
-
 function getAuraGradientStyle(colors: [number, number, number][]) {
   // Deduplicate colors to distinct logged emotion colors
   const uniqueColors: [number, number, number][] = [];
