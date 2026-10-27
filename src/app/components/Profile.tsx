@@ -463,20 +463,24 @@ async function generateHighResAuraCard({
   ctx.fillText(`${dayNum} ${monthName} ${year}`, 90, 275);
   ctx.shadowColor = "transparent";
 
-  // Emotional spectrum / Stillness description as elegant typography (NO CHIPS)
-  const dayMoodText =
-    hasColors && emotionNames.length > 0
-      ? emotionNames.join(" · ")
+  // 4. Subtitle: Number of drawings logged (instead of single emotion)
+  const count = flowers?.length || 0;
+  const daySubtitleText =
+    count > 0
+      ? `${count} ${count === 1 ? "drawing" : "drawings"} logged`
       : "Stillness · Clear Mind";
 
   ctx.font = `italic 30px 'Fraunces', serif`;
   ctx.fillStyle = hasColors ? "rgba(255, 255, 255, 0.88)" : INK_SOFT;
   ctx.letterSpacing = "0.5px";
-  ctx.fillText(dayMoodText, 90, 335);
+  ctx.fillText(daySubtitleText, 90, 335);
   ctx.restore();
 
-  // 5. Day Reflection (if available) - pure typography, NO lines or boxes
-  if (reflectionQuote) {
+  // 5. Day Reflection (if available and not just the emotion word repeated)
+  const isEmotionWord = emotionNames.some(
+    (em) => em.toLowerCase() === reflectionQuote.toLowerCase()
+  );
+  if (reflectionQuote && !isEmotionWord) {
     ctx.save();
     ctx.font = `italic 32px 'Fraunces', serif`;
     ctx.fillStyle = hasColors ? "#FFFFFF" : INK;
@@ -500,6 +504,167 @@ async function generateHighResAuraCard({
   ctx.restore();
 
   return canvas.toDataURL("image/png", 1.0);
+}
+
+// ── WebGL / Dynamic Fluid Harmonic Aura Canvas ──────────────────────────────
+function FluidAuraCanvas({
+  colors,
+  className,
+  style,
+}: {
+  colors: [number, number, number][];
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mouseRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0.5, y: 0.5, active: false });
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    let t = 0;
+
+    const palette: [number, number, number][] =
+      colors.length > 0
+        ? colors
+        : [
+            [47, 107, 94],
+            [74, 154, 142],
+            [146, 186, 175],
+          ];
+
+    const c1 = palette[0];
+    const c2 = palette[1] || [Math.min(255, c1[0] + 45), Math.max(0, c1[1] - 20), Math.min(255, c1[2] + 45)];
+    const c3 = palette[2] || [Math.max(0, c1[0] - 35), Math.min(255, c1[1] + 35), Math.max(0, c1[2] - 30)];
+    const c4 = [
+      Math.min(255, Math.round((c1[0] + c2[0]) / 2)),
+      Math.min(255, Math.round((c2[1] + c3[1]) / 2)),
+      Math.min(255, Math.round((c3[2] + c1[2]) / 2)),
+    ];
+
+    const render = () => {
+      const w = canvas.width;
+      const h = canvas.height;
+      if (w === 0 || h === 0) return;
+
+      t += 0.014;
+
+      // Atmospheric dark forest base
+      ctx.fillStyle = colors.length > 0 ? "#2B3C37" : "#EBEAE5";
+      ctx.fillRect(0, 0, w, h);
+
+      if (colors.length > 0) {
+        // Blob 1 (Top Left Harmonic Drift)
+        const x1 = w * (0.32 + 0.22 * Math.sin(t * 0.45));
+        const y1 = h * (0.36 + 0.18 * Math.cos(t * 0.38));
+        const r1 = Math.max(w, h) * (0.58 + 0.12 * Math.sin(t * 0.55));
+        const g1 = ctx.createRadialGradient(x1, y1, 10, x1, y1, r1);
+        g1.addColorStop(0, rgbStr(c1, 0.94));
+        g1.addColorStop(0.55, rgbStr(c1, 0.42));
+        g1.addColorStop(1, "transparent");
+        ctx.fillStyle = g1;
+        ctx.fillRect(0, 0, w, h);
+
+        // Blob 2 (Top Right Harmonic Drift)
+        const x2 = w * (0.76 + 0.18 * Math.cos(t * 0.52));
+        const y2 = h * (0.40 + 0.20 * Math.sin(t * 0.44));
+        const r2 = Math.max(w, h) * (0.60 + 0.10 * Math.cos(t * 0.48));
+        const g2 = ctx.createRadialGradient(x2, y2, 10, x2, y2, r2);
+        g2.addColorStop(0, rgbStr(c2, 0.90));
+        g2.addColorStop(0.52, rgbStr(c2, 0.38));
+        g2.addColorStop(1, "transparent");
+        ctx.fillStyle = g2;
+        ctx.fillRect(0, 0, w, h);
+
+        // Blob 3 (Center Lower Harmonic Bloom)
+        const x3 = w * (0.50 + 0.24 * Math.sin(t * 0.36 + 1.2));
+        const y3 = h * (0.78 + 0.16 * Math.cos(t * 0.46));
+        const r3 = Math.max(w, h) * (0.64 + 0.14 * Math.sin(t * 0.42));
+        const g3 = ctx.createRadialGradient(x3, y3, 10, x3, y3, r3);
+        g3.addColorStop(0, rgbStr(c3, 0.92));
+        g3.addColorStop(0.54, rgbStr(c3, 0.40));
+        g3.addColorStop(1, "transparent");
+        ctx.fillStyle = g3;
+        ctx.fillRect(0, 0, w, h);
+
+        // Blob 4 (Lower Right Ambient Accent)
+        const x4 = w * (0.84 + 0.14 * Math.cos(t * 0.62 + 0.7));
+        const y4 = h * (0.82 + 0.15 * Math.sin(t * 0.54));
+        const r4 = Math.max(w, h) * 0.52;
+        const g4 = ctx.createRadialGradient(x4, y4, 10, x4, y4, r4);
+        g4.addColorStop(0, rgbStr(c4, 0.82));
+        g4.addColorStop(1, "transparent");
+        ctx.fillStyle = g4;
+        ctx.fillRect(0, 0, w, h);
+
+        // Interactive Pointer Glow
+        if (mouseRef.current.active) {
+          const mx = mouseRef.current.x * w;
+          const my = mouseRef.current.y * h;
+          const mg = ctx.createRadialGradient(mx, my, 5, mx, my, 180);
+          mg.addColorStop(0, "rgba(255, 255, 255, 0.30)");
+          mg.addColorStop(1, "transparent");
+          ctx.fillStyle = mg;
+          ctx.fillRect(0, 0, w, h);
+        }
+      }
+
+      animId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => cancelAnimationFrame(animId);
+  }, [colors]);
+
+  return (
+    <div className={`relative overflow-hidden ${className || ""}`} style={style}>
+      <canvas
+        ref={canvasRef}
+        width={480}
+        height={320}
+        className="w-full h-full object-cover block"
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          mouseRef.current = {
+            x: (e.clientX - rect.left) / rect.width,
+            y: (e.clientY - rect.top) / rect.height,
+            active: true,
+          };
+        }}
+        onTouchMove={(e) => {
+          const touch = e.touches[0];
+          if (!touch) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          mouseRef.current = {
+            x: (touch.clientX - rect.left) / rect.width,
+            y: (touch.clientY - rect.top) / rect.height,
+            active: true,
+          };
+        }}
+        onMouseLeave={() => {
+          mouseRef.current.active = false;
+        }}
+        onTouchEnd={() => {
+          mouseRef.current.active = false;
+        }}
+      />
+      {/* Noise overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: NOISE_DATA_URI,
+          backgroundRepeat: "repeat",
+          opacity: colors.length > 0 ? 0.38 : 0.22,
+          mixBlendMode: colors.length > 0 ? "overlay" : "multiply",
+        }}
+      />
+    </div>
+  );
 }
 
 // ── Aesthetic Downloadable Aura Gradient Card Component ────────────────────
@@ -684,16 +849,16 @@ function AestheticAuraCard({
               <p
                 style={{
                   fontFamily: BODY,
-                  fontSize: 13,
-                  color: hasColors ? "rgba(255,255,255,0.9)" : INK_SOFT,
+                  fontSize: 14,
+                  color: hasColors ? "rgba(255,255,255,0.92)" : INK_SOFT,
                   marginTop: 3,
                   fontStyle: "italic",
                 }}
               >
                 {customSubtitle ||
-                  (hasColors && emotionNames.length > 0
-                    ? emotionNames.join(" · ")
-                    : "Stillness · Clear Mind")}
+                  (count > 0
+                    ? `${count} ${count === 1 ? "drawing" : "drawings"} logged`
+                    : "No drawings yet · Stillness")}
               </p>
             </div>
 
@@ -1951,6 +2116,14 @@ export function Profile() {
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(() => new Date().getDate());
   const [confirmReset, setConfirmReset] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [auraIdeation, setAuraIdeation] = useState<"forest" | "fluid" | "glass">(() => {
+    return (localStorage.getItem("canopy_aura_ideation") as "forest" | "fluid" | "glass") || "forest";
+  });
+
+  function handleSetAuraIdeation(mode: "forest" | "fluid" | "glass") {
+    setAuraIdeation(mode);
+    localStorage.setItem("canopy_aura_ideation", mode);
+  }
 
   // Hourly Wage settings
   const [hourlyWage, setHourlyWage] = useState<number>(() => {
@@ -2237,6 +2410,43 @@ export function Profile() {
     return res;
   }, [monthFlowers]);
 
+  const heroCount =
+    timeScope === "day"
+      ? dayFlowers.length
+      : timeScope === "week"
+      ? weekFlowers.length
+      : monthFlowers.length;
+
+  const heroColors: [number, number, number][] = useMemo(() => {
+    if (timeScope === "day") {
+      return dayFlowers
+        .map((f) => resolveEmotionRgb(f.emotion))
+        .filter((c): c is [number, number, number] => c !== null);
+    }
+    if (timeScope === "week") return weekColors;
+    return monthColors;
+  }, [timeScope, dayFlowers, weekColors, monthColors]);
+
+  const heroTitle = useMemo(() => {
+    if (timeScope === "day") {
+      const d = selectedDate.getDate();
+      const m = selectedDate.toLocaleDateString("en-US", { month: "short" });
+      const y = selectedDate.getFullYear();
+      return `${d} ${m} ${y}`;
+    }
+    if (timeScope === "week") return weekRangeTitle;
+    const m = selectedDate.toLocaleDateString("en-US", { month: "long" });
+    const y = selectedDate.getFullYear();
+    return `${m} ${y}`;
+  }, [timeScope, selectedDate, weekRangeTitle]);
+
+  const heroSubtitle = useMemo(() => {
+    if (heroCount === 0) return "No drawings yet · Stillness";
+    if (timeScope === "day") return `${heroCount} ${heroCount === 1 ? "drawing" : "drawings"} logged`;
+    if (timeScope === "week") return `${heroCount} ${heroCount === 1 ? "drawing" : "drawings"} logged this week`;
+    return `${heroCount} ${heroCount === 1 ? "drawing" : "drawings"} logged this month`;
+  }, [heroCount, timeScope]);
+
   const moodMix = useMemo(() => {
     const counts: Record<string, { count: number; rgb: [number, number, number] }> = {};
     activeFlowers.forEach((f) => {
@@ -2336,225 +2546,470 @@ export function Profile() {
     setConfirmReset(false);
   }
 
-  const arrowBtn = "w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-transform disabled:opacity-20";
+  const [heroSaving, setHeroSaving] = useState(false);
+  const handleHeroDownload = async (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    if (heroSaving) return;
+    setHeroSaving(true);
+    try {
+      const dataUrl = await generateHighResAuraCard({
+        date: selectedDate,
+        colors: heroColors,
+        flowers: activeFlowers,
+      });
+      const filename = `canopy-aura-${selectedDate.toISOString().slice(0, 10)}.png`;
+      try {
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], filename, { type: "image/png" });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Canopy Aura - ${heroTitle}`,
+          });
+          setHeroSaving(false);
+          return;
+        }
+      } catch {}
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = filename;
+      link.click();
+    } catch (err) {
+      console.error("Failed to save aura image", err);
+    } finally {
+      setHeroSaving(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col w-full pb-36" style={{ background: BG, color: INK }}>
-      {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <div className="px-5 pt-8 pb-3 flex items-center justify-between">
-        <div>
-          <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
-            Profile
-          </h1>
-          <p className="sr-only">Your urge patterns, without judgment</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Quick jump to Today if drifted */}
-          {!isCurrentPeriod && (
-            <button
-              onClick={jumpToToday}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-transform active:scale-95 cursor-pointer"
-              style={{
-                background: "rgba(47,107,94,0.12)",
-                color: KEPT,
-                fontFamily: BODY,
-                border: "1px solid rgba(47,107,94,0.2)",
-              }}
-            >
-              <RotateCcw size={12} />
-              Today
-            </button>
-          )}
-
-          {/* Settings button */}
-          <button
-            onClick={() => setShowSettings(true)}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+      {/* ── IDEATION SWITCHER TAB BAR (Toggle between Forest, Fluid WebGL, and Glass) ── */}
+      <div className="px-5 pt-6 pb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Sparkles size={14} color={KEPT} />
+          <span
             style={{
-              background: "rgba(28,46,42,0.06)",
-              border: `1px solid ${BORDER}`,
+              fontFamily: BODY,
+              fontSize: 12,
+              color: INK_SOFT,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              fontWeight: 600,
             }}
-            aria-label="Settings and Profile"
-            title="Settings & Profile"
           >
-            <Settings size={18} color={INK} />
-          </button>
+            Aura Ideation
+          </span>
         </div>
-      </div>
-
-      {/* ── Refined Time Scope Switcher (Day · Week · Month) ────────────────── */}
-      <div className="px-5 mb-4">
         <div
-          className="relative flex p-1 rounded-2xl"
+          className="flex p-0.5 rounded-full"
           style={{
             background: "rgba(28,46,42,0.06)",
             border: `1px solid ${BORDER}`,
           }}
         >
-          {(["day", "week", "month"] as const).map((scope) => {
-            const active = timeScope === scope;
+          {[
+            { id: "forest", label: "🌲 Forest", desc: "Full-bleed hero like Forest app" },
+            { id: "fluid", label: "🌊 WebGL Fluid", desc: "Living harmonic fluid mesh shader" },
+            { id: "glass", label: "🔮 Glass Bento", desc: "Minimalist bento glass capsule" },
+          ].map((tab) => {
+            const active = auraIdeation === tab.id;
             return (
               <button
-                key={scope}
-                onClick={() => setTimeScope(scope)}
-                className="relative flex-1 py-2 text-center transition-colors duration-200 rounded-xl flex items-center justify-center gap-1.5 z-10"
+                key={tab.id}
+                onClick={() => handleSetAuraIdeation(tab.id as "forest" | "fluid" | "glass")}
+                className="relative px-2.5 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer z-10"
                 style={{
-                  fontFamily: HEAD,
-                  fontSize: 16,
-                  letterSpacing: "0.4px",
-                  color: active ? INK : INK_SOFT,
-                  fontWeight: active ? 700 : 500,
+                  fontFamily: BODY,
+                  color: active ? (tab.id === "forest" ? "#FFFFFF" : INK) : INK_SOFT,
                 }}
+                title={tab.desc}
               >
                 {active && (
                   <motion.div
-                    layoutId="activeScopePill"
-                    className="absolute inset-0 rounded-xl"
+                    layoutId="auraIdeationActiveTab"
+                    className="absolute inset-0 rounded-full"
                     style={{
-                      background: "#FFFFFF",
-                      boxShadow: "0 2px 10px rgba(28,46,42,0.08)",
-                      border: `1px solid ${BORDER}`,
+                      background: tab.id === "forest" ? KEPT : "#FFFFFF",
+                      boxShadow: "0 1px 4px rgba(28,46,42,0.12)",
                     }}
-                    transition={{ type: "spring", stiffness: 450, damping: 36 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
-                <span className="relative z-10 capitalize flex items-center gap-1.5">
-                  {scope === "day" && <Clock size={14} />}
-                  {scope === "week" && <CalendarRange size={14} />}
-                  {scope === "month" && <CalendarDays size={14} />}
-                  {scope}
-                </span>
+                <span className="relative z-10">{tab.label}</span>
               </button>
             );
           })}
         </div>
-
-        {/* Period Navigation Ribbon */}
-        <div className="flex items-center justify-between mt-3 px-1">
-          <button
-            onClick={() => shiftPeriod(-1)}
-            className={arrowBtn}
-            style={{ background: "rgba(28,46,42,0.06)" }}
-            aria-label="Previous period"
-          >
-            <ChevronLeft size={18} color={INK} />
-          </button>
-
-          <span
-            style={{
-              fontFamily: HEAD,
-              fontSize: 18,
-              minWidth: 160,
-              textAlign: "center",
-              color: INK,
-              letterSpacing: "0.3px",
-            }}
-          >
-            {periodLabel}
-          </span>
-
-          <button
-            onClick={() => shiftPeriod(1)}
-            disabled={isCurrentPeriod}
-            className={arrowBtn}
-            style={{ background: "rgba(28,46,42,0.06)" }}
-            aria-label="Next period"
-          >
-            <ChevronRight size={18} color={INK} />
-          </button>
-        </div>
       </div>
 
+      {/* ── DESIGN IDEATION 1: FOREST FULL-BLEED HERO (IMAGE 3 STYLE) ────────── */}
+      {auraIdeation === "forest" && (
+        <div
+          className="relative overflow-hidden mb-6 transition-all"
+          style={{
+            background: heroColors.length > 0 ? getAuraGradientStyle(heroColors).background : "#30433E",
+            color: "#FFFFFF",
+            borderBottomLeftRadius: 36,
+            borderBottomRightRadius: 36,
+            boxShadow: "0 8px 30px rgba(28,46,42,0.14)",
+          }}
+        >
+          {/* Risograph Noise overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: NOISE_DATA_URI,
+              backgroundRepeat: "repeat",
+              opacity: 0.38,
+              mixBlendMode: "overlay",
+            }}
+          />
+
+          <div className="relative z-10 px-5 pt-4 pb-7 flex flex-col justify-between">
+            {/* Top Bar inside hero */}
+            <div className="flex items-center justify-between pb-4">
+              <div>
+                <h1 style={{ fontFamily: HEAD, fontSize: 34, lineHeight: 1, color: "#FFFFFF", letterSpacing: "0.5px" }}>
+                  Profile
+                </h1>
+                <p className="sr-only">Your urge patterns, without judgment</p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {!isCurrentPeriod && (
+                  <button
+                    onClick={jumpToToday}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-md bg-white/20 text-white border border-white/25 shadow-sm transition-transform active:scale-95 cursor-pointer"
+                    style={{ fontFamily: BODY }}
+                  >
+                    <RotateCcw size={12} />
+                    Today
+                  </button>
+                )}
+
+                <button
+                  onClick={handleHeroDownload}
+                  disabled={heroSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
+                  style={{ fontFamily: BODY }}
+                  title="Save aesthetic aura image"
+                >
+                  <Download size={13} />
+                  <span>{heroSaving ? "Saving…" : "Save"}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowSettings(true)}
+                  className="w-9 h-9 rounded-full flex items-center justify-center backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/25 transition-transform active:scale-90 cursor-pointer"
+                  aria-label="Settings and Profile"
+                  title="Settings & Profile"
+                >
+                  <Settings size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Scope Switcher embedded inside Forest Hero */}
+            <div className="flex p-1 rounded-2xl backdrop-blur-md bg-black/20 border border-white/15 mb-4">
+              {(["day", "week", "month"] as const).map((scope) => {
+                const active = timeScope === scope;
+                return (
+                  <button
+                    key={scope}
+                    onClick={() => setTimeScope(scope)}
+                    className="relative flex-1 py-2 text-center rounded-xl flex items-center justify-center gap-1.5 z-10 capitalize transition-all cursor-pointer"
+                    style={{
+                      fontFamily: HEAD,
+                      fontSize: 16,
+                      color: active ? "#1C2E2A" : "rgba(255,255,255,0.85)",
+                      fontWeight: active ? 700 : 500,
+                    }}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="forestScopeActivePill"
+                        className="absolute inset-0 rounded-xl bg-white shadow-sm"
+                        transition={{ type: "spring", stiffness: 450, damping: 36 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      {scope === "day" && <Clock size={14} />}
+                      {scope === "week" && <CalendarRange size={14} />}
+                      {scope === "month" && <CalendarDays size={14} />}
+                      {scope}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Period Navigator inside Forest Hero */}
+            <div className="flex items-center justify-between px-1 mb-6">
+              <button
+                onClick={() => shiftPeriod(-1)}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-md hover:bg-white/25 text-white transition-transform active:scale-90 cursor-pointer border border-white/15"
+                aria-label="Previous period"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <span
+                style={{
+                  fontFamily: HEAD,
+                  fontSize: 18,
+                  minWidth: 160,
+                  textAlign: "center",
+                  color: "#FFFFFF",
+                  letterSpacing: "0.3px",
+                  textShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                }}
+              >
+                {periodLabel}
+              </span>
+
+              <button
+                onClick={() => shiftPeriod(1)}
+                disabled={isCurrentPeriod}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-md hover:bg-white/25 text-white transition-transform active:scale-90 disabled:opacity-25 cursor-pointer border border-white/15"
+                aria-label="Next period"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+
+            {/* Central Aura Date & Drawing Count Hero */}
+            <div className="text-center py-4">
+              <div
+                className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold backdrop-blur-md bg-white/20 border border-white/30 text-white mb-3 shadow-sm"
+                style={{ fontFamily: BODY }}
+              >
+                <span>🌸 {heroCount} {heroCount === 1 ? "drawing" : "drawings"}</span>
+              </div>
+              <h2
+                style={{
+                  fontFamily: HEAD,
+                  fontSize: 38,
+                  lineHeight: 1.05,
+                  color: "#FFFFFF",
+                  letterSpacing: "0.6px",
+                  textShadow: "0 2px 10px rgba(0,0,0,0.35)",
+                }}
+              >
+                {heroTitle}
+              </h2>
+              <p
+                style={{
+                  fontFamily: BODY,
+                  fontSize: 15,
+                  color: "rgba(255,255,255,0.92)",
+                  marginTop: 5,
+                  fontStyle: "italic",
+                  textShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                }}
+              >
+                {heroSubtitle}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STANDARD HEADER FOR FLUID AND GLASS MODES ────────────────────────── */}
+      {auraIdeation !== "forest" && (
+        <>
+          <div className="px-5 pt-3 pb-3 flex items-center justify-between">
+            <div>
+              <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
+                Profile
+              </h1>
+              <p className="sr-only">Your urge patterns, without judgment</p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {!isCurrentPeriod && (
+                <button
+                  onClick={jumpToToday}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-transform active:scale-95 cursor-pointer"
+                  style={{
+                    background: "rgba(47,107,94,0.12)",
+                    color: KEPT,
+                    fontFamily: BODY,
+                    border: "1px solid rgba(47,107,94,0.2)",
+                  }}
+                >
+                  <RotateCcw size={12} />
+                  Today
+                </button>
+              )}
+
+              <button
+                onClick={() => setShowSettings(true)}
+                className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+                style={{
+                  background: "rgba(28,46,42,0.06)",
+                  border: `1px solid ${BORDER}`,
+                }}
+                aria-label="Settings and Profile"
+                title="Settings & Profile"
+              >
+                <Settings size={18} color={INK} />
+              </button>
+            </div>
+          </div>
+
+          {/* Scope Switcher */}
+          <div className="px-5 mb-4">
+            <div
+              className="relative flex p-1 rounded-2xl"
+              style={{
+                background: "rgba(28,46,42,0.06)",
+                border: `1px solid ${BORDER}`,
+              }}
+            >
+              {(["day", "week", "month"] as const).map((scope) => {
+                const active = timeScope === scope;
+                return (
+                  <button
+                    key={scope}
+                    onClick={() => setTimeScope(scope)}
+                    className="relative flex-1 py-2 text-center transition-colors duration-200 rounded-xl flex items-center justify-center gap-1.5 z-10"
+                    style={{
+                      fontFamily: HEAD,
+                      fontSize: 16,
+                      letterSpacing: "0.4px",
+                      color: active ? INK : INK_SOFT,
+                      fontWeight: active ? 700 : 500,
+                    }}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="activeScopePill"
+                        className="absolute inset-0 rounded-xl"
+                        style={{
+                          background: "#FFFFFF",
+                          boxShadow: "0 2px 10px rgba(28,46,42,0.08)",
+                          border: `1px solid ${BORDER}`,
+                        }}
+                        transition={{ type: "spring", stiffness: 450, damping: 36 }}
+                      />
+                    )}
+                    <span className="relative z-10 capitalize flex items-center gap-1.5">
+                      {scope === "day" && <Clock size={14} />}
+                      {scope === "week" && <CalendarRange size={14} />}
+                      {scope === "month" && <CalendarDays size={14} />}
+                      {scope}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Period Navigation Ribbon */}
+            <div className="flex items-center justify-between mt-3 px-1">
+              <button
+                onClick={() => shiftPeriod(-1)}
+                className={arrowBtn}
+                style={{ background: "rgba(28,46,42,0.06)" }}
+                aria-label="Previous period"
+              >
+                <ChevronLeft size={18} color={INK} />
+              </button>
+
+              <span
+                style={{
+                  fontFamily: HEAD,
+                  fontSize: 18,
+                  minWidth: 160,
+                  textAlign: "center",
+                  color: INK,
+                  letterSpacing: "0.3px",
+                }}
+              >
+                {periodLabel}
+              </span>
+
+              <button
+                onClick={() => shiftPeriod(1)}
+                disabled={isCurrentPeriod}
+                className={arrowBtn}
+                style={{ background: "rgba(28,46,42,0.06)" }}
+                aria-label="Next period"
+              >
+                <ChevronRight size={18} color={INK} />
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="px-5 flex flex-col gap-5">
-        {/* ── 1. UNIFIED TOP AURA HERO (FIRST IN DAY, WEEK, AND MONTH) ──────── */}
-        {timeScope === "day" && (
-          <Card pad={16}>
-            <AestheticAuraCard
-              date={selectedDate}
-              colors={
-                dayFlowers
-                  .map((f) => resolveEmotionRgb(f.emotion))
-                  .filter((c): c is [number, number, number] => c !== null)
-              }
-              flowers={dayFlowers}
-              drawingCount={dayFlowers.length}
-              scope="day"
-            />
-            <DayScrubber
-              currentDate={selectedDate}
-              onSelectDate={(d) => {
-                setSelectedDate(d);
-                setSelectedDayNumber(d.getDate());
-              }}
-              allFlowers={allFlowers}
-            />
-          </Card>
+        {/* ── DESIGN IDEATION 2: WEBGL LIVING FLUID LIQUID MESH ────────────────── */}
+        {auraIdeation === "fluid" && (
+          <div className="relative w-full rounded-3xl overflow-hidden shadow-md border border-[rgba(28,46,42,0.08)]" style={{ minHeight: 220 }}>
+            <FluidAuraCanvas colors={heroColors} className="w-full" style={{ height: 240 }} />
+            <div className="absolute inset-0 z-10 p-5 flex flex-col justify-between bg-gradient-to-t from-black/60 via-transparent to-black/25 pointer-events-none">
+              <div className="flex items-center justify-between pointer-events-auto">
+                <span
+                  className="px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md bg-white/20 border border-white/30 text-white"
+                  style={{ fontFamily: BODY }}
+                >
+                  🌸 {heroCount} {heroCount === 1 ? "drawing" : "drawings"}
+                </span>
+
+                <button
+                  onClick={handleHeroDownload}
+                  disabled={heroSaving}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md bg-white/20 hover:bg-white/30 text-white border border-white/30 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm"
+                  style={{ fontFamily: BODY }}
+                  title="Save aesthetic aura image"
+                >
+                  <Download size={13} />
+                  <span>{heroSaving ? "Saving…" : "Save"}</span>
+                </button>
+              </div>
+
+              <div className="pointer-events-auto">
+                <h2
+                  style={{
+                    fontFamily: HEAD,
+                    fontSize: 32,
+                    lineHeight: 1.05,
+                    color: "#FFFFFF",
+                    letterSpacing: "0.5px",
+                    textShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  {heroTitle}
+                </h2>
+                <p
+                  style={{
+                    fontFamily: BODY,
+                    fontSize: 14,
+                    color: "rgba(255,255,255,0.92)",
+                    marginTop: 3,
+                    fontStyle: "italic",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {heroSubtitle}
+                </p>
+              </div>
+            </div>
+          </div>
         )}
 
-        {timeScope === "week" && (
-          <Card pad={16}>
+        {/* ── DESIGN IDEATION 3: FLOATING GLASS BENTO CAPSULE ────────────────── */}
+        {auraIdeation === "glass" && (
+          <Card pad={18}>
             <AestheticAuraCard
               date={selectedDate}
-              colors={weekColors}
-              flowers={weekFlowers}
-              customTitle={weekRangeTitle}
-              customSubtitle={weekFlowers.length > 0 ? "Weekly Aura" : "Quiet week · Stillness"}
-              drawingCount={weekFlowers.length}
-              scope="week"
-            />
-            <WeekScrubber
-              weekDays={weekDaysData}
-              selectedDate={selectedDate}
-              onSelectDate={(d) => {
-                setSelectedDate(d);
-                setSelectedDayNumber(d.getDate());
-                setTimeScope("day");
-              }}
-            />
-          </Card>
-        )}
-
-        {timeScope === "month" && (
-          <Card pad={16}>
-            {/* Top Month Aura with live drawings badge and reactive preview */}
-            <AestheticAuraCard
-              date={selectedCalendarDayData.dateObj}
-              colors={
-                selectedCalendarDayData.colors.length > 0
-                  ? selectedCalendarDayData.colors
-                  : monthColors
-              }
-              flowers={
-                selectedCalendarDayData.flowers.length > 0
-                  ? selectedCalendarDayData.flowers
-                  : monthFlowers
-              }
-              customTitle={
-                selectedCalendarDayData.count > 0
-                  ? `${selectedCalendarDayData.day} ${selectedDate.toLocaleDateString("en-US", { month: "short" })} ${year}`
-                  : `${selectedDate.toLocaleDateString("en-US", { month: "long" })} ${year}`
-              }
-              customSubtitle={
-                selectedCalendarDayData.count > 0
-                  ? `${selectedCalendarDayData.count} ${selectedCalendarDayData.count === 1 ? "drawing" : "drawings"} on this day`
-                  : "Monthly Aura"
-              }
-              drawingCount={monthFlowers.length}
-              scope="month"
-            />
-
-            {/* Month Calendar Design directly below Aura */}
-            <MoodGradientCalendar
-              days={days}
-              year={year}
-              month={month}
-              selectedDayNumber={safeSelectedDayNumber}
-              onSelectDay={(dayNum) => {
-                setSelectedDayNumber(dayNum);
-                const newD = new Date(year, month, dayNum);
-                setSelectedDate(newD);
-              }}
+              colors={heroColors}
+              flowers={activeFlowers}
+              customTitle={heroTitle}
+              customSubtitle={heroSubtitle}
+              drawingCount={heroCount}
+              scope={timeScope}
             />
           </Card>
         )}
