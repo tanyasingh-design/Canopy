@@ -218,10 +218,10 @@ function Title({ children, hint }: { children: React.ReactNode; hint?: string })
 // ── High-End Organic Luminous Aura Gradient Generator ────────────────────────
 export type AuraStyle = "bloom" | "halo" | "drift";
 
-function getAuraGradientStyle(
-  colors: [number, number, number][],
-  style: AuraStyle = "bloom"
-) {
+// ── High-End Organic Luminous Halo Semi-Circle Gradient Generator ─────────────
+export type AuraStyle = "halo";
+
+function getAuraGradientStyle(colors: [number, number, number][]) {
   // Deduplicate colors to distinct logged emotion colors
   const uniqueColors: [number, number, number][] = [];
   const seen = new Set<string>();
@@ -237,103 +237,58 @@ function getAuraGradientStyle(
   // 0 emotions: Quiet, pure tactile linen cream
   if (uniqueColors.length === 0) {
     return {
-      background: "linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)",
+      background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
     };
   }
 
   const c1 = uniqueColors[0];
-  const c2 = uniqueColors[1] || uniqueColors[0];
-  const c3 = uniqueColors[2] || uniqueColors[1] || uniqueColors[0];
+  const c1Light = lightenRgb(c1, 0.40);
+  const c1UltraLight = lightenRgb(c1, 0.75);
 
-  // ── Style 2: Radiant Halo Arch / Solar Horizon (Zero black shades, uses lighter tints of same color) ──
-  if (style === "halo") {
-    const isSingle = uniqueColors.length <= 1;
-    // For single color: use the SAME color with increased lightness
-    const c1Light = lightenRgb(c1, 0.42);
-    const c1UltraLight = lightenRgb(c1, 0.76);
-    const crown = isSingle ? c1Light : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.35) : c1Light);
-    const crownUltra = isSingle ? c1UltraLight : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.72) : c1UltraLight);
-
+  // Single emotion color:
+  // The semi-circle rising from the bottom is ENTIRELY of the emotion color (solid, radiant, zero hollow/white ring, zero black)
+  if (uniqueColors.length === 1) {
     return {
       background: `
-        /* 1. Luminous Horizon Spotlight (white core blending into lighter tint of same color) */
-        radial-gradient(circle at 50% 115%, rgba(255, 255, 255, 0.98) 0%, ${rgbStr(c1UltraLight, 0.88)} 24%, ${rgbStr(c1Light, 0.36)} 48%, ${rgbStr(c1Light, 0)} 68%),
-        /* 2. Concentrated Halo Arch (same vibrant color feathering into its own lighter tint, ZERO black) */
-        radial-gradient(ellipse 110% 90% at 50% 102%, ${rgbStr(c1Light, 0)} 30%, ${rgbStr(c1, 0.82)} 52%, ${rgbStr(c1Light, 0.50)} 70%, ${rgbStr(c1UltraLight, 0.20)} 85%, ${rgbStr(c1UltraLight, 0)} 98%),
-        /* 3. Atmospheric Crown Haze (same color with increased lightness) */
-        radial-gradient(ellipse 120% 75% at 50% 0%, ${rgbStr(crown, 0.32)} 0%, ${rgbStr(crownUltra, 0.12)} 50%, ${rgbStr(crownUltra, 0)} 80%),
-        /* 4. Fine linen wash */
+        /* 1. Solid radiant semi-circle dome entirely of emotion color rising from the bottom */
+        radial-gradient(ellipse 115% 85% at 50% 102%,
+          ${rgbStr(c1, 0.94)} 0%,
+          ${rgbStr(c1, 0.90)} 35%,
+          ${rgbStr(c1, 0.78)} 52%,
+          ${rgbStr(c1Light, 0.46)} 70%,
+          ${rgbStr(c1UltraLight, 0.16)} 86%,
+          ${rgbStr(c1UltraLight, 0)} 98%
+        ),
+        /* 2. Top atmospheric subtle warmth of same color */
+        radial-gradient(ellipse 120% 60% at 50% 0%, ${rgbStr(c1Light, 0.14)} 0%, ${rgbStr(c1UltraLight, 0)} 70%),
+        /* 3. Pure tactile linen paper base */
         linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
       `,
     };
   }
 
-  // ── Style 3: Chromatic Drift / Iridescent Floating Clouds (Diagonal Mist) ──
-  if (style === "drift") {
-    return {
-      background: `
-        /* 1. Central luminous diffusion pool */
-        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255, 255, 255, 0.88) 0%, transparent 70%),
-        /* 2. Top-right floating cloud */
-        radial-gradient(ellipse 85% 75% at 88% 12%, ${rgbStr(c1, 0.70)} 0%, ${rgbStr(c1, 0.42)} 32%, ${rgbStr(c1, 0.12)} 65%, transparent 88%),
-        /* 3. Bottom-left warm cloud */
-        radial-gradient(ellipse 90% 80% at 10% 90%, ${rgbStr(c2, 0.65)} 0%, ${rgbStr(c2, 0.36)} 32%, ${rgbStr(c2, 0.10)} 65%, transparent 88%),
-        /* 4. Diagonal painterly chromatic mist */
-        linear-gradient(135deg, ${rgbStr(c1, 0.14)} 0%, rgba(255,255,255,0.6) 50%, ${rgbStr(c3, 0.14)} 100%),
-        /* 5. Warm tactile linen base */
-        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
-      `,
-    };
-  }
-
-  // ── Style 1 (Default): Ethereal Bloom (Vibrant Pastel Luminous Core) ──
-  if (uniqueColors.length === 1) {
-    return {
-      background: `
-        /* 1. Luminous core highlight (feels like light shining through paper) */
-        radial-gradient(ellipse 55% 45% at 60% 40%, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0) 60%),
-        /* 2. Main saturated chromatic aura orb with multi-stop cubic feathering */
-        radial-gradient(ellipse 85% 75% at 62% 42%, ${rgbStr(c1, 0.68)} 0%, ${rgbStr(c1, 0.44)} 26%, ${rgbStr(c1, 0.18)} 52%, ${rgbStr(c1, 0.04)} 76%, transparent 92%),
-        /* 3. Ambient counter-glow on bottom-left for dynamic balance */
-        radial-gradient(ellipse 100% 85% at 22% 76%, ${rgbStr(c1, 0.32)} 0%, ${rgbStr(c1, 0.12)} 42%, transparent 78%),
-        /* 4. Top atmospheric soft wash */
-        radial-gradient(ellipse 80% 50% at 45% 0%, rgba(255, 255, 255, 0.65) 0%, transparent 70%),
-        /* 5. Tactile warm paper base */
-        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
-      `,
-    };
-  }
-
-  if (uniqueColors.length === 2) {
-    return {
-      background: `
-        /* 1. Central luminous diffusion bridge */
-        radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255, 255, 255, 0.82) 0%, transparent 65%),
-        /* 2. Emotion 1 organic aura bloom (top-left) */
-        radial-gradient(ellipse 95% 85% at 28% 30%, ${rgbStr(c1, 0.62)} 0%, ${rgbStr(c1, 0.38)} 28%, ${rgbStr(c1, 0.14)} 54%, transparent 84%),
-        /* 3. Emotion 2 organic aura bloom (bottom-right) */
-        radial-gradient(ellipse 95% 85% at 72% 70%, ${rgbStr(c2, 0.60)} 0%, ${rgbStr(c2, 0.36)} 28%, ${rgbStr(c2, 0.12)} 54%, transparent 84%),
-        /* 4. Ambient diagonal wash */
-        linear-gradient(135deg, ${rgbStr(c1, 0.08)} 0%, ${rgbStr(c2, 0.08)} 100%),
-        /* 5. Warm paper base */
-        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
-      `,
-    };
-  }
-
-  // 3+ emotions logged: Multi-chromatic harmony with glowing heart
+  // 2+ emotions logged: Dual semi-circle domes blending across the bottom
+  const c2 = uniqueColors[1];
+  const c2Light = lightenRgb(c2, 0.40);
+  const c2UltraLight = lightenRgb(c2, 0.75);
   return {
     background: `
-      /* 1. Central luminous focal bloom */
-      radial-gradient(ellipse 55% 50% at 50% 48%, rgba(255, 255, 255, 0.88) 0%, transparent 60%),
-      /* 2. Chromatic aura 1 (top-left) */
-      radial-gradient(ellipse 85% 75% at 20% 25%, ${rgbStr(c1, 0.56)} 0%, ${rgbStr(c1, 0.32)} 30%, ${rgbStr(c1, 0.08)} 60%, transparent 85%),
-      /* 3. Chromatic aura 2 (top-right) */
-      radial-gradient(ellipse 85% 75% at 80% 28%, ${rgbStr(c2, 0.52)} 0%, ${rgbStr(c2, 0.28)} 30%, ${rgbStr(c2, 0.08)} 60%, transparent 85%),
-      /* 4. Chromatic aura 3 (bottom-center) */
-      radial-gradient(ellipse 100% 85% at 50% 82%, ${rgbStr(c3, 0.50)} 0%, ${rgbStr(c3, 0.26)} 30%, ${rgbStr(c3, 0.06)} 60%, transparent 85%),
-      /* 5. Base paper wash */
-      linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
+      /* Emotion 1 semi-circle (bottom-left) */
+      radial-gradient(ellipse 95% 80% at 32% 102%,
+        ${rgbStr(c1, 0.92)} 0%,
+        ${rgbStr(c1, 0.82)} 35%,
+        ${rgbStr(c1Light, 0.45)} 68%,
+        ${rgbStr(c1UltraLight, 0)} 95%
+      ),
+      /* Emotion 2 semi-circle (bottom-right) */
+      radial-gradient(ellipse 95% 80% at 68% 102%,
+        ${rgbStr(c2, 0.92)} 0%,
+        ${rgbStr(c2, 0.82)} 35%,
+        ${rgbStr(c2Light, 0.45)} 68%,
+        ${rgbStr(c2UltraLight, 0)} 95%
+      ),
+      /* Warm paper base */
+      linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
     `,
   };
 }
@@ -380,12 +335,10 @@ async function generateHighResAuraCard({
   date,
   colors,
   flowers,
-  style = "bloom",
 }: {
   date: Date;
   colors: [number, number, number][];
   flowers?: FlowerEntry[];
-  style?: AuraStyle;
 }): Promise<string> {
   if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
     try {
@@ -440,21 +393,50 @@ async function generateHighResAuraCard({
     }
   });
 
-  // 1. Base Layer (Organic Luminous Aura matching the high-end shader)
+  // 1. Base Layer (Solid Halo Semi-Circle dome entirely of emotion color)
   if (uniqueColors.length === 0) {
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F3F1EB");
+    baseGrad.addColorStop(1, "#F5F3EC");
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
-  } else if (style === "halo") {
-    // ── Style 2: Radiant Halo Arch / Solar Horizon Canvas (Zero black, uses lighter tints of same color) ──
-    const isSingle = uniqueColors.length <= 1;
+  } else if (uniqueColors.length === 1) {
     const c1 = uniqueColors[0];
-    const c1Light = lightenRgb(c1, 0.42);
-    const c1UltraLight = lightenRgb(c1, 0.76);
-    const crown = isSingle ? c1Light : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.35) : c1Light);
-    const crownUltra = isSingle ? c1UltraLight : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.72) : c1UltraLight);
+    const c1Light = lightenRgb(c1, 0.40);
+    const c1UltraLight = lightenRgb(c1, 0.75);
+
+    // Warm linen paper base
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F5F3EC");
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top atmospheric crown of same color
+    const gCrown = ctx.createRadialGradient(W * 0.5, 0, 10, W * 0.5, 0, W * 0.75);
+    gCrown.addColorStop(0, rgbStr(c1Light, 0.14));
+    gCrown.addColorStop(0.70, rgbStr(c1UltraLight, 0));
+    ctx.fillStyle = gCrown;
+    ctx.fillRect(0, 0, W, H);
+
+    // Semi-circle dome ENTIRELY of the emotion color (solid from center, feathering into lighter tint, ZERO white ring, ZERO black)
+    const gDome = ctx.createRadialGradient(W * 0.5, H * 1.02, 10, W * 0.5, H * 1.02, W * 0.88);
+    gDome.addColorStop(0, rgbStr(c1, 0.94));
+    gDome.addColorStop(0.35, rgbStr(c1, 0.90));
+    gDome.addColorStop(0.52, rgbStr(c1, 0.78));
+    gDome.addColorStop(0.70, rgbStr(c1Light, 0.46));
+    gDome.addColorStop(0.86, rgbStr(c1UltraLight, 0.16));
+    gDome.addColorStop(1, rgbStr(c1UltraLight, 0));
+    ctx.fillStyle = gDome;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    // 2+ emotions logged: Dual semi-circle domes blending across the bottom
+    const c1 = uniqueColors[0];
+    const c2 = uniqueColors[1];
+    const c1Light = lightenRgb(c1, 0.40);
+    const c1UltraLight = lightenRgb(c1, 0.75);
+    const c2Light = lightenRgb(c2, 0.40);
+    const c2UltraLight = lightenRgb(c2, 0.75);
 
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, "#FAF9F6");
@@ -462,182 +444,20 @@ async function generateHighResAuraCard({
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // 1. Concentrated Halo Arch (feathering into lighter tint of same color, ZERO black)
-    const gArch = ctx.createRadialGradient(W * 0.5, H * 1.05, W * 0.20, W * 0.5, H * 1.05, W * 0.88);
-    gArch.addColorStop(0, rgbStr(c1Light, 0));
-    gArch.addColorStop(0.30, rgbStr(c1Light, 0));
-    gArch.addColorStop(0.52, rgbStr(c1, 0.82));
-    gArch.addColorStop(0.70, rgbStr(c1Light, 0.50));
-    gArch.addColorStop(0.85, rgbStr(c1UltraLight, 0.20));
-    gArch.addColorStop(1, rgbStr(c1UltraLight, 0));
-    ctx.fillStyle = gArch;
-    ctx.fillRect(0, 0, W, H);
-
-    // 2. Luminous Horizon Spotlight (white core into lighter tint of same color)
-    const gHot = ctx.createRadialGradient(W * 0.5, H * 1.12, 10, W * 0.5, H * 1.12, W * 0.52);
-    gHot.addColorStop(0, "rgba(255, 255, 255, 0.98)");
-    gHot.addColorStop(0.28, rgbStr(c1UltraLight, 0.88));
-    gHot.addColorStop(0.52, rgbStr(c1Light, 0.36));
-    gHot.addColorStop(0.75, rgbStr(c1Light, 0));
-    gHot.addColorStop(1, rgbStr(c1Light, 0));
-    ctx.fillStyle = gHot;
-    ctx.fillRect(0, 0, W, H);
-
-    // 3. Top Atmospheric Crown (increased lightness of same color)
-    const gCrown = ctx.createRadialGradient(W * 0.5, 0, 10, W * 0.5, 0, W * 0.80);
-    gCrown.addColorStop(0, rgbStr(crown, 0.32));
-    gCrown.addColorStop(0.50, rgbStr(crownUltra, 0.12));
-    gCrown.addColorStop(1, rgbStr(crownUltra, 0));
-    ctx.fillStyle = gCrown;
-    ctx.fillRect(0, 0, W, H);
-  } else if (style === "drift") {
-    // ── Style 3: Chromatic Drift / Floating Iridescent Clouds Canvas ──
-    const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1] || uniqueColors[0];
-    const c3 = uniqueColors[2] || uniqueColors[1] || uniqueColors[0];
-
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F3F1EB");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Top-right cloud
-    const g1 = ctx.createRadialGradient(W * 0.88, H * 0.12, 20, W * 0.88, H * 0.12, W * 0.75);
-    g1.addColorStop(0, rgbStr(c1, 0.68));
-    g1.addColorStop(0.35, rgbStr(c1, 0.38));
-    g1.addColorStop(0.70, rgbStr(c1, 0.10));
-    g1.addColorStop(1, "transparent");
+    const g1 = ctx.createRadialGradient(W * 0.32, H * 1.02, 10, W * 0.32, H * 1.02, W * 0.75);
+    g1.addColorStop(0, rgbStr(c1, 0.92));
+    g1.addColorStop(0.35, rgbStr(c1, 0.82));
+    g1.addColorStop(0.68, rgbStr(c1Light, 0.45));
+    g1.addColorStop(1, rgbStr(c1UltraLight, 0));
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    // Bottom-left cloud
-    const g2 = ctx.createRadialGradient(W * 0.10, H * 0.90, 20, W * 0.10, H * 0.90, W * 0.78);
-    g2.addColorStop(0, rgbStr(c2, 0.64));
-    g2.addColorStop(0.35, rgbStr(c2, 0.34));
-    g2.addColorStop(0.70, rgbStr(c2, 0.08));
-    g2.addColorStop(1, "transparent");
+    const g2 = ctx.createRadialGradient(W * 0.68, H * 1.02, 10, W * 0.68, H * 1.02, W * 0.75);
+    g2.addColorStop(0, rgbStr(c2, 0.92));
+    g2.addColorStop(0.35, rgbStr(c2, 0.82));
+    g2.addColorStop(0.68, rgbStr(c2Light, 0.45));
+    g2.addColorStop(1, rgbStr(c2UltraLight, 0));
     ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-
-    // Central luminous wash
-    const gh = ctx.createRadialGradient(W * 0.50, H * 0.50, 10, W * 0.50, H * 0.50, W * 0.50);
-    gh.addColorStop(0, "rgba(255, 255, 255, 0.88)");
-    gh.addColorStop(0.65, "transparent");
-    ctx.fillStyle = gh;
-    ctx.fillRect(0, 0, W, H);
-  } else if (uniqueColors.length === 1) {
-    const c = uniqueColors[0];
-
-    // Tactile warm linen paper base
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F3F1EB");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Primary vibrant chromatic aura bloom with cubic non-linear feathering
-    const g1 = ctx.createRadialGradient(W * 0.62, H * 0.42, 20, W * 0.62, H * 0.42, W * 0.76);
-    g1.addColorStop(0, rgbStr(c, 0.68));
-    g1.addColorStop(0.26, rgbStr(c, 0.44));
-    g1.addColorStop(0.52, rgbStr(c, 0.18));
-    g1.addColorStop(0.76, rgbStr(c, 0.04));
-    g1.addColorStop(1, "transparent");
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
-
-    // Luminous hotspot core
-    const gh = ctx.createRadialGradient(W * 0.60, H * 0.40, 10, W * 0.60, H * 0.40, W * 0.44);
-    gh.addColorStop(0, "rgba(255, 255, 255, 0.88)");
-    gh.addColorStop(0.60, "transparent");
-    gh.addColorStop(1, "transparent");
-    ctx.fillStyle = gh;
-    ctx.fillRect(0, 0, W, H);
-
-    // Ambient counter-glow on bottom-left for dynamic balance
-    const g2 = ctx.createRadialGradient(W * 0.22, H * 0.76, 20, W * 0.22, H * 0.76, W * 0.72);
-    g2.addColorStop(0, rgbStr(c, 0.32));
-    g2.addColorStop(0.42, rgbStr(c, 0.12));
-    g2.addColorStop(1, "transparent");
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-  } else if (uniqueColors.length === 2) {
-    const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1];
-
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F3F1EB");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Emotion 1 bloom (top-left)
-    const g1 = ctx.createRadialGradient(W * 0.28, H * 0.30, 20, W * 0.28, H * 0.30, W * 0.75);
-    g1.addColorStop(0, rgbStr(c1, 0.62));
-    g1.addColorStop(0.28, rgbStr(c1, 0.38));
-    g1.addColorStop(0.54, rgbStr(c1, 0.14));
-    g1.addColorStop(1, "transparent");
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
-
-    // Emotion 2 bloom (bottom-right)
-    const g2 = ctx.createRadialGradient(W * 0.72, H * 0.70, 20, W * 0.72, H * 0.70, W * 0.75);
-    g2.addColorStop(0, rgbStr(c2, 0.60));
-    g2.addColorStop(0.28, rgbStr(c2, 0.36));
-    g2.addColorStop(0.54, rgbStr(c2, 0.12));
-    g2.addColorStop(1, "transparent");
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-
-    // Central diffusion bridge
-    const gh = ctx.createRadialGradient(W * 0.50, H * 0.50, 10, W * 0.50, H * 0.50, W * 0.48);
-    gh.addColorStop(0, "rgba(255, 255, 255, 0.82)");
-    gh.addColorStop(0.65, "transparent");
-    gh.addColorStop(1, "transparent");
-    ctx.fillStyle = gh;
-    ctx.fillRect(0, 0, W, H);
-  } else {
-    const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1];
-    const c3 = uniqueColors[2];
-
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F3F1EB");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Tri-chromatic blooms
-    const g1 = ctx.createRadialGradient(W * 0.20, H * 0.25, 20, W * 0.20, H * 0.25, W * 0.70);
-    g1.addColorStop(0, rgbStr(c1, 0.56));
-    g1.addColorStop(0.30, rgbStr(c1, 0.32));
-    g1.addColorStop(0.60, rgbStr(c1, 0.08));
-    g1.addColorStop(1, "transparent");
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
-
-    const g2 = ctx.createRadialGradient(W * 0.80, H * 0.28, 20, W * 0.80, H * 0.28, W * 0.70);
-    g2.addColorStop(0, rgbStr(c2, 0.52));
-    g2.addColorStop(0.30, rgbStr(c2, 0.28));
-    g2.addColorStop(0.60, rgbStr(c2, 0.08));
-    g2.addColorStop(1, "transparent");
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-
-    const g3 = ctx.createRadialGradient(W * 0.50, H * 0.82, 20, W * 0.50, H * 0.82, W * 0.75);
-    g3.addColorStop(0, rgbStr(c3, 0.50));
-    g3.addColorStop(0.30, rgbStr(c3, 0.26));
-    g3.addColorStop(0.60, rgbStr(c3, 0.06));
-    g3.addColorStop(1, "transparent");
-    ctx.fillStyle = g3;
-    ctx.fillRect(0, 0, W, H);
-
-    // Central luminous core
-    const gh = ctx.createRadialGradient(W * 0.50, H * 0.48, 10, W * 0.50, H * 0.48, W * 0.45);
-    gh.addColorStop(0, "rgba(255, 255, 255, 0.88)");
-    gh.addColorStop(0.60, "transparent");
-    gh.addColorStop(1, "transparent");
-    ctx.fillStyle = gh;
     ctx.fillRect(0, 0, W, H);
   }
 
@@ -750,14 +570,13 @@ function AestheticAuraCard({
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
-  const [auraStyle, setAuraStyle] = useState<AuraStyle>("bloom");
   const hasColors = colors.length > 0;
   const count = drawingCount !== undefined ? drawingCount : flowers?.length || 0;
 
   const cardStyle = hasColors
-    ? getAuraGradientStyle(colors, auraStyle)
+    ? getAuraGradientStyle(colors)
     : {
-        background: "linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)",
+        background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
       };
 
   const dayNum = date.getDate();
@@ -784,7 +603,6 @@ function AestheticAuraCard({
         date,
         colors,
         flowers,
-        style: auraStyle,
       });
       const filename = `canopy-aura-${date.toISOString().slice(0, 10)}.png`;
 
@@ -820,29 +638,11 @@ function AestheticAuraCard({
         date,
         colors,
         flowers,
-        style: auraStyle,
       });
       setPreviewDataUrl(dataUrl);
       setShowPreview(true);
     } catch (err) {
       console.error("Failed to prepare aura preview", err);
-    }
-  };
-
-  const handleStyleChange = async (newStyle: AuraStyle) => {
-    setAuraStyle(newStyle);
-    if (showPreview) {
-      try {
-        const dataUrl = await generateHighResAuraCard({
-          date,
-          colors,
-          flowers,
-          style: newStyle,
-        });
-        setPreviewDataUrl(dataUrl);
-      } catch (err) {
-        console.error("Failed to re-render preview with new aura style", err);
-      }
     }
   };
 
@@ -873,9 +673,9 @@ function AestheticAuraCard({
 
         {/* Aesthetic Content Overlay */}
         <div className="relative z-10 flex flex-col justify-between h-full min-h-[105px]">
-          {/* Top row: Drawings Badge + Ideation Style Tabs + Clean Save button */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            {/* Clean Pill with Glowing Dot (Strictly no emojis) */}
+          {/* Top row: Drawings Badge + Clean Save button (Strictly NO extra tabs, NO emojis) */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Clean Pill with Glowing Dot */}
             <div
               className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md transition-all shrink-0"
               style={{
@@ -896,45 +696,6 @@ function AestheticAuraCard({
               <span>
                 {count} {count === 1 ? "drawing" : "drawings"}
               </span>
-            </div>
-
-            {/* Aura Ideation Switcher Tabs: Bloom, Halo, Drift */}
-            <div
-              className="flex items-center p-0.5 rounded-full backdrop-blur-md shrink-0"
-              style={{
-                background: "rgba(255,255,255,0.78)",
-                border: `1px solid ${BORDER}`,
-                boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
-              }}
-            >
-              {(["bloom", "halo", "drift"] as const).map((styleKey) => {
-                const labels: Record<AuraStyle, string> = {
-                  bloom: "Bloom",
-                  halo: "Halo",
-                  drift: "Drift",
-                };
-                const isActive = auraStyle === styleKey;
-                return (
-                  <button
-                    key={styleKey}
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStyleChange(styleKey);
-                    }}
-                    className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer"
-                    style={{
-                      background: isActive ? INK : "transparent",
-                      color: isActive ? "#FFFFFF" : INK_SOFT,
-                      boxShadow: isActive ? "0 1px 4px rgba(28,46,42,0.15)" : "none",
-                      fontFamily: BODY,
-                    }}
-                    title={`Switch to ${labels[styleKey]} aura design`}
-                  >
-                    {labels[styleKey]}
-                  </button>
-                );
-              })}
             </div>
 
             <button
@@ -1041,45 +802,11 @@ function AestheticAuraCard({
                   <img
                     src={previewDataUrl}
                     alt={`Canopy Aura ${dayNum} ${monthName}`}
-                    className="h-auto w-auto max-w-full max-h-[64vh] object-contain block rounded-2xl shadow-2xl"
+                    className="h-auto w-auto max-w-full max-h-[68vh] object-contain block rounded-2xl shadow-2xl"
                   />
 
-                  {/* Modal Style Switcher & Download Actions */}
+                  {/* Modal Download Action */}
                   <div className="flex flex-col items-center gap-3 mt-4 w-full">
-                    {/* Style switcher inside preview */}
-                    <div
-                      className="flex items-center p-1 rounded-full backdrop-blur-md"
-                      style={{
-                        background: "rgba(255,255,255,0.18)",
-                        border: "1px solid rgba(255,255,255,0.25)",
-                      }}
-                    >
-                      {(["bloom", "halo", "drift"] as const).map((styleKey) => {
-                        const labels: Record<AuraStyle, string> = {
-                          bloom: "Bloom",
-                          halo: "Halo",
-                          drift: "Drift",
-                        };
-                        const isActive = auraStyle === styleKey;
-                        return (
-                          <button
-                            key={styleKey}
-                            type="button"
-                            onClick={() => handleStyleChange(styleKey)}
-                            className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
-                            style={{
-                              background: isActive ? "#FFFFFF" : "transparent",
-                              color: isActive ? INK : "rgba(255,255,255,0.85)",
-                              boxShadow: isActive ? "0 2px 6px rgba(0,0,0,0.18)" : "none",
-                              fontFamily: BODY,
-                            }}
-                          >
-                            {labels[styleKey]}
-                          </button>
-                        );
-                      })}
-                    </div>
-
                     <button
                       type="button"
                       onClick={() => handleDownload()}
