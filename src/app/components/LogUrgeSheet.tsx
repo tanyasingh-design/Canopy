@@ -1752,20 +1752,21 @@ export function LogUrgeSheet({
                 </div>
               </div>
 
-              {/* Live answer row */}
+              {/* Live calculation result row */}
               {mathResult !== null && (
                 <button
                   type="button"
                   disabled={mathResult <= 0}
                   onClick={() => setCostInput(Math.max(0, mathResult).toString())}
-                  className="mt-2 w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all active:scale-[0.99] cursor-pointer"
+                  className="mt-2 w-full flex items-center justify-between px-3.5 py-2 rounded-xl transition-all active:scale-[0.99] cursor-pointer"
                   style={{ background: "rgba(47,107,94,0.10)", border: "1px solid rgba(47,107,94,0.2)", fontFamily: BODY }}
                 >
-                  <span style={{ fontSize: 12.5, color: INK }}>Answer</span>
                   <span style={{ fontFamily: HEAD, fontSize: 20, color: mathResult < 0 ? "#B5836A" : FOREST }}>
-                    {mathResult < 0 ? "−" : ""}₹{Math.abs(mathResult).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                    = {mathResult < 0 ? "−" : ""}₹{Math.abs(mathResult).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                   </span>
-                  <span style={{ fontSize: 11.5, color: INK, opacity: 0.6 }}>{mathResult > 0 ? "Tap to use" : "Check numbers"}</span>
+                  <span style={{ fontSize: 12, color: INK, opacity: 0.65 }}>
+                    {mathResult > 0 ? "Tap to use" : "Check numbers"}
+                  </span>
                 </button>
               )}
 
