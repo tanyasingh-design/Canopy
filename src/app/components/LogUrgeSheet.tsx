@@ -364,12 +364,12 @@ const EMOTIONS: {
   color: string;
   Icon: (p: { s: string }) => JSX.Element;
 }[] = [
-    { name: "Stressed", color: FOREST, Icon: WaveIcon },
-    { name: "FOMO", color: BLUE, Icon: SunIcon },
-    { name: "Craving", color: "#D4708A", Icon: FlameIcon },
-    { name: "Bored", color: "#D97706", Icon: LinesIcon },
-    { name: "Excited", color: "#E07B39", Icon: LightningIcon },
-    { name: "Intentional", color: "#5A9469", Icon: PlantIcon },
+    { name: "Craving", color: "#FB5607", Icon: FlameIcon },
+    { name: "Stressed", color: "#E03C31", Icon: WaveIcon },
+    { name: "FOMO", color: "#FF006E", Icon: SunIcon },
+    { name: "Bored", color: "#FFBE0B", Icon: LinesIcon },
+    { name: "Excited", color: "#FF9C33", Icon: LightningIcon },
+    { name: "Intentional", color: "#2DC84D", Icon: PlantIcon },
   ];
 
 const FOR_OPTIONS = [

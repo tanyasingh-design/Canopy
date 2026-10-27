@@ -40,18 +40,18 @@ const FOREST = "#2F6B5E";
 const SPENT = "#B5836A"; // muted clay for money spent
 const EMPTY = "#EFEEEA";
 
-// Emotion colours — used ONLY for mood visuals
+// Emotion colours — vibrant pastel palette
 const EMOTION_RGB: Record<string, [number, number, number]> = {
-  Stressed: [192, 70, 58],
-  Craving: [212, 134, 74],
-  FOMO: [155, 114, 207],
-  Bored: [212, 168, 83],
-  Excited: [96, 190, 120],
-  Intentional: [74, 154, 142],
-  Happy: [229, 194, 83],
-  Calm: [106, 181, 169],
-  Neutral: [94, 148, 203],
-  Anxious: [160, 115, 196],
+  Craving: [251, 86, 7],      // #FB5607
+  Stressed: [224, 60, 49],     // #E03C31
+  FOMO: [255, 0, 110],        // #FF006E
+  Bored: [255, 190, 11],      // #FFBE0B
+  Excited: [255, 156, 51],    // #FF9C33
+  Intentional: [45, 200, 77], // #2DC84D
+  Calm: [97, 158, 255],       // #619EFF
+  Happy: [255, 127, 65],      // #FF7F41
+  Anxious: [131, 56, 236],    // #8338EC
+  Neutral: [138, 143, 152],   // #8A8F98
 };
 
 function hexToRgb(hex?: string): [number, number, number] | null {
