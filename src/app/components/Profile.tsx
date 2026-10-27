@@ -242,11 +242,12 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
 
   // Single emotion color:
   // The semi-circle rising from the bottom is ENTIRELY of the emotion color (solid, radiant, zero hollow/white ring, zero black)
+  // Anchored strictly at 50% 100% (bottom center) with no top glow to ensure 0 orange line or bleed at the top
   if (uniqueColors.length === 1) {
     return {
       background: `
         /* 1. Solid radiant semi-circle dome entirely of emotion color rising from the bottom */
-        radial-gradient(ellipse 115% 85% at 50% 102%,
+        radial-gradient(ellipse 115% 82% at 50% 100%,
           ${rgbStr(c1, 0.94)} 0%,
           ${rgbStr(c1, 0.90)} 35%,
           ${rgbStr(c1, 0.78)} 52%,
@@ -254,11 +255,10 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
           ${rgbStr(c1UltraLight, 0.16)} 86%,
           ${rgbStr(c1UltraLight, 0)} 98%
         ),
-        /* 2. Top atmospheric subtle warmth of same color */
-        radial-gradient(ellipse 120% 60% at 50% 0%, ${rgbStr(c1Light, 0.14)} 0%, ${rgbStr(c1UltraLight, 0)} 70%),
-        /* 3. Pure tactile linen paper base */
+        /* 2. Pure tactile linen paper base */
         linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
       `,
+      backgroundRepeat: "no-repeat",
     };
   }
 
@@ -269,14 +269,14 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
   return {
     background: `
       /* Emotion 1 semi-circle (bottom-left) */
-      radial-gradient(ellipse 95% 80% at 32% 102%,
+      radial-gradient(ellipse 95% 80% at 32% 100%,
         ${rgbStr(c1, 0.92)} 0%,
         ${rgbStr(c1, 0.82)} 35%,
         ${rgbStr(c1Light, 0.45)} 68%,
         ${rgbStr(c1UltraLight, 0)} 95%
       ),
       /* Emotion 2 semi-circle (bottom-right) */
-      radial-gradient(ellipse 95% 80% at 68% 102%,
+      radial-gradient(ellipse 95% 80% at 68% 100%,
         ${rgbStr(c2, 0.92)} 0%,
         ${rgbStr(c2, 0.82)} 35%,
         ${rgbStr(c2Light, 0.45)} 68%,
@@ -285,6 +285,7 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
       /* Warm paper base */
       linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
     `,
+    backgroundRepeat: "no-repeat",
   };
 }
 
@@ -407,15 +408,8 @@ async function generateHighResAuraCard({
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Top atmospheric crown of same color
-    const gCrown = ctx.createRadialGradient(W * 0.5, 0, 10, W * 0.5, 0, W * 0.75);
-    gCrown.addColorStop(0, rgbStr(c1Light, 0.14));
-    gCrown.addColorStop(0.70, rgbStr(c1UltraLight, 0));
-    ctx.fillStyle = gCrown;
-    ctx.fillRect(0, 0, W, H);
-
     // Semi-circle dome ENTIRELY of the emotion color (solid from center, feathering into lighter tint, ZERO white ring, ZERO black)
-    const gDome = ctx.createRadialGradient(W * 0.5, H * 1.02, 10, W * 0.5, H * 1.02, W * 0.88);
+    const gDome = ctx.createRadialGradient(W * 0.5, H, 10, W * 0.5, H, W * 0.88);
     gDome.addColorStop(0, rgbStr(c1, 0.94));
     gDome.addColorStop(0.35, rgbStr(c1, 0.90));
     gDome.addColorStop(0.52, rgbStr(c1, 0.78));
@@ -439,7 +433,7 @@ async function generateHighResAuraCard({
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.32, H * 1.02, 10, W * 0.32, H * 1.02, W * 0.75);
+    const g1 = ctx.createRadialGradient(W * 0.32, H, 10, W * 0.32, H, W * 0.75);
     g1.addColorStop(0, rgbStr(c1, 0.92));
     g1.addColorStop(0.35, rgbStr(c1, 0.82));
     g1.addColorStop(0.68, rgbStr(c1Light, 0.45));
@@ -447,7 +441,7 @@ async function generateHighResAuraCard({
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    const g2 = ctx.createRadialGradient(W * 0.68, H * 1.02, 10, W * 0.68, H * 1.02, W * 0.75);
+    const g2 = ctx.createRadialGradient(W * 0.68, H, 10, W * 0.68, H, W * 0.75);
     g2.addColorStop(0, rgbStr(c2, 0.92));
     g2.addColorStop(0.35, rgbStr(c2, 0.82));
     g2.addColorStop(0.68, rgbStr(c2Light, 0.45));
@@ -572,6 +566,7 @@ function AestheticAuraCard({
     ? getAuraGradientStyle(colors)
     : {
         background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
+        backgroundRepeat: "no-repeat",
       };
 
   const dayNum = date.getDate();
@@ -648,6 +643,7 @@ function AestheticAuraCard({
         className="group relative w-full rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-lg active:scale-[0.99]"
         style={{
           ...cardStyle,
+          backgroundRepeat: "no-repeat",
           minHeight: 140,
           padding: "18px 20px",
           boxShadow: "0 4px 20px rgba(28,46,42,0.05)",
