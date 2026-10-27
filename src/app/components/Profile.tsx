@@ -90,8 +90,8 @@ function resolveEmotionRgb(emotion?: { name?: string; hex?: string } | string | 
 
 const rgbStr = (c: number[], a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
-// High-definition fine fractal noise data URI for authentic risograph texture
-const NOISE_DATA_URI = `url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.42'/%3E%3C/svg%3E")`;
+// Ultra-fine micro tactile grain data URI (small particle size, whisper subtle)
+const NOISE_DATA_URI = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.18'/%3E%3C/svg%3E")`;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type TimeScope = "day" | "week" | "month";
@@ -438,19 +438,19 @@ async function generateHighResAuraCard({
     ctx.fillRect(0, 0, W, H);
   }
 
-  // 2. High-Definition Risograph / Film Grain Texture
+  // 2. Ultra-Fine Tactile Film Grain Texture (1:1 micro pixels)
   const noiseCanvas = document.createElement("canvas");
-  noiseCanvas.width = 360;
-  noiseCanvas.height = 450;
+  noiseCanvas.width = 720;
+  noiseCanvas.height = 900;
   const nCtx = noiseCanvas.getContext("2d")!;
-  const imgData = nCtx.createImageData(360, 450);
+  const imgData = nCtx.createImageData(720, 900);
   const buf = imgData.data;
   for (let i = 0; i < buf.length; i += 4) {
     const v = Math.floor(Math.random() * 255);
     buf[i] = v;
     buf[i + 1] = v;
     buf[i + 2] = v;
-    buf[i + 3] = 16;
+    buf[i + 3] = 7; // very soft and fine
   }
   nCtx.putImageData(imgData, 0, 0);
 
@@ -643,7 +643,7 @@ function AestheticAuraCard({
           style={{
             backgroundImage: NOISE_DATA_URI,
             backgroundRepeat: "repeat",
-            opacity: 0.18,
+            opacity: 0.08,
             mixBlendMode: "multiply",
           }}
         />
