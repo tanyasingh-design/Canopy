@@ -42,12 +42,21 @@ const INK_FAINT = "rgba(28,46,42,0.12)";
 const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
 const BORDER = "transparent"; // borderless clean visual aesthetic
-// Canopy defined green scale as primary color, Intentional strictly preserved as #2DC84D
-const PRIMARY_GREEN = "#4ba555"; // --green-9
-const KEPT = "#4ba555"; // primary green for kept / preserved
-const FOREST = "#4ba555"; // primary green accent
-const SPENT = "#FB5607"; // Canopy Craving orange for spent/bought
-const EMPTY = "#EFEEEA";
+
+// ── Canopy 60-30-10 Palette System ───────────────────────────────────────────
+// 30% Secondary: Radix Pink Scale (Plum, Muted Rose, Petal)
+const SEC_PLUM = "#2C1320";     // --pink-9 deep plum
+const SEC_ROSE = "#7D586A";     // --pink-11 muted rose for charts & text
+const SEC_PETAL = "#FCEBF2";    // --pink-3 soft blush surface / tracks / icons
+const SEC_BLUSH = "#F7E2EB";    // --pink-4 subtle rose border / badges
+const SEC_BORDER = "#DDABC2";   // --pink-8 soft rose lines
+const EMPTY = "#F7E2EB";        // --pink-4 bar track
+
+// 10% Primary: Radix Green Scale (Accent highlights & victories)
+const PRIMARY_GREEN = "#4BA555"; // --green-9
+const KEPT = "#4BA555";          // primary green for money saved / milestones
+const FOREST = "#4BA555";        // primary green accent
+const SPENT = "#FB5607";         // Canopy Craving orange for spent/bought
 
 // Emotion colours — vibrant pastel palette
 const EMOTION_RGB: Record<string, [number, number, number]> = {
@@ -1322,19 +1331,18 @@ function describeArc(cx: number, cy: number, r1: number, r2: number, startAngle:
   return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${largeArcFlag} 0 ${p4.x} ${p4.y} Z`;
 }
 
-// ── Canopy Signature Palette for Data Visuals (Primary green-9 + emotions) ─────
+// ── Canopy Signature Palette for Data Visuals (30% Secondary + 10% Primary + Emotions) ─────
 const BOTANICAL_COLORS = [
-  "#4ba555", // Primary Green (--green-9)
+  "#2C1320", // Secondary Deep Plum (--pink-9)
+  "#4BA555", // Primary Green (--green-9)
+  "#7D586A", // Secondary Muted Rose (--pink-11)
   "#FB5607", // Craving (Vibrant Orange)
   "#2DC84D", // Intentional (Fresh Green)
   "#619EFF", // Calm (Sky Blue)
   "#FF006E", // FOMO (Hot Pink)
   "#FFBE0B", // Bored (Bright Gold)
   "#8338EC", // Anxious (Deep Violet)
-  "#FF9C33", // Excited (Warm Tangerine)
-  "#E03C31", // Stressed (Crimson Red)
-  "#FF7F41", // Happy (Coral)
-  "#8A8F98", // Neutral (Cool Grey)
+  "#DDABC2", // Secondary Soft Rose (--pink-8)
 ];
 
 // ── Most Vulnerable Day of The Week (Line Chart matching Forest App) ──────────
@@ -1373,7 +1381,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
         Most impulses on{" "}
-        <strong style={{ color: FOREST, fontWeight: 700 }}>
+        <strong style={{ color: PRIMARY_GREEN, fontWeight: 700 }}>
           {allFlowers.length > 0 ? peakDayName : "—"}
         </strong>{" "}
         every week in general
@@ -1386,24 +1394,24 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
           <line x1="16" y1="55" x2="304" y2="55" stroke="rgba(28,46,42,0.06)" strokeDasharray="3 3" />
           <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
 
-          {/* Vertical dashed line at peak day */}
+          {/* Vertical dashed line at peak day (10% primary green accent) */}
           {allFlowers.length > 0 && (
             <line
               x1={points[peakIndex].x}
               y1={points[peakIndex].y}
               x2={points[peakIndex].x}
               y2={84}
-              stroke="rgba(45,200,77,0.4)"
+              stroke="rgba(75, 165, 85, 0.5)"
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
           )}
 
-          {/* Smooth connecting line */}
+          {/* Smooth connecting line (30% secondary rose) */}
           <path
             d={pathD}
             fill="none"
-            stroke={FOREST}
+            stroke={SEC_ROSE}
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1418,16 +1426,16 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                   cx={p.x}
                   cy={p.y}
                   r={isPeak ? 5.5 : 3.5}
-                  fill={isPeak ? "#FFFFFF" : FOREST}
-                  stroke={FOREST}
-                  strokeWidth={isPeak ? 2.5 : 1.5}
+                  fill={isPeak ? "#FFFFFF" : SEC_BORDER}
+                  stroke={isPeak ? PRIMARY_GREEN : SEC_ROSE}
+                  strokeWidth={isPeak ? 3 : 1.5}
                 />
                 {isPeak && (
                   <text
                     x={p.x}
                     y={p.y - 8}
                     textAnchor="middle"
-                    fill={FOREST}
+                    fill={PRIMARY_GREEN}
                     style={{ fontFamily: HEAD, fontSize: 13, fontWeight: 700 }}
                   >
                     {p.cnt}
@@ -1495,7 +1503,7 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
         Most impulses around{" "}
-        <strong style={{ color: FOREST, fontWeight: 700 }}>
+        <strong style={{ color: PRIMARY_GREEN, fontWeight: 700 }}>
           {allFlowers.length > 0 ? peakHourLabel : "—"}
         </strong>{" "}
         every day in general
@@ -1505,49 +1513,49 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
         <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="forestAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#4ba555" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#4ba555" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#DDABC2" stopOpacity="0.28" />
+              <stop offset="100%" stopColor="#DDABC2" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
           {/* Horizontal base line */}
           <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
 
-          {/* Area fill */}
+          {/* Area fill (30% secondary rose glow) */}
           {allFlowers.length > 0 && <path d={areaD} fill="url(#forestAreaGrad)" />}
 
-          {/* Vertical dashed line at peak hour */}
+          {/* Vertical dashed line at peak hour (10% primary green accent) */}
           {allFlowers.length > 0 && (
             <line
               x1={points[peakHour].x}
               y1={points[peakHour].y}
               x2={points[peakHour].x}
               y2={84}
-              stroke="rgba(45,200,77,0.4)"
+              stroke="rgba(75, 165, 85, 0.5)"
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
           )}
 
-          {/* Stroke line */}
+          {/* Stroke line (30% secondary rose) */}
           <path
             d={pathD}
             fill="none"
-            stroke={FOREST}
+            stroke={SEC_ROSE}
             strokeWidth={2.2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Peak dot */}
+          {/* Peak dot (10% primary green accent) */}
           {allFlowers.length > 0 && (
             <circle
               cx={points[peakHour].x}
               cy={points[peakHour].y}
               r={5}
               fill="#FFFFFF"
-              stroke={FOREST}
-              strokeWidth={2.5}
+              stroke={PRIMARY_GREEN}
+              strokeWidth={3}
             />
           )}
 
@@ -1706,13 +1714,13 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
 
   const renderItemIcon = (cat: string) => {
     const c = cat.toLowerCase();
-    if (c.includes("coffee") || c.includes("tea")) return <Coffee size={15} color={INK} />;
-    if (c.includes("food") || c.includes("dining")) return <Utensils size={15} color={INK} />;
-    if (c.includes("tech") || c.includes("gadget")) return <Headphones size={15} color={INK} />;
-    if (c.includes("cloth") || c.includes("fashion")) return <Shirt size={15} color={INK} />;
-    if (c.includes("book")) return <BookOpen size={15} color={INK} />;
-    if (c.includes("game")) return <Gamepad2 size={15} color={INK} />;
-    return <Tag size={15} color={INK} />;
+    if (c.includes("coffee") || c.includes("tea")) return <Coffee size={15} color={SEC_PLUM} />;
+    if (c.includes("food") || c.includes("dining")) return <Utensils size={15} color={SEC_PLUM} />;
+    if (c.includes("tech") || c.includes("gadget")) return <Headphones size={15} color={SEC_PLUM} />;
+    if (c.includes("cloth") || c.includes("fashion")) return <Shirt size={15} color={SEC_PLUM} />;
+    if (c.includes("book")) return <BookOpen size={15} color={SEC_PLUM} />;
+    if (c.includes("game")) return <Gamepad2 size={15} color={SEC_PLUM} />;
+    return <Tag size={15} color={SEC_PLUM} />;
   };
 
   return (
@@ -1726,7 +1734,10 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
             <span style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, width: 14 }}>
               {item.rank}.
             </span>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(28,46,42,0.06)" }}>
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: SEC_PETAL }}
+            >
               {renderItemIcon(item.category)}
             </div>
             <div className="flex-1 min-w-0">
@@ -1738,12 +1749,12 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
                   {item.count} {item.count === 1 ? "time" : "times"} · {fmt(item.total)}
                 </span>
               </div>
-              <div className="w-full rounded-full overflow-hidden mt-1.5" style={{ height: 7, background: EMPTY }}>
+              <div className="w-full rounded-full overflow-hidden mt-1.5" style={{ height: 6.5, background: SEC_BLUSH }}>
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${item.barWidth}%`,
-                    background: FOREST,
+                    background: item.rank === 1 ? PRIMARY_GREEN : SEC_ROSE,
                   }}
                 />
               </div>
@@ -2444,7 +2455,7 @@ export function Profile() {
         <div
           className="relative flex p-1 rounded-2xl"
           style={{
-            background: "rgba(28,46,42,0.06)",
+            background: SEC_PETAL,
             border: `1px solid ${BORDER}`,
           }}
         >
@@ -2491,7 +2502,7 @@ export function Profile() {
           <button
             onClick={() => shiftPeriod(-1)}
             className={arrowBtn}
-            style={{ background: "rgba(28,46,42,0.06)" }}
+            style={{ background: SEC_PETAL }}
             aria-label="Previous period"
           >
             <ChevronLeft size={18} color={INK} />
@@ -2514,7 +2525,7 @@ export function Profile() {
             onClick={() => shiftPeriod(1)}
             disabled={isCurrentPeriod}
             className={arrowBtn}
-            style={{ background: "rgba(28,46,42,0.06)" }}
+            style={{ background: SEC_PETAL }}
             aria-label="Next period"
           >
             <ChevronRight size={18} color={INK} />
@@ -2691,7 +2702,7 @@ export function Profile() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
                   style={{
                     fontFamily: BODY,
-                    background: "rgba(28,46,42,0.03)",
+                    background: SEC_PETAL,
                     border: `1px solid ${BORDER}`,
                     color: INK,
                   }}
@@ -2707,7 +2718,7 @@ export function Profile() {
                   />
                   <span>{m.name}</span>
                   <strong style={{ fontFamily: HEAD, fontSize: 16 }}>{m.pct}%</strong>
-                  <span style={{ color: INK_SOFT, fontSize: 12 }}>({m.count})</span>
+                  <span style={{ color: SEC_ROSE, fontSize: 12 }}>({m.count})</span>
                 </span>
               ))}
             </div>
@@ -2721,7 +2732,7 @@ export function Profile() {
                   lineHeight: 1.5,
                 }}
               >
-                Primary impulse trigger: <strong style={{ color: INK }}>{moodMix[0].name}</strong>, accounting for {moodMix[0].pct}% of all logged moments in this period.
+                Primary impulse trigger: <strong style={{ color: PRIMARY_GREEN }}>{moodMix[0].name}</strong>, accounting for {moodMix[0].pct}% of all logged moments in this period.
               </p>
             )}
           </Card>
@@ -2737,9 +2748,10 @@ export function Profile() {
               Labor & value balance
             </h2>
             <span
-              className="shrink-0 whitespace-nowrap text-xs font-medium mt-1"
+              className="shrink-0 whitespace-nowrap text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1"
               style={{
-                color: INK_SOFT,
+                color: SEC_PLUM,
+                background: SEC_PETAL,
                 fontFamily: BODY,
               }}
             >
@@ -2749,7 +2761,7 @@ export function Profile() {
 
           <div className="flex items-baseline justify-between mb-2">
             <div>
-              <span style={{ fontFamily: HEAD, fontSize: 28, color: KEPT }}>
+              <span style={{ fontFamily: HEAD, fontSize: 28, color: PRIMARY_GREEN }}>
                 {activeKeptHours}h
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
@@ -2766,13 +2778,13 @@ export function Profile() {
             </div>
           </div>
 
-          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 16, background: EMPTY }}>
+          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 12, background: SEC_PETAL }}>
             {activeKeptHours > 0 && (
               <div
                 className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
                 style={{
                   width: `${(activeKeptHours / (activeKeptHours + activeSpentHours || 0.01)) * 100}%`,
-                  background: KEPT,
+                  background: SEC_PLUM,
                   fontFamily: HEAD,
                 }}
               >
@@ -2794,8 +2806,12 @@ export function Profile() {
           </div>
 
           <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
-            <span>Saved: {fmt(stats.kept)}</span>
-            <span>Spent: {fmt(stats.spent)}</span>
+            <span>
+              Saved: <strong style={{ color: PRIMARY_GREEN, fontWeight: 700 }}>{fmt(stats.kept)}</strong>
+            </span>
+            <span>
+              Spent: <strong style={{ color: INK, fontWeight: 600 }}>{fmt(stats.spent)}</strong>
+            </span>
           </div>
         </Card>
 
