@@ -661,43 +661,17 @@ function AestheticAuraCard({
 
         {/* Aesthetic Content Overlay */}
         <div className="relative z-10 flex flex-col justify-between h-full min-h-[105px]">
-          {/* Top row: Drawings Badge + Clean Save button (Strictly NO extra tabs, NO emojis) */}
-          <div className="flex items-center justify-between gap-2">
-            {/* Clean Pill with Glowing Dot */}
-            <div
-              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md transition-all shrink-0"
-              style={{
-                background: "rgba(255,255,255,0.78)",
-                color: INK,
-                border: `1px solid ${BORDER}`,
-                fontFamily: BODY,
-                boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
-              }}
-            >
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{
-                  background: colors.length > 0 ? rgbStr(colors[0], 0.95) : KEPT,
-                  boxShadow: colors.length > 0 ? `0 0 6px ${rgbStr(colors[0], 0.6)}` : "none",
-                }}
-              />
-              <span>
-                {count} {count === 1 ? "drawing" : "drawings"}
-              </span>
-            </div>
-
+          {/* Top row: Minimal clean Save action (Strictly NO chips, NO pills) */}
+          <div className="flex items-center justify-end">
             <button
               id="aura-download-btn"
               type="button"
               onClick={handleDownload}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium backdrop-blur-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer shrink-0"
+              className="flex items-center gap-1.5 text-xs font-medium transition-opacity opacity-60 hover:opacity-100 active:scale-95 disabled:opacity-30 cursor-pointer"
               style={{
-                background: "rgba(255,255,255,0.78)",
                 color: INK,
-                border: `1px solid ${BORDER}`,
                 fontFamily: BODY,
-                boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
               }}
               title="Save aesthetic aura image"
             >
