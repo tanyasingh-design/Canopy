@@ -16,6 +16,11 @@ import {
   Maximize2,
   X,
   Sparkles,
+  Settings,
+  PieChart,
+  BarChart3,
+  TrendingUp,
+  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
@@ -502,15 +507,24 @@ function AestheticAuraCard({
   date,
   colors,
   flowers,
+  customTitle,
+  customSubtitle,
+  drawingCount,
+  scope = "day",
 }: {
   date: Date;
   colors: [number, number, number][];
   flowers?: FlowerEntry[];
+  customTitle?: string;
+  customSubtitle?: string;
+  drawingCount?: number;
+  scope?: "day" | "week" | "month";
 }) {
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const hasColors = colors.length > 0;
+  const count = drawingCount !== undefined ? drawingCount : flowers?.length || 0;
 
   const cardStyle = hasColors
     ? getAuraGradientStyle(colors)
@@ -613,15 +627,31 @@ function AestheticAuraCard({
         />
 
         {/* Aesthetic Content Overlay */}
-        <div className="relative z-10 flex flex-col justify-between h-full min-h-[78px]">
-          {/* Top row: Only the clean Save button (no chips) */}
-          <div className="flex items-center justify-end">
+        <div className="relative z-10 flex flex-col justify-between h-full min-h-[92px]">
+          {/* Top row: Drawings Badge + Clean Save button */}
+          <div className="flex items-center justify-between">
+            <div
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md transition-all"
+              style={{
+                background: hasColors ? "rgba(255,255,255,0.22)" : "rgba(28,46,42,0.06)",
+                color: hasColors ? "#FFFFFF" : INK,
+                border: hasColors ? "1px solid rgba(255,255,255,0.3)" : `1px solid ${BORDER}`,
+                fontFamily: BODY,
+                boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+              }}
+            >
+              <span>
+                🌸 {count} {count === 1 ? "drawing" : "drawings"}
+                {scope === "week" ? " this week" : scope === "month" ? " this month" : ""}
+              </span>
+            </div>
+
             <button
               id="aura-download-btn"
               type="button"
               onClick={handleDownload}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md transition-all active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               style={{
                 background: hasColors ? "rgba(255,255,255,0.22)" : "rgba(28,46,42,0.08)",
                 color: hasColors ? "#FFFFFF" : INK,
@@ -636,33 +666,34 @@ function AestheticAuraCard({
             </button>
           </div>
 
-          {/* Bottom row: Day text & Canopy watermark (No chips!) */}
-          <div className="mt-2 flex items-end justify-between">
+          {/* Bottom row: Title & Canopy watermark */}
+          <div className="mt-3 flex items-end justify-between">
             <div>
               <p
                 style={{
                   fontFamily: HEAD,
-                  fontSize: 28,
-                  lineHeight: 1,
+                  fontSize: customTitle ? 25 : 28,
+                  lineHeight: 1.05,
                   color: hasColors ? "#FFFFFF" : INK,
                   letterSpacing: "0.5px",
                   textShadow: hasColors ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
                 }}
               >
-                {dayNum} {monthName} {year}
+                {customTitle || `${dayNum} ${monthName} ${year}`}
               </p>
               <p
                 style={{
                   fontFamily: BODY,
                   fontSize: 13,
-                  color: hasColors ? "rgba(255,255,255,0.85)" : INK_SOFT,
+                  color: hasColors ? "rgba(255,255,255,0.9)" : INK_SOFT,
                   marginTop: 3,
                   fontStyle: "italic",
                 }}
               >
-                {hasColors && emotionNames.length > 0
-                  ? emotionNames.join(" · ")
-                  : "Stillness · Clear Mind"}
+                {customSubtitle ||
+                  (hasColors && emotionNames.length > 0
+                    ? emotionNames.join(" · ")
+                    : "Stillness · Clear Mind")}
               </p>
             </div>
 
@@ -1200,6 +1231,718 @@ function DayScrubber({
   );
 }
 
+// ── Horizontal Week Scrubber (Week View) ──────────────────────────────────────
+function WeekScrubber({
+  weekDays,
+  selectedDate,
+  onSelectDate,
+}: {
+  weekDays: { date: Date; name: string; kept: number; spent: number; flowers: FlowerEntry[] }[];
+  selectedDate: Date;
+  onSelectDate: (d: Date) => void;
+}) {
+  const today = new Date();
+  return (
+    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar w-full mt-3">
+      {weekDays.map(({ date, name, flowers }, i) => {
+        const isSelected = isSameDay(date, selectedDate);
+        const isToday = isSameDay(date, today);
+        const isFuture = date.getTime() > new Date().setHours(23, 59, 59, 999);
+        const hasDrawings = flowers.length > 0;
+
+        return (
+          <button
+            key={i}
+            disabled={isFuture}
+            onClick={() => {
+              if (!isFuture) onSelectDate(date);
+            }}
+            className={`flex-1 py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all duration-200 relative ${
+              isFuture ? "cursor-default opacity-25 pointer-events-none" : "cursor-pointer active:scale-95"
+            }`}
+            style={{
+              background: isSelected ? KEPT : "rgba(28,46,42,0.04)",
+              color: isSelected ? "#FFFFFF" : INK,
+              border: isSelected ? `1.5px solid ${KEPT}` : isToday ? `1.5px solid ${INK}` : `1px solid ${BORDER}`,
+              minWidth: 44,
+            }}
+          >
+            <span style={{ fontFamily: BODY, fontSize: 11, opacity: isSelected ? 0.9 : 0.6 }}>
+              {name}
+            </span>
+            <span style={{ fontFamily: HEAD, fontSize: 17, marginTop: 1 }}>
+              {date.getDate()}
+            </span>
+            {hasDrawings && !isFuture && (
+              <span
+                className="w-1.5 h-1.5 rounded-full mt-1"
+                style={{ background: isSelected ? "#FFFFFF" : KEPT }}
+                title={`${flowers.length} drawing(s)`}
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── SVG Arc Calculation Helpers for Donut Charts ──────────────────────────────
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
+  return {
+    x: cx + r * Math.cos(rad),
+    y: cy + r * Math.sin(rad),
+  };
+}
+
+function describeArc(cx: number, cy: number, r1: number, r2: number, startAngle: number, endAngle: number) {
+  const sweep = Math.min(359.99, Math.max(0.1, endAngle - startAngle));
+  const largeArcFlag = sweep <= 180 ? 0 : 1;
+  const p1 = polarToCartesian(cx, cy, r2, startAngle);
+  const p2 = polarToCartesian(cx, cy, r2, startAngle + sweep);
+  const p3 = polarToCartesian(cx, cy, r1, startAngle + sweep);
+  const p4 = polarToCartesian(cx, cy, r1, startAngle);
+  return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${largeArcFlag} 0 ${p4.x} ${p4.y} Z`;
+}
+
+// ── Botanical Color Palette for Data Visuals ──────────────────────────────────
+const BOTANICAL_COLORS = [
+  "#2F6B5E", // Forest green
+  "#B5836A", // Warm terracotta
+  "#E5A93B", // Amber honey
+  "#729B79", // Sage
+  "#8E7DBE", // Lavender
+  "#4A90A4", // Ocean teal
+  "#C06C84", // Rose
+];
+
+// ── Most Vulnerable Day of The Week (Line Chart matching Forest App) ──────────
+function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
+  const dowNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const counts = useMemo(() => {
+    const c = [0, 0, 0, 0, 0, 0, 0];
+    allFlowers.forEach((f) => {
+      const d = new Date(f.date);
+      if (!isNaN(d.getTime())) {
+        c[d.getDay()]++;
+      }
+    });
+    return c;
+  }, [allFlowers]);
+
+  const max = Math.max(1, ...counts);
+  const peakIndex = counts.indexOf(Math.max(...counts));
+  const peakDayName = dowNames[peakIndex];
+
+  // Width 320, Height 110
+  const points = counts.map((cnt, i) => {
+    const x = 24 + i * ((320 - 48) / 6);
+    const y = 84 - (cnt / max) * 58;
+    return { x, y, cnt, name: dowNames[i] };
+  });
+
+  const pathD = points.reduce((acc, p, i) => {
+    return i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
+  }, "");
+
+  return (
+    <Card pad={20}>
+      <Title hint="Day of the week when urges are most frequent">
+        Most Vulnerable Day of The Week
+      </Title>
+      <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
+        Most impulses on{" "}
+        <strong style={{ color: FOREST, fontWeight: 700 }}>
+          {allFlowers.length > 0 ? peakDayName : "—"}
+        </strong>{" "}
+        every week in general
+      </p>
+
+      <div className="w-full relative mt-1">
+        <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
+          {/* Subtle horizontal grid lines */}
+          <line x1="16" y1="26" x2="304" y2="26" stroke="rgba(28,46,42,0.06)" strokeDasharray="3 3" />
+          <line x1="16" y1="55" x2="304" y2="55" stroke="rgba(28,46,42,0.06)" strokeDasharray="3 3" />
+          <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
+
+          {/* Vertical dashed line at peak day */}
+          {allFlowers.length > 0 && (
+            <line
+              x1={points[peakIndex].x}
+              y1={points[peakIndex].y}
+              x2={points[peakIndex].x}
+              y2={84}
+              stroke="rgba(47,107,94,0.4)"
+              strokeDasharray="2 3"
+              strokeWidth={1.5}
+            />
+          )}
+
+          {/* Smooth connecting line */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke={FOREST}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Node points on each day */}
+          {points.map((p, i) => {
+            const isPeak = i === peakIndex && allFlowers.length > 0;
+            return (
+              <g key={i}>
+                <circle
+                  cx={p.x}
+                  cy={p.y}
+                  r={isPeak ? 5.5 : 3.5}
+                  fill={isPeak ? "#FFFFFF" : FOREST}
+                  stroke={FOREST}
+                  strokeWidth={isPeak ? 2.5 : 1.5}
+                />
+                {isPeak && (
+                  <text
+                    x={p.x}
+                    y={p.y - 8}
+                    textAnchor="middle"
+                    fill={FOREST}
+                    style={{ fontFamily: HEAD, fontSize: 13, fontWeight: 700 }}
+                  >
+                    {p.cnt}
+                  </text>
+                )}
+                <text
+                  x={p.x}
+                  y={102}
+                  textAnchor="middle"
+                  fill={isPeak ? INK : "rgba(28,46,42,0.5)"}
+                  style={{
+                    fontFamily: BODY,
+                    fontSize: 11,
+                    fontWeight: isPeak ? 600 : 400,
+                  }}
+                >
+                  {p.name}
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+    </Card>
+  );
+}
+
+// ── Peak Period of The Day (Continuous 24h Curve matching Forest App) ─────────
+function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
+  const hourlyCounts = useMemo(() => {
+    const c = Array(24).fill(0);
+    allFlowers.forEach((f) => {
+      const d = new Date(f.date);
+      if (!isNaN(d.getTime())) {
+        const h = d.getHours();
+        if (h >= 0 && h < 24) c[h]++;
+      }
+    });
+    return c;
+  }, [allFlowers]);
+
+  const max = Math.max(1, ...hourlyCounts);
+  const peakHour = hourlyCounts.indexOf(Math.max(...hourlyCounts));
+  const peakHourLabel = `${String(peakHour).padStart(2, "0")}:00`;
+
+  // Width 320, Height 110, padding left/right 24
+  const points = hourlyCounts.map((cnt, h) => {
+    const x = 24 + h * ((320 - 48) / 23);
+    const y = 84 - (cnt / max) * 58;
+    return { x, y, cnt, h };
+  });
+
+  const pathD = points.reduce((acc, p, i) => {
+    return i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
+  }, "");
+
+  const areaD = `${pathD} L ${points[23].x} 84 L ${points[0].x} 84 Z`;
+
+  const tickHours = [0, 6, 12, 18, 23];
+
+  return (
+    <Card pad={20}>
+      <Title hint="Time of day when shopping triggers peak">
+        Most Vulnerable Period of The Day
+      </Title>
+      <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
+        Most impulses around{" "}
+        <strong style={{ color: FOREST, fontWeight: 700 }}>
+          {allFlowers.length > 0 ? peakHourLabel : "—"}
+        </strong>{" "}
+        every day in general
+      </p>
+
+      <div className="w-full relative mt-1">
+        <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
+          <defs>
+            <linearGradient id="forestAreaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#2F6B5E" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#2F6B5E" stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+
+          {/* Horizontal base line */}
+          <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
+
+          {/* Area fill */}
+          {allFlowers.length > 0 && <path d={areaD} fill="url(#forestAreaGrad)" />}
+
+          {/* Vertical dashed line at peak hour */}
+          {allFlowers.length > 0 && (
+            <line
+              x1={points[peakHour].x}
+              y1={points[peakHour].y}
+              x2={points[peakHour].x}
+              y2={84}
+              stroke="rgba(47,107,94,0.4)"
+              strokeDasharray="2 3"
+              strokeWidth={1.5}
+            />
+          )}
+
+          {/* Stroke line */}
+          <path
+            d={pathD}
+            fill="none"
+            stroke={FOREST}
+            strokeWidth={2.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+
+          {/* Peak dot */}
+          {allFlowers.length > 0 && (
+            <circle
+              cx={points[peakHour].x}
+              cy={points[peakHour].y}
+              r={5}
+              fill="#FFFFFF"
+              stroke={FOREST}
+              strokeWidth={2.5}
+            />
+          )}
+
+          {/* Ticks for 00:00, 06:00, 12:00, 18:00, 23:00 */}
+          {tickHours.map((th) => {
+            const p = points[th];
+            const label = `${String(th).padStart(2, "0")}:00`;
+            return (
+              <text
+                key={th}
+                x={p.x}
+                y={100}
+                textAnchor="middle"
+                fill="rgba(28,46,42,0.5)"
+                style={{ fontFamily: BODY, fontSize: 10.5 }}
+              >
+                {label}
+              </text>
+            );
+          })}
+        </svg>
+      </div>
+    </Card>
+  );
+}
+
+// ── Category Distribution Donut Chart (Matching Forest App) ───────────────────
+function CategoryDonutChart({ flowers }: { flowers: FlowerEntry[] }) {
+  const categoryData = useMemo(() => {
+    const map: Record<string, { amount: number; count: number }> = {};
+    flowers.forEach((f) => {
+      const cat = categoryOf(f);
+      if (!map[cat]) map[cat] = { amount: 0, count: 0 };
+      map[cat].amount += Number(f.amount) || 0;
+      map[cat].count += 1;
+    });
+
+    const totalUrges = flowers.length || 1;
+    const sorted = Object.entries(map).sort((a, b) => b[1].amount - a[1].amount);
+
+    return sorted.map(([name, data], idx) => ({
+      name,
+      amount: data.amount,
+      count: data.count,
+      pct: Math.round((data.count / totalUrges) * 100),
+      color: BOTANICAL_COLORS[idx % BOTANICAL_COLORS.length],
+    }));
+  }, [flowers]);
+
+  if (flowers.length === 0) {
+    return (
+      <Card pad={20}>
+        <Title hint="Categories where you paused purchases">Tag & Category Distribution</Title>
+        <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, textAlign: "center", padding: "20px 0" }}>
+          No impulses logged in this period yet.
+        </p>
+      </Card>
+    );
+  }
+
+  // Build SVG arc paths
+  const totalItems = flowers.length;
+  let accumulatedAngle = 0;
+  const arcs = categoryData.map((c) => {
+    const sweep = (c.count / totalItems) * 360;
+    const startAngle = accumulatedAngle;
+    const endAngle = accumulatedAngle + sweep;
+    accumulatedAngle += sweep;
+
+    const path = describeArc(100, 100, 52, 80, startAngle, endAngle);
+    return { ...c, path };
+  });
+
+  return (
+    <Card pad={20}>
+      <Title hint="Where desires and urges are concentrated">
+        Tag & Category Distribution
+      </Title>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 my-2">
+        {/* SVG Donut */}
+        <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+          <svg viewBox="0 0 200 200" className="w-full h-full">
+            {arcs.map((arc, i) => (
+              <path
+                key={i}
+                d={arc.path}
+                fill={arc.color}
+                className="transition-all duration-300 hover:opacity-90"
+              />
+            ))}
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span style={{ fontFamily: HEAD, fontSize: 32, lineHeight: 1, color: INK }}>
+              {totalItems}
+            </span>
+            <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
+              {totalItems === 1 ? "impulse" : "impulses"}
+            </span>
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex-1 flex flex-col gap-2.5 w-full">
+          {categoryData.slice(0, 5).map((c) => (
+            <div key={c.name} className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-3 h-3 rounded-full shrink-0"
+                  style={{ background: c.color }}
+                />
+                <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 500 }}>
+                  {c.name}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span style={{ fontFamily: HEAD, fontSize: 15, color: INK }}>
+                  {c.pct}%
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
+                  {fmt(c.amount)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ── Favorite / Most Frequent Impulses (Matching Forest App) ───────────────────
+function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
+  const topItems = useMemo(() => {
+    const map: Record<string, { count: number; total: number; category: string }> = {};
+    flowers.forEach((f) => {
+      const name = f.itemName || categoryOf(f) || "Micro-indulgence";
+      if (!map[name]) map[name] = { count: 0, total: 0, category: categoryOf(f) };
+      map[name].count += 1;
+      map[name].total += Number(f.amount) || 0;
+    });
+
+    const sorted = Object.entries(map).sort((a, b) => b[1].count - a[1].count || b[1].total - a[1].total);
+    const maxCount = sorted[0]?.[1].count || 1;
+    return sorted.slice(0, 4).map(([name, data], idx) => ({
+      rank: idx + 1,
+      name,
+      count: data.count,
+      total: data.total,
+      category: data.category,
+      barWidth: Math.max(12, Math.round((data.count / maxCount) * 100)),
+    }));
+  }, [flowers]);
+
+  if (flowers.length === 0) return null;
+
+  const itemEmoji = (cat: string) => {
+    const c = cat.toLowerCase();
+    if (c.includes("coffee") || c.includes("tea")) return "☕";
+    if (c.includes("food") || c.includes("dining")) return "🍕";
+    if (c.includes("tech") || c.includes("gadget")) return "🎧";
+    if (c.includes("cloth") || c.includes("fashion")) return "👗";
+    if (c.includes("book")) return "📚";
+    if (c.includes("game")) return "🎮";
+    return "🌱";
+  };
+
+  return (
+    <Card pad={20}>
+      <Title hint="The temptations you paused to reflect on most often">
+        Favorite impulse species
+      </Title>
+      <div className="flex flex-col gap-4 mt-2">
+        {topItems.map((item) => (
+          <div key={item.name} className="flex items-center gap-3">
+            <span style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, width: 14 }}>
+              {item.rank}.
+            </span>
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(28,46,42,0.06)", fontSize: 16 }}>
+              {itemEmoji(item.category)}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline justify-between">
+                <span style={{ fontFamily: BODY, fontSize: 15, fontWeight: 600, color: INK }} className="truncate">
+                  {item.name}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }} className="shrink-0 ml-2">
+                  {item.count} {item.count === 1 ? "time" : "times"} · {fmt(item.total)}
+                </span>
+              </div>
+              <div className="w-full rounded-full overflow-hidden mt-1.5" style={{ height: 7, background: EMPTY }}>
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{
+                    width: `${item.barWidth}%`,
+                    background: FOREST,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+// ── Settings & Personalization Modal ──────────────────────────────────────────
+function SettingsModal({
+  isOpen,
+  onClose,
+  userName,
+  onSaveName,
+  monthlySalary,
+  onSaveSalary,
+  profileProblem,
+  onSaveProblem,
+  profileGoal,
+  onSaveGoal,
+  onExportData,
+  onResetData,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  userName: string;
+  onSaveName: (n: string) => void;
+  monthlySalary: number;
+  onSaveSalary: (s: number) => void;
+  profileProblem: string;
+  onSaveProblem: (p: string) => void;
+  profileGoal: string;
+  onSaveGoal: (g: string) => void;
+  onExportData: () => void;
+  onResetData: () => void;
+}) {
+  const [name, setName] = useState(userName);
+  const [salary, setSalary] = useState(String(monthlySalary || ""));
+  const [problem, setProblem] = useState(profileProblem);
+  const [goal, setGoal] = useState(profileGoal);
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(userName);
+      setSalary(String(monthlySalary || ""));
+      setProblem(profileProblem);
+      setGoal(profileGoal);
+    }
+  }, [isOpen, userName, monthlySalary, profileProblem, profileGoal]);
+
+  if (!isOpen) return null;
+
+  const parsedSalary = Math.max(0, parseFloat(salary) || 0);
+  const derivedWage = Math.round((parsedSalary / 22 / 8) * 100) / 100;
+
+  function handleSave() {
+    onSaveName(name.trim() || "Friend");
+    onSaveSalary(parsedSalary);
+    onSaveProblem(problem.trim() || "Late-night scrolling, Sales and discounts");
+    onSaveGoal(goal.trim() || "Financial peace of mind");
+    onClose();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: "rgba(28,46,42,0.45)", backdropFilter: "blur(6px)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-6 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl"
+        style={{ background: BG, color: INK }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between pb-4 border-b border-[rgba(28,46,42,0.08)]">
+          <div>
+            <h2 style={{ fontFamily: HEAD, fontSize: 26, color: INK }}>Settings & Profile</h2>
+            <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
+              Personalize your Canopy reflections and value conversions
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
+            style={{ background: "rgba(28,46,42,0.06)" }}
+            aria-label="Close settings"
+          >
+            <X size={16} color={INK} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-4 mt-5">
+          {/* Name */}
+          <div>
+            <label style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, fontWeight: 500 }}>
+              Your Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Alex"
+              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+              style={{ fontFamily: BODY, fontSize: 15 }}
+            />
+          </div>
+
+          {/* Monthly Salary */}
+          <div>
+            <div className="flex items-baseline justify-between">
+              <label style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, fontWeight: 500 }}>
+                Monthly Take-Home Salary
+              </label>
+              {parsedSalary > 0 && (
+                <span style={{ fontFamily: BODY, fontSize: 12, color: FOREST, fontWeight: 600 }}>
+                  @ ₹{derivedWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr · ≈ ₹{Math.round(parsedSalary / 22).toLocaleString("en-IN")}/day
+                </span>
+              )}
+            </div>
+            <div className="relative mt-1">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ fontFamily: HEAD, fontSize: 18, color: INK_SOFT }}>
+                ₹
+              </span>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={salary}
+                onChange={(e) => setSalary(e.target.value)}
+                placeholder="e.g. 50000"
+                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+                style={{ fontFamily: HEAD, fontSize: 18 }}
+              />
+            </div>
+            <p style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT, marginTop: 4 }}>
+              Used to calculate the hours and days of work every impulse purchase costs. (Based on 22 days × 8h).
+            </p>
+          </div>
+
+          {/* Impulse problem to soften */}
+          <div>
+            <label style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, fontWeight: 500 }}>
+              Impulse Patterns to Soften
+            </label>
+            <input
+              type="text"
+              value={problem}
+              onChange={(e) => setProblem(e.target.value)}
+              placeholder="e.g. Late-night scrolling, Sales and discounts"
+              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+              style={{ fontFamily: BODY, fontSize: 15 }}
+            />
+          </div>
+
+          {/* Growing money towards */}
+          <div>
+            <label style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, fontWeight: 500 }}>
+              Growing Money Towards (Personal Goal)
+            </label>
+            <input
+              type="text"
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              placeholder="e.g. Dream travel, Emergency peace fund"
+              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+              style={{ fontFamily: BODY, fontSize: 15 }}
+            />
+          </div>
+
+          {/* Navigation & Data Actions */}
+          <div className="pt-2 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.removeItem("canopy_onboarded");
+                window.location.href = "/?reboard=1";
+              }}
+              className="w-full py-2.5 px-4 rounded-xl text-left text-sm font-medium transition-colors hover:bg-stone-200/60 cursor-pointer"
+              style={{ background: EMPTY, fontFamily: BODY, color: FOREST }}
+            >
+              Revisit onboarding journey
+            </button>
+            <button
+              type="button"
+              onClick={onExportData}
+              className="w-full py-2.5 px-4 rounded-xl text-left text-sm font-medium transition-colors hover:bg-stone-200/60 cursor-pointer"
+              style={{ background: EMPTY, fontFamily: BODY, color: INK }}
+            >
+              Export data backup (JSON)
+            </button>
+            <button
+              type="button"
+              onClick={onResetData}
+              className="w-full py-2.5 px-4 rounded-xl text-left text-sm font-medium transition-colors hover:bg-red-50 cursor-pointer"
+              style={{ background: "rgba(181,131,106,0.12)", fontFamily: BODY, color: SPENT }}
+            >
+              Reset all data
+            </button>
+          </div>
+
+          {/* Save button */}
+          <div className="pt-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              className="w-full py-3 rounded-2xl text-white font-semibold transition-transform active:scale-[0.99] cursor-pointer"
+              style={{ background: FOREST, fontFamily: HEAD, fontSize: 18 }}
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main Profile Component ─────────────────────────────────────────────────────
 export function Profile() {
   const [allFlowers, setAllFlowers] = useState<FlowerEntry[]>([]);
@@ -1207,6 +1950,7 @@ export function Profile() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedDayNumber, setSelectedDayNumber] = useState<number>(() => new Date().getDate());
   const [confirmReset, setConfirmReset] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Hourly Wage settings
   const [hourlyWage, setHourlyWage] = useState<number>(() => {
@@ -1455,6 +2199,44 @@ export function Profile() {
     };
   }, [days, safeSelectedDayNumber, year, month]);
 
+  const weekRangeTitle = useMemo(() => {
+    const start = getStartOfWeek(selectedDate);
+    const end = getEndOfWeek(selectedDate);
+    return `${start.toLocaleDateString("en-US", { day: "numeric", month: "short" })} – ${end.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}`;
+  }, [selectedDate]);
+
+  const weekColors = useMemo(() => {
+    const seen = new Set<string>();
+    const res: [number, number, number][] = [];
+    weekFlowers.forEach((f) => {
+      const c = resolveEmotionRgb(f.emotion);
+      if (c) {
+        const k = `${c[0]},${c[1]},${c[2]}`;
+        if (!seen.has(k)) {
+          seen.add(k);
+          res.push(c);
+        }
+      }
+    });
+    return res;
+  }, [weekFlowers]);
+
+  const monthColors = useMemo(() => {
+    const seen = new Set<string>();
+    const res: [number, number, number][] = [];
+    monthFlowers.forEach((f) => {
+      const c = resolveEmotionRgb(f.emotion);
+      if (c) {
+        const k = `${c[0]},${c[1]},${c[2]}`;
+        if (!seen.has(k)) {
+          seen.add(k);
+          res.push(c);
+        }
+      }
+    });
+    return res;
+  }, [monthFlowers]);
+
   const moodMix = useMemo(() => {
     const counts: Record<string, { count: number; rgb: [number, number, number] }> = {};
     activeFlowers.forEach((f) => {
@@ -1560,27 +2342,45 @@ export function Profile() {
     <div className="min-h-screen flex flex-col w-full pb-36" style={{ background: BG, color: INK }}>
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <div className="px-5 pt-8 pb-3 flex items-center justify-between">
-        <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
-          Profile
-        </h1>
-        <p className="sr-only">Your urge patterns, without judgment</p>
+        <div>
+          <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
+            Profile
+          </h1>
+          <p className="sr-only">Your urge patterns, without judgment</p>
+        </div>
 
-        {/* Quick jump to Today if drifted */}
-        {!isCurrentPeriod && (
+        <div className="flex items-center gap-2">
+          {/* Quick jump to Today if drifted */}
+          {!isCurrentPeriod && (
+            <button
+              onClick={jumpToToday}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-transform active:scale-95 cursor-pointer"
+              style={{
+                background: "rgba(47,107,94,0.12)",
+                color: KEPT,
+                fontFamily: BODY,
+                border: "1px solid rgba(47,107,94,0.2)",
+              }}
+            >
+              <RotateCcw size={12} />
+              Today
+            </button>
+          )}
+
+          {/* Settings button */}
           <button
-            onClick={jumpToToday}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-transform active:scale-95"
+            onClick={() => setShowSettings(true)}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
             style={{
-              background: "rgba(47,107,94,0.12)",
-              color: KEPT,
-              fontFamily: BODY,
-              border: "1px solid rgba(47,107,94,0.2)",
+              background: "rgba(28,46,42,0.06)",
+              border: `1px solid ${BORDER}`,
             }}
+            aria-label="Settings and Profile"
+            title="Settings & Profile"
           >
-            <RotateCcw size={12} />
-            Today
+            <Settings size={18} color={INK} />
           </button>
-        )}
+        </div>
       </div>
 
       {/* ── Refined Time Scope Switcher (Day · Week · Month) ────────────────── */}
@@ -1667,802 +2467,483 @@ export function Profile() {
       </div>
 
       <div className="px-5 flex flex-col gap-5">
-        <InsightCard
-          scope={timeScope}
-          total={stats.total}
-          keptN={stats.keptN}
-          spentN={stats.spentN}
-          keptHours={activeKeptHours}
-          topMood={moodMix[0]}
-          peakLabel={peakTime && peakTime.count > 0 ? peakTime.label : undefined}
-        />
-
-        {/* ── DAY VIEW ───────────────────────────────────────────────────────── */}
+        {/* ── 1. UNIFIED TOP AURA HERO (FIRST IN DAY, WEEK, AND MONTH) ──────── */}
         {timeScope === "day" && (
-          <>
-            {/* Interactive Day Aura at Top + Day Scrubber */}
-            <Card pad={16}>
-              <AestheticAuraCard
-                date={selectedDate}
-                colors={
-                  dayFlowers
-                    .map((f) => resolveEmotionRgb(f.emotion))
-                    .filter((c): c is [number, number, number] => c !== null)
-                }
-                flowers={dayFlowers}
-              />
-              <DayScrubber
-                currentDate={selectedDate}
-                onSelectDate={(d) => {
-                  setSelectedDate(d);
-                  setSelectedDayNumber(d.getDate());
-                }}
-                allFlowers={allFlowers}
-              />
-            </Card>
-
-            {/* Day Financial & Impulse Reframe */}
-            <Card pad={22}>
-              <Title hint="Impulses paused vs indulged on this day">
-                Day impulse summary
-              </Title>
-              <div className="flex items-baseline justify-between mb-3">
-                <div>
-                  <span style={{ fontFamily: HEAD, fontSize: 32, color: KEPT }}>
-                    {fmt(stats.kept)}
-                  </span>
-                  <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                    kept today
-                  </span>
-                </div>
-                <div>
-                  <span style={{ fontFamily: HEAD, fontSize: 24, color: SPENT }}>
-                    {fmt(stats.spent)}
-                  </span>
-                  <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                    spent
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex w-full rounded-full overflow-hidden" style={{ height: 10, background: EMPTY }}>
-                <div style={{ width: `${(stats.kept / barTotal) * 100}%`, background: KEPT }} />
-                <div style={{ width: `${(stats.spent / barTotal) * 100}%`, background: SPENT }} />
-              </div>
-
-              <div className="flex justify-between items-center mt-3 text-xs" style={{ fontFamily: BODY, color: INK_SOFT }}>
-                <span>{stats.keptN} impulses diverted</span>
-                <span>{stats.spentN} bought</span>
-              </div>
-            </Card>
-
-            {/* Day Reflections & Logged Urge Notes */}
-            {dayFlowers.length > 0 ? (
-              <Card pad={20}>
-                <Title hint="Logged urges, decisions & thoughts on this day">
-                  Today's reflections ({dayFlowers.length})
-                </Title>
-                <div className="flex flex-col gap-3">
-                  {dayFlowers.map((f) => {
-                    const isItemSpent = isSpent(f);
-                    const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
-                    const emColor = resolveEmotionRgb(f.emotion) || [106, 181, 169];
-                    const cat = categoryOf(f);
-                    const refText = f.reflection || f.buyingReason || f.compostReason;
-
-                    return (
-                      <div
-                        key={f.id}
-                        className="p-3.5 rounded-2xl flex flex-col gap-2"
-                        style={{
-                          background: "rgba(28,46,42,0.03)",
-                          border: `1px solid ${BORDER}`,
-                        }}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span style={{ fontFamily: BODY, fontSize: 16, fontWeight: 600, color: INK }}>
-                              {f.itemName || cat || "Impulse"}
-                            </span>
-                            <span
-                              className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                              style={{
-                                background: isItemSpent ? "rgba(181,131,106,0.15)" : "rgba(47,107,94,0.12)",
-                                color: isItemSpent ? SPENT : KEPT,
-                              }}
-                            >
-                              {isItemSpent ? "Bought" : "Let go"}
-                            </span>
-                          </div>
-                          <span style={{ fontFamily: HEAD, fontSize: 20, color: INK }}>
-                            {fmt(Number(f.amount) || 0)}
-                          </span>
-                        </div>
-
-                        {refText && (
-                          <p
-                            style={{
-                              fontFamily: BODY,
-                              fontSize: 14,
-                              color: INK_SOFT,
-                              fontStyle: "italic",
-                              lineHeight: 1.45,
-                            }}
-                          >
-                            "{refText}"
-                          </p>
-                        )}
-
-                        <div className="flex items-center justify-between text-xs pt-1 border-t border-[rgba(28,46,42,0.05)]" style={{ fontFamily: BODY, color: INK_SOFT }}>
-                          <span className="flex items-center gap-1.5">
-                            <i style={{ width: 8, height: 8, borderRadius: "50%", background: rgbStr(emColor) }} />
-                            {emName || "Impulse"} · {cat}
-                          </span>
-                          <span>
-                            {new Date(f.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-            ) : (
-              <Card pad={20}>
-                <Title hint="Mindful pause">Today's reflections</Title>
-                <p style={{ fontFamily: BODY, fontSize: 15, color: INK_SOFT, textAlign: "center", padding: "16px 0" }}>
-                  No urges logged on this day. You kept all your money and time.
-                </p>
-              </Card>
-            )}
-
-            {/* Day Hourly Pulse */}
-            {dayFlowers.length > 0 && (
-              <Card pad={20}>
-                <Title hint="When urges surfaced today">Hourly pulse</Title>
-                <div className="flex flex-col gap-3">
-                  {timeBuckets.map((t) => (
-                    <div key={t.label}>
-                      <div className="flex items-baseline justify-between">
-                        <span style={{ fontFamily: BODY, fontSize: 15, color: INK }}>
-                          {t.label} <span style={{ fontSize: 13, color: INK_SOFT }}>({t.range})</span>
-                        </span>
-                        <span style={{ fontFamily: HEAD, fontSize: 17, color: INK }}>
-                          {t.count} · {fmt(t.amount)}
-                        </span>
-                      </div>
-                      <div className="w-full rounded-full overflow-hidden mt-1.5" style={{ height: 6, background: EMPTY }}>
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${(t.count / maxTime) * 100}%`,
-                            background: t.count > 0 ? KEPT : INK_FAINT,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Card>
-            )}
-          </>
-        )}
-
-        {/* ── WEEK VIEW ──────────────────────────────────────────────────────── */}
-        {timeScope === "week" && (
-          <>
-            {/* Week Summary Hero */}
-            <Card pad={24}>
-              <div className="flex items-center justify-between">
-                <p style={{ fontFamily: BODY, fontSize: 16, color: INK_SOFT }}>Let go this week</p>
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
-                  style={{
-                    background: "rgba(47,107,94,0.12)",
-                    color: KEPT,
-                    fontFamily: BODY,
-                  }}
-                >
-                  <Zap size={12} />
-                  {fmtWork(weekKeptHours)} of work saved
-                </span>
-              </div>
-
-              <p style={{ fontFamily: HEAD, fontSize: 52, lineHeight: 1.05, color: KEPT, marginTop: 4 }}>
-                {fmt(stats.kept)}
-              </p>
-              <p style={{ fontFamily: BODY, fontSize: 15, color: INK, marginTop: 4 }}>
-                {stats.total} urges paused · {stats.plannedPct}% planned
-              </p>
-
-              <div className="flex w-full rounded-full overflow-hidden mt-5" style={{ height: 10, background: EMPTY }}>
-                <div style={{ width: `${(stats.kept / barTotal) * 100}%`, background: KEPT }} />
-                <div style={{ width: `${(stats.spent / barTotal) * 100}%`, background: SPENT }} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-5">
-                <div className="p-3.5 rounded-2xl" style={{ background: "rgba(47,107,94,0.05)", border: "1px solid rgba(47,107,94,0.12)" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: KEPT, fontFamily: BODY }}>
-                      <ArrowUpRight size={14} /> Let go
-                    </span>
-                    <span className="text-[11px] opacity-75" style={{ fontFamily: BODY, color: KEPT }}>
-                      +{weekKeptHours}h
-                    </span>
-                  </div>
-                  <p style={{ fontFamily: HEAD, fontSize: 24, color: INK, marginTop: 4 }}>{fmt(stats.kept)}</p>
-                  <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>{stats.keptN} diverted</p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl" style={{ background: "rgba(181,131,106,0.08)", border: "1px solid rgba(181,131,106,0.15)" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: SPENT, fontFamily: BODY }}>
-                      <ArrowDownRight size={14} /> Bought
-                    </span>
-                    <span className="text-[11px] opacity-75" style={{ fontFamily: BODY, color: SPENT }}>
-                      -{weekSpentHours}h
-                    </span>
-                  </div>
-                  <p style={{ fontFamily: HEAD, fontSize: 24, color: INK, marginTop: 4 }}>{fmt(stats.spent)}</p>
-                  <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>{stats.spentN} bought</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Weekly Labor Bar */}
-            <Card pad={22}>
-              <div className="flex items-center justify-between mb-1">
-                <Title hint="Hours of work saved vs traded on micro-indulgences">
-                  Weekly labor bar
-                </Title>
-                <span
-                  className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{
-                    background: "rgba(28,46,42,0.06)",
-                    color: INK,
-                    fontFamily: BODY,
-                  }}
-                >
-                  @ ₹{hourlyWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr
-                </span>
-              </div>
-
-              <div className="flex items-baseline justify-between mb-2">
-                <div>
-                  <span style={{ fontFamily: HEAD, fontSize: 28, color: KEPT }}>
-                    {weekKeptHours}h
-                  </span>
-                  <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                    life preserved
-                  </span>
-                </div>
-                <div>
-                  <span style={{ fontFamily: HEAD, fontSize: 20, color: SPENT }}>
-                    {weekSpentHours}h
-                  </span>
-                  <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                    traded away
-                  </span>
-                </div>
-              </div>
-
-              <div className="w-full rounded-full overflow-hidden flex" style={{ height: 16, background: EMPTY }}>
-                {weekKeptHours > 0 && (
-                  <div
-                    className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
-                    style={{
-                      width: `${weekKeptPct}%`,
-                      background: KEPT,
-                      fontFamily: HEAD,
-                    }}
-                  >
-                    {weekKeptPct > 15 ? `${weekKeptPct}%` : ""}
-                  </div>
-                )}
-                {weekSpentHours > 0 && (
-                  <div
-                    className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
-                    style={{
-                      width: `${100 - weekKeptPct}%`,
-                      background: SPENT,
-                      fontFamily: HEAD,
-                    }}
-                  >
-                    {(100 - weekKeptPct) > 15 ? `${100 - weekKeptPct}%` : ""}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
-                <span>Week saved: {fmt(weekKeptAmt)}</span>
-                <span>{fmt(weekSpentAmt)} spent</span>
-              </div>
-
-              <p style={{ fontFamily: BODY, fontSize: 12.5, color: "rgba(28,46,42,0.55)", lineHeight: 1.5, marginTop: 10 }}>
-                {weekKeptHours >= weekSpentHours
-                  ? "Great week: you're keeping more of your money and time. Every paused urge saves hours of work."
-                  : "You spent more hours of work than you saved this week. Next time, pause and draw before you decide."}
-              </p>
-            </Card>
-
-            {/* 7-Day Day-by-Day Bars */}
-            <Card>
-              <Title hint="Tap any day to focus its date in Day view">7-day breakdown</Title>
-              <WeekBars
-                weekDays={weekDaysData}
-                onSelectDate={(d) => {
-                  setSelectedDate(d);
-                  setSelectedDayNumber(d.getDate());
-                  setTimeScope("day");
-                }}
-              />
-            </Card>
-
-            {/* Week Mood Mix */}
-            {moodMix.length > 0 && (
-              <Card>
-                <Title hint="Emotions guiding your impulses this week">Week's emotional spectrum</Title>
-                <div className="flex flex-wrap gap-x-5 gap-y-3">
-                  {moodMix.map((m) => (
-                    <span key={m.name} className="flex items-center gap-2" style={{ fontFamily: BODY, fontSize: 16, color: INK }}>
-                      <i style={{ width: 14, height: 14, borderRadius: 5, background: rgbStr(m.rgb), display: "inline-block" }} />
-                      {m.name} {m.pct}%
-                    </span>
-                  ))}
-                </div>
-              </Card>
-            )}
-          </>
-        )}
-
-        {/* ── MONTH VIEW ─────────────────────────────────────────────────────── */}
-        {timeScope === "month" && (
-          <>
-            {/* Monthly Summary Hero */}
-            <Card pad={24}>
-              <div className="flex items-center justify-between">
-                <p style={{ fontFamily: BODY, fontSize: 16, color: INK_SOFT }}>Let go this month</p>
-                <span
-                  className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
-                  style={{
-                    background: "rgba(47,107,94,0.12)",
-                    color: KEPT,
-                    fontFamily: BODY,
-                  }}
-                >
-                  <Zap size={12} />
-                  {fmtWork(activeKeptHours)} of work saved
-                </span>
-              </div>
-
-              <p style={{ fontFamily: HEAD, fontSize: 56, lineHeight: 1.05, color: KEPT, marginTop: 4 }}>
-                {fmt(stats.kept)}
-              </p>
-              <p style={{ fontFamily: BODY, fontSize: 15, color: INK, marginTop: 4 }}>
-                {stats.total} urges paused · {stats.plannedPct}% planned
-              </p>
-
-              <div className="flex w-full rounded-full overflow-hidden mt-5" style={{ height: 10, background: EMPTY }}>
-                <div style={{ width: `${(stats.kept / barTotal) * 100}%`, background: KEPT }} />
-                <div style={{ width: `${(stats.spent / barTotal) * 100}%`, background: SPENT }} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-5">
-                <div className="p-3.5 rounded-2xl" style={{ background: "rgba(47,107,94,0.05)", border: "1px solid rgba(47,107,94,0.12)" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: KEPT, fontFamily: BODY }}>
-                      <ArrowUpRight size={14} /> Let go
-                    </span>
-                    <span className="text-[11px] opacity-75" style={{ fontFamily: BODY, color: KEPT }}>
-                      +{activeKeptHours}h
-                    </span>
-                  </div>
-                  <p style={{ fontFamily: HEAD, fontSize: 24, color: INK, marginTop: 4 }}>{fmt(stats.kept)}</p>
-                  <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>{stats.keptN} impulses diverted</p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl" style={{ background: "rgba(181,131,106,0.08)", border: "1px solid rgba(181,131,106,0.15)" }}>
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: SPENT, fontFamily: BODY }}>
-                      <ArrowDownRight size={14} /> Bought
-                    </span>
-                    <span className="text-[11px] opacity-75" style={{ fontFamily: BODY, color: SPENT }}>
-                      -{activeSpentHours}h
-                    </span>
-                  </div>
-                  <p style={{ fontFamily: HEAD, fontSize: 24, color: INK, marginTop: 4 }}>{fmt(stats.spent)}</p>
-                  <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>{stats.spentN} impulses purchased</p>
-                </div>
-              </div>
-            </Card>
-
-            {/* Weekly Labor Bar */}
-            <Card pad={22}>
-              <div className="flex items-center justify-between mb-1">
-                <Title hint="Hours of this week's work saved vs spent on micro-indulgences">
-                  Weekly labor bar
-                </Title>
-                <span
-                  className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
-                  style={{
-                    background: "rgba(28,46,42,0.06)",
-                    color: INK,
-                    fontFamily: BODY,
-                  }}
-                >
-                  @ ₹{hourlyWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr
-                </span>
-              </div>
-
-              <div className="flex items-baseline justify-between mb-2">
-                <div>
-                  <span style={{ fontFamily: HEAD, fontSize: 28, color: KEPT }}>
-                    {weekKeptHours}h
-                  </span>
-                  <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                    of work saved
-                  </span>
-                </div>
-                <div>
-                  <span style={{ fontFamily: HEAD, fontSize: 20, color: SPENT }}>
-                    {weekSpentHours}h
-                  </span>
-                  <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                    traded away
-                  </span>
-                </div>
-              </div>
-
-              <div className="w-full rounded-full overflow-hidden flex" style={{ height: 16, background: EMPTY }}>
-                {weekKeptHours > 0 && (
-                  <div
-                    className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
-                    style={{
-                      width: `${weekKeptPct}%`,
-                      background: KEPT,
-                      fontFamily: HEAD,
-                    }}
-                  >
-                    {weekKeptPct > 15 ? `${weekKeptPct}%` : ""}
-                  </div>
-                )}
-                {weekSpentHours > 0 && (
-                  <div
-                    className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
-                    style={{
-                      width: `${100 - weekKeptPct}%`,
-                      background: SPENT,
-                      fontFamily: HEAD,
-                    }}
-                  >
-                    {(100 - weekKeptPct) > 15 ? `${100 - weekKeptPct}%` : ""}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
-                <span>This week: {fmt(weekKeptAmt)} saved</span>
-                <span>{fmt(weekSpentAmt)} spent</span>
-              </div>
-
-              <p style={{ fontFamily: BODY, fontSize: 12.5, color: "rgba(28,46,42,0.55)", lineHeight: 1.5, marginTop: 10 }}>
-                {weekKeptHours >= weekSpentHours
-                  ? "Great week: you're keeping more of your money and time. Every paused urge saves hours of work."
-                  : "You spent more hours of work than you saved this week. Next time, pause and draw before you decide."}
-              </p>
-            </Card>
-
-            {/* Interactive Mood Calendar with Aesthetic Aura Card at TOP */}
-            <Card>
-              <Title hint="Tap any day below to change the mood aura">
-                Mood this month
-              </Title>
-
-              {/* Aesthetic Downloadable Aura Card at TOP */}
-              <AestheticAuraCard
-                date={selectedCalendarDayData.dateObj}
-                colors={selectedCalendarDayData.colors}
-                flowers={selectedCalendarDayData.flowers}
-              />
-
-              <MoodGradientCalendar
-                days={days}
-                year={year}
-                month={month}
-                selectedDayNumber={selectedDayNumber}
-                onSelectDay={(dayNum) => {
-                  setSelectedDayNumber(dayNum);
-                  const newD = new Date(year, month, dayNum);
-                  setSelectedDate(newD);
-                }}
-              />
-
-              {moodMix.length > 0 && (
-                <div className="flex flex-wrap gap-x-5 gap-y-3 mt-5">
-                  {moodMix.map((m) => (
-                    <span key={m.name} className="flex items-center gap-2" style={{ fontFamily: BODY, fontSize: 16, color: INK }}>
-                      <i style={{ width: 14, height: 14, borderRadius: 5, background: rgbStr(m.rgb), display: "inline-block" }} />
-                      {m.name} {m.pct}%
-                    </span>
-                  ))}
-                </div>
-              )}
-            </Card>
-
-            {/* Daily Money Distribution Bars */}
-            <Card>
-              <Title hint="What you let go vs bought, day by day">Daily money</Title>
-              <DailyBars
-                days={days}
-                year={year}
-                month={month}
-                onSelectDay={(dayNum) => {
-                  setSelectedDayNumber(dayNum);
-                  const newD = new Date(year, month, dayNum);
-                  setSelectedDate(newD);
-                }}
-              />
-            </Card>
-          </>
-        )}
-
-        {/* ── Top Categories ─────────────────────────────────────────────────── */}
-        {topCategories.length > 0 && (
-          <Card>
-            <Title>Top categories</Title>
-            <div className="flex flex-col gap-5">
-              {topCategories.map((c) => (
-                <div key={c.name}>
-                  <div className="flex items-baseline justify-between">
-                    <span style={{ fontFamily: BODY, fontSize: 17, color: INK }}>{c.name}</span>
-                    <span style={{ fontFamily: HEAD, fontSize: 20, color: INK }}>{fmt(c.total)}</span>
-                  </div>
-                  <div className="w-full rounded-full overflow-hidden mt-2" style={{ height: 8, background: EMPTY }}>
-                    <div className="h-full rounded-full" style={{ width: `${c.w}%`, background: INK }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* ── Patterns: When It Happens ───────────────────────────────────────── */}
-        {stats.total > 0 && timeScope === "month" && (
-          <Card>
-            <Title hint={`You want things most in the ${peakTime.label.toLowerCase()} (${peakTime.range})`}>
-              When it happens
-            </Title>
-            <div className="flex flex-col gap-4">
-              {timeBuckets.map((t) => (
-                <div key={t.label}>
-                  <div className="flex items-baseline justify-between">
-                    <span style={{ fontFamily: BODY, fontSize: 17, color: INK }}>
-                      {t.label} <span style={{ fontSize: 14, color: INK_SOFT }}>{t.range}</span>
-                    </span>
-                    <span style={{ fontFamily: HEAD, fontSize: 18, color: INK }}>{t.count} · {fmt(t.amount)}</span>
-                  </div>
-                  <div className="w-full rounded-full overflow-hidden mt-2" style={{ height: 8, background: EMPTY }}>
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${(t.count / maxTime) * 100}%`,
-                        background: t === peakTime ? INK : "rgba(28,46,42,0.3)",
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-6 pt-5 flex flex-col gap-3" style={{ borderTop: `1px solid ${BORDER}`, fontFamily: BODY, fontSize: 17, lineHeight: 1.5, color: INK }}>
-              {topCategories[0] && (
-                <p>
-                  <strong>{topCategories[0].name}</strong> is where most goes: {fmt(topCategories[0].total)} ({Math.round((topCategories[0].total / (topCategories.reduce((s, c) => s + c.total, 0) || 1)) * 100)}% of this period).
-                </p>
-              )}
-              {moodMix[0] && (
-                <p>
-                  <strong>{moodMix[0].name}</strong> is your most common trigger ({moodMix[0].pct}% of moments).
-                </p>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {/* ── Intentions & Settings ─────────────────────────────────────────── */}
-        <Card>
-          <Title hint="Your grounded intentions and work conversion">
-            Your canopy intentions & settings
-          </Title>
-          <div className="flex flex-col gap-3.5">
-            {/* User problem to soften */}
-            <div
-              className="rounded-2xl p-4 flex items-center justify-between"
-              style={{ background: EMPTY }}
-            >
-              <div className="flex-1 mr-2 min-w-0">
-                <p style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Impulse patterns to soften
-                </p>
-                {isEditingProblem ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="text"
-                      value={tempProblem}
-                      onChange={(e) => setTempProblem(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white border border-gray-300 outline-none"
-                      style={{ fontFamily: BODY, fontSize: 14 }}
-                      placeholder="e.g. Late-night scrolling, Stress"
-                      autoFocus
-                    />
-                    <button
-                      onClick={saveProblem}
-                      className="p-2 rounded-lg text-white shrink-0 cursor-pointer"
-                      style={{ background: KEPT }}
-                      title="Save"
-                    >
-                      <Check size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <p style={{ fontFamily: BODY, fontSize: 15, fontWeight: 600, color: INK, marginTop: 2 }}>
-                    {profileProblem || "Late-night scrolling, Sales and discounts"}
-                  </p>
-                )}
-              </div>
-              {!isEditingProblem && (
-                <button
-                  onClick={() => {
-                    setTempProblem(profileProblem || "Late-night scrolling");
-                    setIsEditingProblem(true);
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
-                  style={{
-                    background: CARD,
-                    color: INK,
-                    fontFamily: BODY,
-                    border: `1px solid ${BORDER}`,
-                  }}
-                >
-                  <Edit2 size={12} />
-                  Change
-                </button>
-              )}
-            </div>
-
-            {/* Personal goal to grow */}
-            <div
-              className="rounded-2xl p-4 flex items-center justify-between"
-              style={{ background: EMPTY }}
-            >
-              <div className="flex-1 mr-2 min-w-0">
-                <p style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  Growing money towards
-                </p>
-                {isEditingGoal ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <input
-                      type="text"
-                      value={tempGoal}
-                      onChange={(e) => setTempGoal(e.target.value)}
-                      className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white border border-gray-300 outline-none"
-                      style={{ fontFamily: BODY, fontSize: 14 }}
-                      placeholder="e.g. Dream travel & adventures"
-                      autoFocus
-                    />
-                    <button
-                      onClick={saveGoal}
-                      className="p-2 rounded-lg text-white shrink-0 cursor-pointer"
-                      style={{ background: KEPT }}
-                      title="Save"
-                    >
-                      <Check size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <p style={{ fontFamily: BODY, fontSize: 15, fontWeight: 600, color: FOREST, marginTop: 2 }}>
-                    {profileGoal || "Financial peace of mind"}
-                  </p>
-                )}
-              </div>
-              {!isEditingGoal && (
-                <button
-                  onClick={() => {
-                    setTempGoal(profileGoal || "Financial peace of mind");
-                    setIsEditingGoal(true);
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
-                  style={{
-                    background: CARD,
-                    color: INK,
-                    fontFamily: BODY,
-                    border: `1px solid ${BORDER}`,
-                  }}
-                >
-                  <Edit2 size={12} />
-                  Change
-                </button>
-              )}
-            </div>
-
-            {/* Salary setting */}
-            <div
-              className="rounded-2xl p-4 flex items-center justify-between"
-              style={{ background: EMPTY }}
-            >
-              <div>
-                <p style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>Monthly take-home salary</p>
-                {isEditingWage ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span style={{ fontFamily: HEAD, fontSize: 20, color: INK }}>₹</span>
-                    <input
-                      type="number"
-                      value={tempWage}
-                      onChange={(e) => setTempWage(e.target.value)}
-                      className="w-24 px-2 py-1 rounded-lg text-sm bg-white border border-gray-300 outline-none"
-                      style={{ fontFamily: HEAD, fontSize: 18 }}
-                      placeholder="e.g. 40000"
-                      inputMode="numeric"
-                      autoFocus
-                    />
-                    <button
-                      onClick={saveWage}
-                      className="p-1.5 rounded-lg text-white cursor-pointer"
-                      style={{ background: KEPT }}
-                      title="Save"
-                    >
-                      <Check size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <p style={{ fontFamily: HEAD, fontSize: 22, color: INK, marginTop: 2 }}>
-                      ₹{monthlySalary.toLocaleString("en-IN")}/month
-                    </p>
-                    <p style={{ fontFamily: BODY, fontSize: 12.5, color: INK_SOFT, marginTop: 2 }}>
-                      ≈ ₹{Math.round(monthlySalary / 22).toLocaleString("en-IN")} for each day of work
-                    </p>
-                  </>
-                )}
-              </div>
-              {!isEditingWage && (
-                <button
-                  onClick={() => {
-                    setTempWage(String(monthlySalary));
-                    setIsEditingWage(true);
-                  }}
-                  className="px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-                  style={{
-                    background: CARD,
-                    color: INK,
-                    fontFamily: BODY,
-                    border: `1px solid ${BORDER}`,
-                  }}
-                >
-                  <Edit2 size={12} />
-                  Change
-                </button>
-              )}
-            </div>
-
-            <button
-              onClick={() => {
-                localStorage.removeItem("canopy_onboarded");
-                window.location.href = "/?reboard=1";
+          <Card pad={16}>
+            <AestheticAuraCard
+              date={selectedDate}
+              colors={
+                dayFlowers
+                  .map((f) => resolveEmotionRgb(f.emotion))
+                  .filter((c): c is [number, number, number] => c !== null)
+              }
+              flowers={dayFlowers}
+              drawingCount={dayFlowers.length}
+              scope="day"
+            />
+            <DayScrubber
+              currentDate={selectedDate}
+              onSelectDate={(d) => {
+                setSelectedDate(d);
+                setSelectedDayNumber(d.getDate());
               }}
-              className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100"
-              style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: FOREST }}
+              allFlowers={allFlowers}
+            />
+          </Card>
+        )}
+
+        {timeScope === "week" && (
+          <Card pad={16}>
+            <AestheticAuraCard
+              date={selectedDate}
+              colors={weekColors}
+              flowers={weekFlowers}
+              customTitle={weekRangeTitle}
+              customSubtitle={weekFlowers.length > 0 ? "Weekly Aura" : "Quiet week · Stillness"}
+              drawingCount={weekFlowers.length}
+              scope="week"
+            />
+            <WeekScrubber
+              weekDays={weekDaysData}
+              selectedDate={selectedDate}
+              onSelectDate={(d) => {
+                setSelectedDate(d);
+                setSelectedDayNumber(d.getDate());
+                setTimeScope("day");
+              }}
+            />
+          </Card>
+        )}
+
+        {timeScope === "month" && (
+          <Card pad={16}>
+            {/* Top Month Aura with live drawings badge and reactive preview */}
+            <AestheticAuraCard
+              date={selectedCalendarDayData.dateObj}
+              colors={
+                selectedCalendarDayData.colors.length > 0
+                  ? selectedCalendarDayData.colors
+                  : monthColors
+              }
+              flowers={
+                selectedCalendarDayData.flowers.length > 0
+                  ? selectedCalendarDayData.flowers
+                  : monthFlowers
+              }
+              customTitle={
+                selectedCalendarDayData.count > 0
+                  ? `${selectedCalendarDayData.day} ${selectedDate.toLocaleDateString("en-US", { month: "short" })} ${year}`
+                  : `${selectedDate.toLocaleDateString("en-US", { month: "long" })} ${year}`
+              }
+              customSubtitle={
+                selectedCalendarDayData.count > 0
+                  ? `${selectedCalendarDayData.count} ${selectedCalendarDayData.count === 1 ? "drawing" : "drawings"} on this day`
+                  : "Monthly Aura"
+              }
+              drawingCount={monthFlowers.length}
+              scope="month"
+            />
+
+            {/* Month Calendar Design directly below Aura */}
+            <MoodGradientCalendar
+              days={days}
+              year={year}
+              month={month}
+              selectedDayNumber={safeSelectedDayNumber}
+              onSelectDay={(dayNum) => {
+                setSelectedDayNumber(dayNum);
+                const newD = new Date(year, month, dayNum);
+                setSelectedDate(newD);
+              }}
+            />
+          </Card>
+        )}
+
+        {/* ── 2. STATISTICAL SUMMARY & DISTRIBUTION (FOREST-STYLE) ───────────── */}
+        {timeScope === "month" && (
+          <Card pad={20}>
+            <div className="flex items-center justify-between mb-1">
+              <Title hint="Total money and work time preserved across the month">
+                Diverted Spending & Time Distribution
+              </Title>
+              <span
+                className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+                style={{
+                  background: "rgba(47,107,94,0.12)",
+                  color: KEPT,
+                  fontFamily: BODY,
+                }}
+              >
+                <Zap size={12} />
+                {fmtWork(activeKeptHours)} saved
+              </span>
+            </div>
+
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <span style={{ fontFamily: HEAD, fontSize: 34, color: KEPT }}>
+                  {fmt(stats.kept)}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                  diverted ({stats.keptN} impulses)
+                </span>
+              </div>
+              <div>
+                <span style={{ fontFamily: HEAD, fontSize: 22, color: SPENT }}>
+                  {fmt(stats.spent)}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                  spent
+                </span>
+              </div>
+            </div>
+
+            <DailyBars
+              days={days}
+              year={year}
+              month={month}
+              onSelectDay={(dayNum) => {
+                setSelectedDayNumber(dayNum);
+                const newD = new Date(year, month, dayNum);
+                setSelectedDate(newD);
+              }}
+            />
+          </Card>
+        )}
+
+        {timeScope === "week" && (
+          <Card pad={20}>
+            <div className="flex items-center justify-between mb-1">
+              <Title hint="Money and work time preserved across the 7 days">
+                Diverted Spending & Time Distribution
+              </Title>
+              <span
+                className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+                style={{
+                  background: "rgba(47,107,94,0.12)",
+                  color: KEPT,
+                  fontFamily: BODY,
+                }}
+              >
+                <Zap size={12} />
+                {fmtWork(weekKeptHours)} saved
+              </span>
+            </div>
+
+            <div className="flex items-baseline justify-between mb-4">
+              <div>
+                <span style={{ fontFamily: HEAD, fontSize: 34, color: KEPT }}>
+                  {fmt(stats.kept)}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                  diverted ({stats.keptN} impulses)
+                </span>
+              </div>
+              <div>
+                <span style={{ fontFamily: HEAD, fontSize: 22, color: SPENT }}>
+                  {fmt(stats.spent)}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                  spent
+                </span>
+              </div>
+            </div>
+
+            <WeekBars
+              weekDays={weekDaysData}
+              onSelectDate={(d) => {
+                setSelectedDate(d);
+                setSelectedDayNumber(d.getDate());
+                setTimeScope("day");
+              }}
+            />
+          </Card>
+        )}
+
+        {timeScope === "day" && (
+          <Card pad={22}>
+            <Title hint="Impulses paused vs indulged on this day">
+              Day impulse summary
+            </Title>
+            <div className="flex items-baseline justify-between mb-3">
+              <div>
+                <span style={{ fontFamily: HEAD, fontSize: 32, color: KEPT }}>
+                  {fmt(stats.kept)}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                  kept today
+                </span>
+              </div>
+              <div>
+                <span style={{ fontFamily: HEAD, fontSize: 24, color: SPENT }}>
+                  {fmt(stats.spent)}
+                </span>
+                <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                  spent
+                </span>
+              </div>
+            </div>
+
+            <div className="flex w-full rounded-full overflow-hidden" style={{ height: 10, background: EMPTY }}>
+              <div style={{ width: `${(stats.kept / barTotal) * 100}%`, background: KEPT }} />
+              <div style={{ width: `${(stats.spent / barTotal) * 100}%`, background: SPENT }} />
+            </div>
+
+            <div className="flex justify-between items-center mt-3 text-xs" style={{ fontFamily: BODY, color: INK_SOFT }}>
+              <span>{stats.keptN} impulses diverted</span>
+              <span>{stats.spentN} bought</span>
+            </div>
+          </Card>
+        )}
+
+        {/* ── 3. MOST VULNERABLE DAY OF THE WEEK (FOREST-STYLE LINE CHART) ──── */}
+        <VulnerableDayOfWeekChart allFlowers={allFlowers} />
+
+        {/* ── 4. PEAK IMPULSE PERIOD OF THE DAY (FOREST-STYLE 24H AREA CHART) ── */}
+        <PeakPeriodOfDayChart allFlowers={allFlowers} />
+
+        {/* ── 5. TAG & CATEGORY DISTRIBUTION (FOREST-STYLE DONUT CHART) ──────── */}
+        <CategoryDonutChart flowers={activeFlowers} />
+
+        {/* ── 6. EMOTIONAL SPECTRUM & DRIVERS ─────────────────────────────────── */}
+        {moodMix.length > 0 && (
+          <Card pad={20}>
+            <Title hint="Dominant emotional states triggering your desires">
+              Emotional drivers & spectrum
+            </Title>
+            <div className="flex flex-wrap gap-x-3 gap-y-2.5">
+              {moodMix.map((m) => (
+                <span
+                  key={m.name}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
+                  style={{
+                    fontFamily: BODY,
+                    background: "rgba(28,46,42,0.03)",
+                    border: `1px solid ${BORDER}`,
+                    color: INK,
+                  }}
+                >
+                  <i
+                    style={{
+                      width: 11,
+                      height: 11,
+                      borderRadius: 4,
+                      background: rgbStr(m.rgb),
+                      display: "inline-block",
+                    }}
+                  />
+                  <span>{m.name}</span>
+                  <strong style={{ fontFamily: HEAD, fontSize: 16 }}>{m.pct}%</strong>
+                  <span style={{ color: INK_SOFT, fontSize: 12 }}>({m.count})</span>
+                </span>
+              ))}
+            </div>
+            {moodMix[0] && (
+              <p
+                style={{
+                  fontFamily: BODY,
+                  fontSize: 13,
+                  color: INK_SOFT,
+                  marginTop: 14,
+                  lineHeight: 1.5,
+                }}
+              >
+                Primary impulse trigger: <strong style={{ color: INK }}>{moodMix[0].name}</strong>, accounting for {moodMix[0].pct}% of all logged moments in this period.
+              </p>
+            )}
+          </Card>
+        )}
+
+        {/* ── 7. FAVORITE IMPULSE SPECIES (FOREST-STYLE RANKED HABITS) ───────── */}
+        <FavoriteImpulsesCard flowers={activeFlowers} />
+
+        {/* ── 8. LABOR & VALUE BALANCE ────────────────────────────────────────── */}
+        <Card pad={22}>
+          <div className="flex items-center justify-between mb-1">
+            <Title hint="Hours of work saved vs traded on micro-indulgences">
+              Labor & value balance
+            </Title>
+            <span
+              className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+              style={{
+                background: "rgba(28,46,42,0.06)",
+                color: INK,
+                fontFamily: BODY,
+              }}
             >
-              Revisit onboarding journey
-            </button>
-            <button onClick={exportData} className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100" style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: INK }}>
-              Export my data
-            </button>
-            <button onClick={() => setConfirmReset(true)} className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100" style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: SPENT }}>
-              Reset all data
-            </button>
+              @ ₹{hourlyWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr
+            </span>
+          </div>
+
+          <div className="flex items-baseline justify-between mb-2">
+            <div>
+              <span style={{ fontFamily: HEAD, fontSize: 28, color: KEPT }}>
+                {activeKeptHours}h
+              </span>
+              <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                life preserved
+              </span>
+            </div>
+            <div>
+              <span style={{ fontFamily: HEAD, fontSize: 20, color: SPENT }}>
+                {activeSpentHours}h
+              </span>
+              <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
+                traded away
+              </span>
+            </div>
+          </div>
+
+          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 16, background: EMPTY }}>
+            {activeKeptHours > 0 && (
+              <div
+                className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{
+                  width: `${(activeKeptHours / (activeKeptHours + activeSpentHours || 0.01)) * 100}%`,
+                  background: KEPT,
+                  fontFamily: HEAD,
+                }}
+              >
+                {Math.round((activeKeptHours / (activeKeptHours + activeSpentHours || 0.01)) * 100)}%
+              </div>
+            )}
+            {activeSpentHours > 0 && (
+              <div
+                className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
+                style={{
+                  width: `${(activeSpentHours / (activeKeptHours + activeSpentHours || 0.01)) * 100}%`,
+                  background: SPENT,
+                  fontFamily: HEAD,
+                }}
+              >
+                {Math.round((activeSpentHours / (activeKeptHours + activeSpentHours || 0.01)) * 100)}%
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
+            <span>Saved: {fmt(stats.kept)}</span>
+            <span>Spent: {fmt(stats.spent)}</span>
           </div>
         </Card>
+
+        {/* ── 9. DAY REFLECTIONS (FOR DAY VIEW ONLY) ───────────────────────────── */}
+        {timeScope === "day" && dayFlowers.length > 0 && (
+          <Card pad={20}>
+            <Title hint="Logged urges, decisions & thoughts on this day">
+              Today's reflections ({dayFlowers.length})
+            </Title>
+            <div className="flex flex-col gap-3">
+              {dayFlowers.map((f) => {
+                const isItemSpent = isSpent(f);
+                const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
+                const emColor = resolveEmotionRgb(f.emotion) || [106, 181, 169];
+                const cat = categoryOf(f);
+                const refText = f.reflection || f.buyingReason || f.compostReason;
+
+                return (
+                  <div
+                    key={f.id}
+                    className="p-3.5 rounded-2xl flex flex-col gap-2"
+                    style={{
+                      background: "rgba(28,46,42,0.03)",
+                      border: `1px solid ${BORDER}`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span style={{ fontFamily: BODY, fontSize: 16, fontWeight: 600, color: INK }}>
+                          {f.itemName || cat || "Impulse"}
+                        </span>
+                        <span
+                          className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                          style={{
+                            background: isItemSpent ? "rgba(181,131,106,0.15)" : "rgba(47,107,94,0.12)",
+                            color: isItemSpent ? SPENT : KEPT,
+                          }}
+                        >
+                          {isItemSpent ? "Bought" : "Let go"}
+                        </span>
+                      </div>
+                      <span style={{ fontFamily: HEAD, fontSize: 20, color: INK }}>
+                        {fmt(Number(f.amount) || 0)}
+                      </span>
+                    </div>
+
+                    {refText && (
+                      <p
+                        style={{
+                          fontFamily: BODY,
+                          fontSize: 14,
+                          color: INK_SOFT,
+                          fontStyle: "italic",
+                          lineHeight: 1.45,
+                        }}
+                      >
+                        "{refText}"
+                      </p>
+                    )}
+
+                    <div
+                      className="flex items-center justify-between text-xs pt-1 border-t border-[rgba(28,46,42,0.05)]"
+                      style={{ fontFamily: BODY, color: INK_SOFT }}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <i
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: rgbStr(emColor),
+                          }}
+                        />
+                        {emName || "Impulse"} · {cat}
+                      </span>
+                      <span>
+                        {new Date(f.date).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
       </div>
+
+      {/* ── Settings Modal (Slide-up modal from header gear button) ─────────── */}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        userName={profileName}
+        onSaveName={(n) => {
+          setProfileName(n);
+          localStorage.setItem("userName", n);
+        }}
+        monthlySalary={monthlySalary}
+        onSaveSalary={(s) => {
+          const hw = Math.round((s / 22 / 8) * 100) / 100;
+          setMonthlySalary(s);
+          setHourlyWage(hw);
+          localStorage.setItem("userMonthlySalary", String(s));
+          localStorage.setItem("userHourlyWage", String(hw));
+        }}
+        profileProblem={profileProblem}
+        onSaveProblem={(p) => {
+          setProfileProblem(p);
+          localStorage.setItem("userSpendingProblem", p);
+        }}
+        profileGoal={profileGoal}
+        onSaveGoal={(g) => {
+          setProfileGoal(g);
+          localStorage.setItem("userPersonalGoal", g);
+        }}
+        onExportData={exportData}
+        onResetData={() => {
+          setShowSettings(false);
+          setConfirmReset(true);
+        }}
+      />
 
       {/* ── Confirmation Modal ──────────────────────────────────────────────── */}
       {confirmReset && (
