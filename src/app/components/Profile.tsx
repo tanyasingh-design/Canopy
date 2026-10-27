@@ -249,14 +249,11 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
   const c1Light = lightenRgb(c1, 0.40);
   const c1UltraLight = lightenRgb(c1, 0.75);
 
-  // Single emotion color:
-  // The semi-circle rising from the bottom is ENTIRELY of the emotion color (solid, radiant, zero hollow/white ring, zero black)
-  // Anchored strictly at 50% 100% (bottom center) with no top glow to ensure 0 orange line or bleed at the top
   if (uniqueColors.length === 1) {
     return {
       background: `
-        /* 1. Solid radiant semi-circle dome entirely of emotion color rising from the bottom */
-        radial-gradient(ellipse 115% 82% at 50% 100%,
+        /* 1. Solid radiant semi-circle dome rising from bottom center */
+        radial-gradient(circle 70% at 50% 100%,
           ${rgbStr(c1, 0.94)} 0%,
           ${rgbStr(c1, 0.90)} 35%,
           ${rgbStr(c1, 0.78)} 52%,
@@ -271,21 +268,21 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
     };
   }
 
-  // 2+ emotions logged: Dual semi-circle domes blending across the bottom
+  // 2+ emotions logged: Dual circular domes matching opened card exactly
   const c2 = uniqueColors[1];
   const c2Light = lightenRgb(c2, 0.40);
   const c2UltraLight = lightenRgb(c2, 0.75);
   return {
     background: `
-      /* Emotion 1 semi-circle (bottom-left) */
-      radial-gradient(ellipse 95% 80% at 32% 100%,
+      /* Emotion 1 circular dome (bottom-left) */
+      radial-gradient(circle 65% at 30% 100%,
         ${rgbStr(c1, 0.92)} 0%,
         ${rgbStr(c1, 0.82)} 35%,
         ${rgbStr(c1Light, 0.45)} 68%,
         ${rgbStr(c1UltraLight, 0)} 95%
       ),
-      /* Emotion 2 semi-circle (bottom-right) */
-      radial-gradient(ellipse 95% 80% at 68% 100%,
+      /* Emotion 2 circular dome (bottom-right) */
+      radial-gradient(circle 65% at 70% 100%,
         ${rgbStr(c2, 0.92)} 0%,
         ${rgbStr(c2, 0.82)} 35%,
         ${rgbStr(c2Light, 0.45)} 68%,
@@ -296,6 +293,104 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
     `,
     backgroundRepeat: "no-repeat",
   };
+}
+
+// ── Shared Base Aura Gradient & Tactile Grain (100% Identical in Preview & Opened Card) ──
+function drawAuraBase(
+  ctx: CanvasRenderingContext2D,
+  W: number,
+  H: number,
+  colors: [number, number, number][]
+) {
+  const uniqueColors: [number, number, number][] = [];
+  const seenColors = new Set<string>();
+  colors.forEach((c) => {
+    if (!c) return;
+    const k = `${c[0]},${c[1]},${c[2]}`;
+    if (!seenColors.has(k)) {
+      seenColors.add(k);
+      uniqueColors.push(c);
+    }
+  });
+
+  // 1. Linen cream paper base
+  const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+  baseGrad.addColorStop(0, "#FAF9F6");
+  baseGrad.addColorStop(1, "#F5F3EC");
+  ctx.fillStyle = baseGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  if (uniqueColors.length === 1) {
+    const c1 = uniqueColors[0];
+    const c1Light = lightenRgb(c1, 0.40);
+    const c1UltraLight = lightenRgb(c1, 0.75);
+
+    const r = Math.min(W * 0.70, H * 0.72);
+    const gDome = ctx.createRadialGradient(W * 0.5, H, 10, W * 0.5, H, r);
+    gDome.addColorStop(0, rgbStr(c1, 0.94));
+    gDome.addColorStop(0.35, rgbStr(c1, 0.90));
+    gDome.addColorStop(0.52, rgbStr(c1, 0.78));
+    gDome.addColorStop(0.70, rgbStr(c1Light, 0.46));
+    gDome.addColorStop(0.86, rgbStr(c1UltraLight, 0.16));
+    gDome.addColorStop(1, rgbStr(c1UltraLight, 0));
+    ctx.fillStyle = gDome;
+    ctx.fillRect(0, 0, W, H);
+  } else if (uniqueColors.length >= 2) {
+    const c1 = uniqueColors[0];
+    const c2 = uniqueColors[1];
+    const c1Light = lightenRgb(c1, 0.40);
+    const c1UltraLight = lightenRgb(c1, 0.75);
+    const c2Light = lightenRgb(c2, 0.40);
+    const c2UltraLight = lightenRgb(c2, 0.75);
+
+    // Keep dome height constrained to ~68% of H so the top area is always clean linen cream paper
+    const r = Math.min(W * 0.52, H * 0.68);
+
+    const g1 = ctx.createRadialGradient(W * 0.30, H, 10, W * 0.30, H, r);
+    g1.addColorStop(0, rgbStr(c1, 0.92));
+    g1.addColorStop(0.35, rgbStr(c1, 0.82));
+    g1.addColorStop(0.68, rgbStr(c1Light, 0.45));
+    g1.addColorStop(1, rgbStr(c1UltraLight, 0));
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, W, H);
+
+    const g2 = ctx.createRadialGradient(W * 0.70, H, 10, W * 0.70, H, r);
+    g2.addColorStop(0, rgbStr(c2, 0.92));
+    g2.addColorStop(0.35, rgbStr(c2, 0.82));
+    g2.addColorStop(0.68, rgbStr(c2Light, 0.45));
+    g2.addColorStop(1, rgbStr(c2UltraLight, 0));
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // 2. Ultra-Fine Tactile Film Grain Texture
+  const noiseCanvas = document.createElement("canvas");
+  noiseCanvas.width = 360;
+  noiseCanvas.height = 360;
+  const nCtx = noiseCanvas.getContext("2d");
+  if (nCtx) {
+    const imgData = nCtx.createImageData(360, 360);
+    const buf = imgData.data;
+    for (let i = 0; i < buf.length; i += 4) {
+      const v = Math.floor(Math.random() * 255);
+      buf[i] = v;
+      buf[i + 1] = v;
+      buf[i + 2] = v;
+      buf[i + 3] = 7;
+    }
+    nCtx.putImageData(imgData, 0, 0);
+
+    ctx.save();
+    ctx.globalCompositeOperation = "multiply";
+    const pattern = ctx.createPattern(noiseCanvas, "repeat");
+    if (pattern) {
+      ctx.fillStyle = pattern;
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      ctx.drawImage(noiseCanvas, 0, 0, W, H);
+    }
+    ctx.restore();
+  }
 }
 
 // ── Text Wrapping Helper for Canvas ──────────────────────────────────────────
@@ -386,99 +481,8 @@ async function generateHighResAuraCard({
     }
   });
 
-  // Deduplicate colors to distinct logged emotion colors
-  const uniqueColors: [number, number, number][] = [];
-  const seenColors = new Set<string>();
-  colors.forEach((c) => {
-    if (!c) return;
-    const k = `${c[0]},${c[1]},${c[2]}`;
-    if (!seenColors.has(k)) {
-      seenColors.add(k);
-      uniqueColors.push(c);
-    }
-  });
-
-  // 1. Base Layer (Solid Halo Semi-Circle dome entirely of emotion color)
-  if (uniqueColors.length === 0) {
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F5F3EC");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-  } else if (uniqueColors.length === 1) {
-    const c1 = uniqueColors[0];
-    const c1Light = lightenRgb(c1, 0.40);
-    const c1UltraLight = lightenRgb(c1, 0.75);
-
-    // Warm linen paper base
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F5F3EC");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Semi-circle dome ENTIRELY of the emotion color (solid from center, feathering into lighter tint, ZERO white ring, ZERO black)
-    const gDome = ctx.createRadialGradient(W * 0.5, H, 10, W * 0.5, H, W * 0.88);
-    gDome.addColorStop(0, rgbStr(c1, 0.94));
-    gDome.addColorStop(0.35, rgbStr(c1, 0.90));
-    gDome.addColorStop(0.52, rgbStr(c1, 0.78));
-    gDome.addColorStop(0.70, rgbStr(c1Light, 0.46));
-    gDome.addColorStop(0.86, rgbStr(c1UltraLight, 0.16));
-    gDome.addColorStop(1, rgbStr(c1UltraLight, 0));
-    ctx.fillStyle = gDome;
-    ctx.fillRect(0, 0, W, H);
-  } else {
-    // 2+ emotions logged: Dual semi-circle domes blending across the bottom
-    const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1];
-    const c1Light = lightenRgb(c1, 0.40);
-    const c1UltraLight = lightenRgb(c1, 0.75);
-    const c2Light = lightenRgb(c2, 0.40);
-    const c2UltraLight = lightenRgb(c2, 0.75);
-
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F5F3EC");
-    ctx.fillStyle = baseGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    const g1 = ctx.createRadialGradient(W * 0.32, H, 10, W * 0.32, H, W * 0.75);
-    g1.addColorStop(0, rgbStr(c1, 0.92));
-    g1.addColorStop(0.35, rgbStr(c1, 0.82));
-    g1.addColorStop(0.68, rgbStr(c1Light, 0.45));
-    g1.addColorStop(1, rgbStr(c1UltraLight, 0));
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
-
-    const g2 = ctx.createRadialGradient(W * 0.68, H, 10, W * 0.68, H, W * 0.75);
-    g2.addColorStop(0, rgbStr(c2, 0.92));
-    g2.addColorStop(0.35, rgbStr(c2, 0.82));
-    g2.addColorStop(0.68, rgbStr(c2Light, 0.45));
-    g2.addColorStop(1, rgbStr(c2UltraLight, 0));
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
-  }
-
-  // 2. Ultra-Fine Tactile Film Grain Texture (1:1 micro pixels)
-  const noiseCanvas = document.createElement("canvas");
-  noiseCanvas.width = 720;
-  noiseCanvas.height = 900;
-  const nCtx = noiseCanvas.getContext("2d")!;
-  const imgData = nCtx.createImageData(720, 900);
-  const buf = imgData.data;
-  for (let i = 0; i < buf.length; i += 4) {
-    const v = Math.floor(Math.random() * 255);
-    buf[i] = v;
-    buf[i + 1] = v;
-    buf[i + 2] = v;
-    buf[i + 3] = 7; // very soft and fine
-  }
-  nCtx.putImageData(imgData, 0, 0);
-
-  ctx.save();
-  ctx.globalCompositeOperation = "multiply";
-  ctx.drawImage(noiseCanvas, 0, 0, W, H);
-  ctx.restore();
+  // 1 & 2. Draw unified Base Aura (linen cream + emotion dome(s) + film grain)
+  drawAuraBase(ctx, W, H, colors);
 
   // 3. Clean Minimalist Top Header (NO border lines, NO divider lines)
   ctx.save();
@@ -568,6 +572,7 @@ function AestheticAuraCard({
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const hasColors = colors.length > 0;
   const count = drawingCount !== undefined ? drawingCount : flowers?.length || 0;
 
@@ -577,6 +582,33 @@ function AestheticAuraCard({
         background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
         backgroundRepeat: "no-repeat",
       };
+
+  // Render identical base aura canvas on preview card
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const render = () => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
+      const W = Math.round((rect.width || 360) * dpr);
+      const H = Math.round((rect.height || 140) * dpr);
+      if (W === 0 || H === 0) return;
+      canvas.width = W;
+      canvas.height = H;
+      drawAuraBase(ctx, W, H, colors);
+    };
+
+    render();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(() => render());
+      ro.observe(canvas);
+      return () => ro.disconnect();
+    }
+  }, [colors]);
 
   const dayNum = date.getDate();
   const monthName = date.toLocaleDateString("en-US", { month: "short" });
@@ -660,15 +692,11 @@ function AestheticAuraCard({
         }}
         title="Tap to preview or save aesthetic art card"
       >
-        {/* Authentic Fine Fractal Noise Texture */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: NOISE_DATA_URI,
-            backgroundRepeat: "repeat",
-            opacity: 0.08,
-            mixBlendMode: "multiply",
-          }}
+        {/* Render Canvas background for 100% identical look to opened card */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ borderRadius: "inherit" }}
         />
 
         {/* Aesthetic Content Overlay */}
