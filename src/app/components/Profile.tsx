@@ -2280,7 +2280,7 @@ export function Profile() {
             >
               <div className="flex-1 mr-2 min-w-0">
                 <p style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  🛡️ Impulse pattern to soften
+                  Impulse patterns to soften
                 </p>
                 {isEditingProblem ? (
                   <div className="flex items-center gap-2 mt-1">
@@ -2290,7 +2290,7 @@ export function Profile() {
                       onChange={(e) => setTempProblem(e.target.value)}
                       className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white border border-gray-300 outline-none"
                       style={{ fontFamily: BODY, fontSize: 14 }}
-                      placeholder="e.g. Late-night scrolling"
+                      placeholder="e.g. Late-night scrolling, Stress"
                       autoFocus
                     />
                     <button
@@ -2304,7 +2304,7 @@ export function Profile() {
                   </div>
                 ) : (
                   <p style={{ fontFamily: BODY, fontSize: 15, fontWeight: 600, color: INK, marginTop: 2 }}>
-                    {profileProblem || "Late-night scrolling & impulse shopping"}
+                    {profileProblem || "Late-night scrolling, Sales and discounts"}
                   </p>
                 )}
               </div>
@@ -2335,7 +2335,7 @@ export function Profile() {
             >
               <div className="flex-1 mr-2 min-w-0">
                 <p style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                  🌱 Growing money towards
+                  Growing money towards
                 </p>
                 {isEditingGoal ? (
                   <div className="flex items-center gap-2 mt-1">
@@ -2451,7 +2451,7 @@ export function Profile() {
               className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100"
               style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: FOREST }}
             >
-              🌱 Revisit Onboarding Journey
+              Revisit onboarding journey
             </button>
             <button onClick={exportData} className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100" style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: INK }}>
               Export my data

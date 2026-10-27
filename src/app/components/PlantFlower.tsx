@@ -120,9 +120,26 @@ export function PlantFlower() {
   // Onboarded user intentions
   const userName = localStorage.getItem("userName") || "";
   const userProblem = localStorage.getItem("userSpendingProblem") || "";
-  const userProblemKey = localStorage.getItem("userSpendingProblemKey") || "";
   const userGoal = localStorage.getItem("userPersonalGoal") || "";
   const monthlySalary = parseFloat(localStorage.getItem("userMonthlySalary") || "0");
+
+  const userProblemKeys: string[] = useMemo(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("userSpendingProblemKeys") || "[]");
+      if (Array.isArray(raw) && raw.length > 0) return raw;
+    } catch {}
+    const single = localStorage.getItem("userSpendingProblemKey");
+    return single ? [single] : [];
+  }, []);
+
+  const userProblemsList: string[] = useMemo(() => {
+    try {
+      const raw = JSON.parse(localStorage.getItem("userSpendingProblems") || "[]");
+      if (Array.isArray(raw) && raw.length > 0) return raw;
+    } catch {}
+    const single = localStorage.getItem("userSpendingProblem");
+    return single ? [single] : [];
+  }, []);
 
   const daysOfWork = monthlySalary > 0
     ? Math.round((cost / (monthlySalary / 22)) * 10) / 10
@@ -131,7 +148,7 @@ export function PlantFlower() {
     ? `${daysOfWork} day${daysOfWork === 1 ? "" : "s"} of work`
     : `${parseFloat(laborHours) || (cost > 0 ? (cost / 500).toFixed(1) : "1")}h of work`;
 
-  const [compostReason, setCompostReason] = useState(userProblem || "Quick dopamine spike");
+  const [compostReason, setCompostReason] = useState(userProblemsList[0] || userProblem || "Quick dopamine spike");
   const [customCompost, setCustomCompost] = useState("");
 
   const tailoredReflection = useMemo(() => {
@@ -139,7 +156,9 @@ export function PlantFlower() {
     const itemPhrase = urgeItem && urgeItem !== "this item" ? `"${urgeItem}"` : "this purchase";
     const costPhrase = cost > 0 ? `₹${cost.toLocaleString("en-IN")}` : "this amount";
 
-    if (userProblemKey === "late_night" || userProblem.toLowerCase().includes("night") || userProblem.toLowerCase().includes("scroll")) {
+    const hasKey = (k: string) => userProblemKeys.includes(k);
+
+    if (hasKey("late_night") || userProblem.toLowerCase().includes("night") || userProblem.toLowerCase().includes("scroll")) {
       return {
         tag: "Breaking Late-Night Urges",
         prompt: `Is ${itemPhrase} solving a real daylight need, or is it late-night fatigue and scrolling craving a quick dopamine salve?`,
@@ -147,7 +166,7 @@ export function PlantFlower() {
         closing: `Does buying this now serve your future self, or just a sleepy impulse?`,
       };
     }
-    if (userProblemKey === "stress" || userProblem.toLowerCase().includes("stress") || userProblem.toLowerCase().includes("exhaust")) {
+    if (hasKey("stress") || userProblem.toLowerCase().includes("stress") || userProblem.toLowerCase().includes("exhaust")) {
       return {
         tag: "Stress & Exhaustion Check",
         prompt: `Work was demanding, but buying ${itemPhrase} won't undo that stress — it trades away ${workDurationText} of the very labor that tired you.`,
@@ -155,7 +174,7 @@ export function PlantFlower() {
         closing: `Give yourself real rest and peace instead of a checkout screen.`,
       };
     }
-    if (userProblemKey === "discount" || userProblem.toLowerCase().includes("discount") || userProblem.toLowerCase().includes("sale") || userProblem.toLowerCase().includes("fomo")) {
+    if (hasKey("discount") || userProblem.toLowerCase().includes("discount") || userProblem.toLowerCase().includes("sale") || userProblem.toLowerCase().includes("fomo")) {
       return {
         tag: "Sale & Discount Reality Check",
         prompt: `A discount is only a saving if you were already looking for ${itemPhrase}. Were you planning on this before seeing the price tag?`,
@@ -163,7 +182,7 @@ export function PlantFlower() {
         closing: `100% off is what you save when you choose not to buy at all.`,
       };
     }
-    if (userProblemKey === "boredom" || userProblem.toLowerCase().includes("bored") || userProblem.toLowerCase().includes("dopamine")) {
+    if (hasKey("boredom") || userProblem.toLowerCase().includes("bored") || userProblem.toLowerCase().includes("dopamine")) {
       return {
         tag: "Dopamine & Boredom Pause",
         prompt: `The fleeting excitement of ordering ${itemPhrase} fades in minutes, but the ${workDurationText} spent working for it is gone permanently.`,
@@ -171,7 +190,7 @@ export function PlantFlower() {
         closing: `Sit with the boredom for a few moments — notice how the urge dissolves.`,
       };
     }
-    if (userProblemKey === "fantasy_self" || userProblem.toLowerCase().includes("fantasy")) {
+    if (hasKey("fantasy_self") || userProblem.toLowerCase().includes("fantasy")) {
       return {
         tag: "Fantasy Self vs Reality",
         prompt: `Will ${itemPhrase} genuinely fit your daily routine, or is it for an idealized version of yourself that lives in your imagination?`,
@@ -179,10 +198,11 @@ export function PlantFlower() {
         closing: `Honor where you are today before buying gear for an imaginary tomorrow.`,
       };
     }
-    if (userProblem) {
+    if (userProblemsList.length > 0) {
+      const displayProblems = userProblemsList.slice(0, 2).join(" & ");
       return {
-        tag: `Conquering ${userProblem}`,
-        prompt: `You stepped into Canopy to break free from "${userProblem}". Does buying ${itemPhrase} repeat that familiar cycle?`,
+        tag: `Conquering ${displayProblems}`,
+        prompt: `You stepped into Canopy to soften impulse spending (${displayProblems}). Does buying ${itemPhrase} repeat that familiar cycle?`,
         tradeoff: `Letting it go keeps ${costPhrase} (${workDurationText}) to protect ${goalPhrase}.`,
         closing: `The pause you took today is proof you are already in control.`,
       };
@@ -193,7 +213,7 @@ export function PlantFlower() {
       tradeoff: `Letting this go saves ${costPhrase} (${workDurationText}) for ${goalPhrase}.`,
       closing: `Take a deep breath and decide with full clarity.`,
     };
-  }, [userProblemKey, userProblem, userGoal, urgeItem, cost, workDurationText]);
+  }, [userProblemKeys, userProblemsList, userProblem, userGoal, urgeItem, cost, workDurationText]);
 
   const emotion = localStorage.getItem("currentEmotion")
     ? JSON.parse(localStorage.getItem("currentEmotion")!)
@@ -856,7 +876,7 @@ export function PlantFlower() {
                   {/* Emotion chips */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {[
-                      ...(userProblem ? [userProblem] : []),
+                      ...(userProblemsList.length > 0 ? userProblemsList : (userProblem ? [userProblem] : [])),
                       "Tired & low energy",
                       "Reward after work",
                       "Social obligation",
@@ -956,7 +976,7 @@ export function PlantFlower() {
                           letterSpacing: "0.05em",
                         }}
                       >
-                        {userName ? `${userName} · Pause Complete` : "Somatic Pause Complete"}
+                        {userName ? `${userName} · Pause Complete` : "Pause Complete"}
                       </span>
                     </div>
 
@@ -970,7 +990,7 @@ export function PlantFlower() {
                         fontWeight: 600,
                       }}
                     >
-                      ⚡ {workDurationText}
+                      {workDurationText}
                     </span>
                   </div>
 
@@ -1031,7 +1051,7 @@ export function PlantFlower() {
                         borderTop: "1px dashed rgba(47,107,94,0.2)",
                       }}
                     >
-                      💡 {tailoredReflection.tradeoff}
+                      {tailoredReflection.tradeoff}
                     </p>
                   </div>
 
@@ -1062,7 +1082,7 @@ export function PlantFlower() {
                       }}
                     >
                       <span style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "0.02em" }}>
-                        🌱 Let It Go & Save
+                        Let it go & save
                       </span>
                       <span className="opacity-90 text-xs font-medium">
                         {cost > 0 ? `+₹${cost.toLocaleString("en-IN")}` : `Keep ${workDurationText}`}

@@ -1318,11 +1318,12 @@ export function DrawingCanvas() {
             style={{
               fontFamily: SPACE,
               fontSize: 12,
-              color: "rgba(26,36,32,0.55)",
+              color: "rgba(26,36,32,0.65)",
               textAlign: "center",
+              letterSpacing: "0.01em",
             }}
           >
-            ⚡ That's {workDurationText} to earn {userGoal ? `· Saving towards ${userGoal}` : "· Take a slow breath"}
+            That's {workDurationText} to earn {userGoal ? `· Saving towards ${userGoal}` : "· Take a slow breath"}
           </p>
         </div>
       )}
