@@ -97,6 +97,17 @@ function resolveEmotionRgb(emotion?: { name?: string; hex?: string } | string | 
 
 const rgbStr = (c: number[], a = 1) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 
+function lightenRgb(
+  c: [number, number, number],
+  factor = 0.45
+): [number, number, number] {
+  return [
+    Math.round(c[0] + (255 - c[0]) * factor),
+    Math.round(c[1] + (255 - c[1]) * factor),
+    Math.round(c[2] + (255 - c[2]) * factor),
+  ];
+}
+
 // Ultra-fine micro tactile grain data URI (small particle size, whisper subtle)
 const NOISE_DATA_URI = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.18'/%3E%3C/svg%3E")`;
 
@@ -234,18 +245,25 @@ function getAuraGradientStyle(
   const c2 = uniqueColors[1] || uniqueColors[0];
   const c3 = uniqueColors[2] || uniqueColors[1] || uniqueColors[0];
 
-  // ── Style 2: Radiant Halo Arch / Solar Horizon (Pinterest Arch Aesthetic) ──
+  // ── Style 2: Radiant Halo Arch / Solar Horizon (Zero black shades, uses lighter tints of same color) ──
   if (style === "halo") {
+    const isSingle = uniqueColors.length <= 1;
+    // For single color: use the SAME color with increased lightness
+    const c1Light = lightenRgb(c1, 0.42);
+    const c1UltraLight = lightenRgb(c1, 0.76);
+    const crown = isSingle ? c1Light : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.35) : c1Light);
+    const crownUltra = isSingle ? c1UltraLight : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.72) : c1UltraLight);
+
     return {
       background: `
-        /* 1. Incandescent horizon hotspot */
-        radial-gradient(circle at 50% 112%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.40) 25%, transparent 55%),
-        /* 2. Concentrated halo rim arch */
-        radial-gradient(ellipse 110% 90% at 50% 102%, transparent 32%, ${rgbStr(c1, 0.75)} 52%, ${rgbStr(c1, 0.40)} 70%, ${rgbStr(c1, 0.08)} 86%, transparent 98%),
-        /* 3. Atmospheric crown haze */
-        radial-gradient(ellipse 120% 70% at 50% 0%, ${rgbStr(c2, 0.22)} 0%, transparent 75%),
+        /* 1. Luminous Horizon Spotlight (white core blending into lighter tint of same color) */
+        radial-gradient(circle at 50% 115%, rgba(255, 255, 255, 0.98) 0%, ${rgbStr(c1UltraLight, 0.88)} 24%, ${rgbStr(c1Light, 0.36)} 48%, ${rgbStr(c1Light, 0)} 68%),
+        /* 2. Concentrated Halo Arch (same vibrant color feathering into its own lighter tint, ZERO black) */
+        radial-gradient(ellipse 110% 90% at 50% 102%, ${rgbStr(c1Light, 0)} 30%, ${rgbStr(c1, 0.82)} 52%, ${rgbStr(c1Light, 0.50)} 70%, ${rgbStr(c1UltraLight, 0.20)} 85%, ${rgbStr(c1UltraLight, 0)} 98%),
+        /* 3. Atmospheric Crown Haze (same color with increased lightness) */
+        radial-gradient(ellipse 120% 75% at 50% 0%, ${rgbStr(crown, 0.32)} 0%, ${rgbStr(crownUltra, 0.12)} 50%, ${rgbStr(crownUltra, 0)} 80%),
         /* 4. Fine linen wash */
-        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
+        linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
       `,
     };
   }
@@ -430,38 +448,46 @@ async function generateHighResAuraCard({
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
   } else if (style === "halo") {
-    // ── Style 2: Radiant Halo Arch / Solar Horizon Canvas ──
+    // ── Style 2: Radiant Halo Arch / Solar Horizon Canvas (Zero black, uses lighter tints of same color) ──
+    const isSingle = uniqueColors.length <= 1;
     const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1] || uniqueColors[0];
+    const c1Light = lightenRgb(c1, 0.42);
+    const c1UltraLight = lightenRgb(c1, 0.76);
+    const crown = isSingle ? c1Light : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.35) : c1Light);
+    const crownUltra = isSingle ? c1UltraLight : (uniqueColors[1] ? lightenRgb(uniqueColors[1], 0.72) : c1UltraLight);
 
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F3F1EB");
+    baseGrad.addColorStop(1, "#F5F3EC");
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Radiant halo arc from bottom
-    const gArch = ctx.createRadialGradient(W * 0.5, H * 1.05, W * 0.22, W * 0.5, H * 1.05, W * 0.88);
-    gArch.addColorStop(0, "transparent");
-    gArch.addColorStop(0.35, rgbStr(c1, 0.72));
-    gArch.addColorStop(0.65, rgbStr(c1, 0.36));
-    gArch.addColorStop(0.85, rgbStr(c1, 0.08));
-    gArch.addColorStop(1, "transparent");
+    // 1. Concentrated Halo Arch (feathering into lighter tint of same color, ZERO black)
+    const gArch = ctx.createRadialGradient(W * 0.5, H * 1.05, W * 0.20, W * 0.5, H * 1.05, W * 0.88);
+    gArch.addColorStop(0, rgbStr(c1Light, 0));
+    gArch.addColorStop(0.30, rgbStr(c1Light, 0));
+    gArch.addColorStop(0.52, rgbStr(c1, 0.82));
+    gArch.addColorStop(0.70, rgbStr(c1Light, 0.50));
+    gArch.addColorStop(0.85, rgbStr(c1UltraLight, 0.20));
+    gArch.addColorStop(1, rgbStr(c1UltraLight, 0));
     ctx.fillStyle = gArch;
     ctx.fillRect(0, 0, W, H);
 
-    // Incandescent horizon hotspot
-    const gHot = ctx.createRadialGradient(W * 0.5, H * 1.12, 10, W * 0.5, H * 1.12, W * 0.48);
-    gHot.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-    gHot.addColorStop(0.4, "rgba(255, 255, 255, 0.40)");
-    gHot.addColorStop(1, "transparent");
+    // 2. Luminous Horizon Spotlight (white core into lighter tint of same color)
+    const gHot = ctx.createRadialGradient(W * 0.5, H * 1.12, 10, W * 0.5, H * 1.12, W * 0.52);
+    gHot.addColorStop(0, "rgba(255, 255, 255, 0.98)");
+    gHot.addColorStop(0.28, rgbStr(c1UltraLight, 0.88));
+    gHot.addColorStop(0.52, rgbStr(c1Light, 0.36));
+    gHot.addColorStop(0.75, rgbStr(c1Light, 0));
+    gHot.addColorStop(1, rgbStr(c1Light, 0));
     ctx.fillStyle = gHot;
     ctx.fillRect(0, 0, W, H);
 
-    // Top atmospheric crown
-    const gCrown = ctx.createRadialGradient(W * 0.5, 0, 10, W * 0.5, 0, W * 0.75);
-    gCrown.addColorStop(0, rgbStr(c2, 0.20));
-    gCrown.addColorStop(0.7, "transparent");
+    // 3. Top Atmospheric Crown (increased lightness of same color)
+    const gCrown = ctx.createRadialGradient(W * 0.5, 0, 10, W * 0.5, 0, W * 0.80);
+    gCrown.addColorStop(0, rgbStr(crown, 0.32));
+    gCrown.addColorStop(0.50, rgbStr(crownUltra, 0.12));
+    gCrown.addColorStop(1, rgbStr(crownUltra, 0));
     ctx.fillStyle = gCrown;
     ctx.fillRect(0, 0, W, H);
   } else if (style === "drift") {
