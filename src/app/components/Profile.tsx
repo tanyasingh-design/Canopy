@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
-import { SunShapeSvg } from "./SunShapeSvg";
 
 // ── Typography & Palette ──────────────────────────────────────────────────────
 const HEAD = "'Passion One', sans-serif";
@@ -1561,18 +1560,9 @@ export function Profile() {
     <div className="min-h-screen flex flex-col w-full pb-36" style={{ background: BG, color: INK }}>
       {/* ── Top Header ──────────────────────────────────────────────────────── */}
       <div className="px-5 pt-8 pb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-            style={{ background: "rgba(28,46,42,0.05)" }}
-            title="Canopy"
-          >
-            <SunShapeSvg width={24} height={24} />
-          </div>
-          <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
-            Profile
-          </h1>
-        </div>
+        <h1 style={{ fontFamily: HEAD, fontSize: 38, lineHeight: 1, color: INK, letterSpacing: "0.5px" }}>
+          Profile
+        </h1>
         <p className="sr-only">Your urge patterns, without judgment</p>
 
         {/* Quick jump to Today if drifted */}

@@ -31,7 +31,6 @@ import {
 } from "lucide-react";
 import ScribblePng from "../../imports/115.png";
 import { ReceiptModal } from "./ReceiptModal";
-import { SunShapeSvg } from "./SunShapeSvg";
 
 const BG = "#FAFAFA";
 const TEAL = "#1C2E2A";
@@ -304,14 +303,6 @@ export function GardenHeader({
       <div className="flex flex-col gap-1 items-start pt-[20px] relative w-full">
         <div className="w-full flex items-center justify-between gap-2 px-[10px]">
           <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center shrink-0"
-              style={{ background: "rgba(28,46,42,0.05)" }}
-              title="Canopy"
-            >
-              <SunShapeSvg width={22} height={22} />
-            </div>
-
             {/* Previous week — sits right next to the label in week mode */}
             {viewMode === "week" && (
               <button
