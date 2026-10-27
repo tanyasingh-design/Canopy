@@ -41,6 +41,7 @@ const INK_SOFT = "rgba(28,46,42,0.62)";
 const INK_FAINT = "rgba(28,46,42,0.12)";
 const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
+const BORDER = "rgba(28,46,42,0.08)";
 // Canopy brand & emotion color system (matching user's palette)
 const KEPT = "#2DC84D"; // Canopy Intentional green
 const FOREST = "#2DC84D"; // Canopy primary accent
