@@ -2546,6 +2546,8 @@ export function Profile() {
     setConfirmReset(false);
   }
 
+  const arrowBtn = "w-9 h-9 flex items-center justify-center rounded-full active:scale-90 transition-transform disabled:opacity-20 cursor-pointer";
+
   const [heroSaving, setHeroSaving] = useState(false);
   const handleHeroDownload = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
