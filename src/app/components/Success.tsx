@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { Flower2 } from "lucide-react";
+import { Flower2, Zap } from "lucide-react";
 
 const BG = "#FAFAFA";
 const TEAL = "#1C2E2A";
@@ -143,9 +143,14 @@ export function Success() {
                 fontSize: "12px",
                 color: TEAL,
                 marginTop: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "4px",
               }}
             >
-              ⚡ +{(savedAmount / (parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500)).toFixed(1)}h of work saved
+              <Zap size={13} className="text-emerald-700 shrink-0" />
+              <span>+{(savedAmount / (parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500)).toFixed(1)}h of work saved</span>
             </p>
           </motion.div>
         )}

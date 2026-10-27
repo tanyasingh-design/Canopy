@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
-import { Link2, Clock, Check, ChevronDown } from "lucide-react";
+import { Link2, Clock, Check, ChevronDown, Sparkles, X } from "lucide-react";
 import svgPaths from "../../imports/Container-1/svg-bn934pb3bw";
 import imgGrain from "../../imports/Container-1/cbba9115fb590daa573bfb2aaaad974c0e3c5db0.png";
 
@@ -1587,16 +1587,16 @@ export function LogUrgeSheet({
                         alt="Urge preview"
                         className="w-16 h-16 object-cover rounded-[5px]"
                       />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setImageFiles((prev) => prev.filter((_, i) => i !== index))
-                        }
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#1C2E2A] text-white flex items-center justify-center text-[10px] shadow-sm"
-                        title="Remove photo"
-                      >
-                        ✕
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setImageFiles((prev) => prev.filter((_, i) => i !== index))
+                          }
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#1C2E2A] text-white flex items-center justify-center text-[10px] shadow-sm cursor-pointer"
+                          title="Remove photo"
+                        >
+                          <X size={10} strokeWidth={2.5} />
+                        </button>
                     </div>
                   ))}
                 </div>
@@ -1967,7 +1967,7 @@ export function LogUrgeSheet({
               }}
             >
               <div className="flex items-center gap-2.5">
-                <span className="text-base">🌿</span>
+                <Sparkles size={16} className="text-[#FAFAFA]" />
                 <span
                   style={{
                     fontFamily: BODY,
@@ -1978,7 +1978,7 @@ export function LogUrgeSheet({
                   }}
                 >
                   {totalCost > 0
-                    ? `Begin Somatic Pause · ⚡ ${laborHours}h life`
+                    ? `Begin Somatic Pause · ${laborHours}h life`
                     : "Begin Somatic Pause"}
                 </span>
               </div>

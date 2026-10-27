@@ -64,7 +64,7 @@ function Frame2() {
   return (
     <div className="content-stretch flex items-center relative shrink-0" data-name="Frame">
       <p className="[word-break:break-word] font-['Fraunces:Bold',sans-serif] font-bold leading-[normal] relative shrink-0 text-[#3c3633] text-[32px] whitespace-nowrap" style={{ fontVariationSettings: '"SOFT" 0, "WONK" 1' }}>
-        Log the urge ✏️
+        Log the urge
       </p>
     </div>
   );

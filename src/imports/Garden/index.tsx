@@ -82,7 +82,7 @@ function Paragraph1() {
   return (
     <div className="h-[16.494px] relative shrink-0 w-[70.444px]" data-name="Paragraph">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid relative size-full">
-        <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16.5px] left-0 not-italic text-[#b8a898] text-[11px] top-[0.43px] tracking-[0.44px] whitespace-nowrap">🌸 4 planted</p>
+        <p className="[word-break:break-word] absolute font-['Inter:Regular',sans-serif] font-normal leading-[16.5px] left-0 not-italic text-[#b8a898] text-[11px] top-[0.43px] tracking-[0.44px] whitespace-nowrap">4 planted</p>
       </div>
     </div>
   );

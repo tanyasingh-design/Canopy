@@ -21,6 +21,13 @@ import {
   BarChart3,
   TrendingUp,
   Info,
+  Coffee,
+  Utensils,
+  Headphones,
+  Shirt,
+  BookOpen,
+  Gamepad2,
+  Tag,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
@@ -197,8 +204,13 @@ function Title({ children, hint }: { children: React.ReactNode; hint?: string })
   );
 }
 
-// ── Ethereal Softened True-Emotion Aura Gradient Generator ─────────────────────
-function getAuraGradientStyle(colors: [number, number, number][]) {
+// ── High-End Organic Luminous Aura Gradient Generator ────────────────────────
+export type AuraStyle = "bloom" | "halo" | "drift";
+
+function getAuraGradientStyle(
+  colors: [number, number, number][],
+  style: AuraStyle = "bloom"
+) {
   // Deduplicate colors to distinct logged emotion colors
   const uniqueColors: [number, number, number][] = [];
   const seen = new Set<string>();
@@ -214,50 +226,96 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
   // 0 emotions: Quiet, pure tactile linen cream
   if (uniqueColors.length === 0) {
     return {
-      background: "#FAF9F5",
+      background: "linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)",
     };
   }
 
-  // 1 emotion logged (e.g. Craving [212, 134, 74]):
-  // Ethereal soft glowing bloom diffused on a warm light linen backdrop
-  if (uniqueColors.length === 1) {
-    const c = uniqueColors[0];
-    return {
-      background: `
-        radial-gradient(circle at 62% 40%, ${rgbStr(c, 0.46)} 0%, ${rgbStr(c, 0.20)} 42%, transparent 72%),
-        radial-gradient(circle at 28% 66%, ${rgbStr(c, 0.26)} 0%, transparent 58%),
-        radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
-        #FAF9F5
-      `,
-    };
-  }
-
-  // 2 emotions logged: Dual softened aura blooms bleeding softly across light canvas
-  if (uniqueColors.length === 2) {
-    const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1];
-
-    return {
-      background: `
-        radial-gradient(circle at 34% 36%, ${rgbStr(c1, 0.44)} 0%, ${rgbStr(c1, 0.16)} 45%, transparent 72%),
-        radial-gradient(circle at 68% 64%, ${rgbStr(c2, 0.42)} 0%, ${rgbStr(c2, 0.15)} 45%, transparent 72%),
-        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 60%),
-        #FAF9F5
-      `,
-    };
-  }
-
-  // 3+ emotions logged: Multicolor ethereal harmony (like the board's multicolor cards)
   const c1 = uniqueColors[0];
-  const c2 = uniqueColors[1];
-  const c3 = uniqueColors[2];
+  const c2 = uniqueColors[1] || uniqueColors[0];
+  const c3 = uniqueColors[2] || uniqueColors[1] || uniqueColors[0];
 
+  // ── Style 2: Radiant Halo Arch / Solar Horizon (Pinterest Arch Aesthetic) ──
+  if (style === "halo") {
+    return {
+      background: `
+        /* 1. Incandescent horizon hotspot */
+        radial-gradient(circle at 50% 112%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.40) 25%, transparent 55%),
+        /* 2. Concentrated halo rim arch */
+        radial-gradient(ellipse 110% 90% at 50% 102%, transparent 32%, ${rgbStr(c1, 0.75)} 52%, ${rgbStr(c1, 0.40)} 70%, ${rgbStr(c1, 0.08)} 86%, transparent 98%),
+        /* 3. Atmospheric crown haze */
+        radial-gradient(ellipse 120% 70% at 50% 0%, ${rgbStr(c2, 0.22)} 0%, transparent 75%),
+        /* 4. Fine linen wash */
+        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
+      `,
+    };
+  }
+
+  // ── Style 3: Chromatic Drift / Iridescent Floating Clouds (Diagonal Mist) ──
+  if (style === "drift") {
+    return {
+      background: `
+        /* 1. Central luminous diffusion pool */
+        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255, 255, 255, 0.88) 0%, transparent 70%),
+        /* 2. Top-right floating cloud */
+        radial-gradient(ellipse 85% 75% at 88% 12%, ${rgbStr(c1, 0.70)} 0%, ${rgbStr(c1, 0.42)} 32%, ${rgbStr(c1, 0.12)} 65%, transparent 88%),
+        /* 3. Bottom-left warm cloud */
+        radial-gradient(ellipse 90% 80% at 10% 90%, ${rgbStr(c2, 0.65)} 0%, ${rgbStr(c2, 0.36)} 32%, ${rgbStr(c2, 0.10)} 65%, transparent 88%),
+        /* 4. Diagonal painterly chromatic mist */
+        linear-gradient(135deg, ${rgbStr(c1, 0.14)} 0%, rgba(255,255,255,0.6) 50%, ${rgbStr(c3, 0.14)} 100%),
+        /* 5. Warm tactile linen base */
+        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
+      `,
+    };
+  }
+
+  // ── Style 1 (Default): Ethereal Bloom (Vibrant Pastel Luminous Core) ──
+  if (uniqueColors.length === 1) {
+    return {
+      background: `
+        /* 1. Luminous core highlight (feels like light shining through paper) */
+        radial-gradient(ellipse 55% 45% at 60% 40%, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0) 60%),
+        /* 2. Main saturated chromatic aura orb with multi-stop cubic feathering */
+        radial-gradient(ellipse 85% 75% at 62% 42%, ${rgbStr(c1, 0.68)} 0%, ${rgbStr(c1, 0.44)} 26%, ${rgbStr(c1, 0.18)} 52%, ${rgbStr(c1, 0.04)} 76%, transparent 92%),
+        /* 3. Ambient counter-glow on bottom-left for dynamic balance */
+        radial-gradient(ellipse 100% 85% at 22% 76%, ${rgbStr(c1, 0.32)} 0%, ${rgbStr(c1, 0.12)} 42%, transparent 78%),
+        /* 4. Top atmospheric soft wash */
+        radial-gradient(ellipse 80% 50% at 45% 0%, rgba(255, 255, 255, 0.65) 0%, transparent 70%),
+        /* 5. Tactile warm paper base */
+        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
+      `,
+    };
+  }
+
+  if (uniqueColors.length === 2) {
+    return {
+      background: `
+        /* 1. Central luminous diffusion bridge */
+        radial-gradient(ellipse 60% 50% at 50% 50%, rgba(255, 255, 255, 0.82) 0%, transparent 65%),
+        /* 2. Emotion 1 organic aura bloom (top-left) */
+        radial-gradient(ellipse 95% 85% at 28% 30%, ${rgbStr(c1, 0.62)} 0%, ${rgbStr(c1, 0.38)} 28%, ${rgbStr(c1, 0.14)} 54%, transparent 84%),
+        /* 3. Emotion 2 organic aura bloom (bottom-right) */
+        radial-gradient(ellipse 95% 85% at 72% 70%, ${rgbStr(c2, 0.60)} 0%, ${rgbStr(c2, 0.36)} 28%, ${rgbStr(c2, 0.12)} 54%, transparent 84%),
+        /* 4. Ambient diagonal wash */
+        linear-gradient(135deg, ${rgbStr(c1, 0.08)} 0%, ${rgbStr(c2, 0.08)} 100%),
+        /* 5. Warm paper base */
+        linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
+      `,
+    };
+  }
+
+  // 3+ emotions logged: Multi-chromatic harmony with glowing heart
   return {
     background: `
-      radial-gradient(circle at 26% 30%, ${rgbStr(c1, 0.40)} 0%, ${rgbStr(c1, 0.14)} 45%, transparent 70%),
-      radial-gradient(circle at 76% 32%, ${rgbStr(c2, 0.38)} 0%, ${rgbStr(c2, 0.14)} 45%, transparent 70%),
-      radial-gradient(circle at 52% 76%, ${rgbStr(c3, 0.36)} 0%, ${rgbStr(c3, 0.12)} 45%, transparent 70%),
-      #FAF9F5
+      /* 1. Central luminous focal bloom */
+      radial-gradient(ellipse 55% 50% at 50% 48%, rgba(255, 255, 255, 0.88) 0%, transparent 60%),
+      /* 2. Chromatic aura 1 (top-left) */
+      radial-gradient(ellipse 85% 75% at 20% 25%, ${rgbStr(c1, 0.56)} 0%, ${rgbStr(c1, 0.32)} 30%, ${rgbStr(c1, 0.08)} 60%, transparent 85%),
+      /* 3. Chromatic aura 2 (top-right) */
+      radial-gradient(ellipse 85% 75% at 80% 28%, ${rgbStr(c2, 0.52)} 0%, ${rgbStr(c2, 0.28)} 30%, ${rgbStr(c2, 0.08)} 60%, transparent 85%),
+      /* 4. Chromatic aura 3 (bottom-center) */
+      radial-gradient(ellipse 100% 85% at 50% 82%, ${rgbStr(c3, 0.50)} 0%, ${rgbStr(c3, 0.26)} 30%, ${rgbStr(c3, 0.06)} 60%, transparent 85%),
+      /* 5. Base paper wash */
+      linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)
     `,
   };
 }
@@ -304,10 +362,12 @@ async function generateHighResAuraCard({
   date,
   colors,
   flowers,
+  style = "bloom",
 }: {
   date: Date;
   colors: [number, number, number][];
   flowers?: FlowerEntry[];
+  style?: AuraStyle;
 }): Promise<string> {
   if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
     try {
@@ -362,29 +422,116 @@ async function generateHighResAuraCard({
     }
   });
 
-  // 1. Base Layer (Softened True-Emotion Aura matching the light board)
+  // 1. Base Layer (Organic Luminous Aura matching the high-end shader)
   if (uniqueColors.length === 0) {
-    // Pure matte tactile linen for empty days
-    ctx.fillStyle = "#FAF9F5";
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F3F1EB");
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
-  } else if (uniqueColors.length === 1) {
-    const c = uniqueColors[0];
+  } else if (style === "halo") {
+    // ── Style 2: Radiant Halo Arch / Solar Horizon Canvas ──
+    const c1 = uniqueColors[0];
+    const c2 = uniqueColors[1] || uniqueColors[0];
 
-    // Light airy linen canvas base
-    ctx.fillStyle = "#FAF9F5";
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F3F1EB");
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Primary glowing soft aura bloom
-    const g1 = ctx.createRadialGradient(W * 0.62, H * 0.40, 20, W * 0.62, H * 0.40, W * 0.68);
-    g1.addColorStop(0, rgbStr(c, 0.46));
-    g1.addColorStop(0.42, rgbStr(c, 0.20));
+    // Radiant halo arc from bottom
+    const gArch = ctx.createRadialGradient(W * 0.5, H * 1.05, W * 0.22, W * 0.5, H * 1.05, W * 0.88);
+    gArch.addColorStop(0, "transparent");
+    gArch.addColorStop(0.35, rgbStr(c1, 0.72));
+    gArch.addColorStop(0.65, rgbStr(c1, 0.36));
+    gArch.addColorStop(0.85, rgbStr(c1, 0.08));
+    gArch.addColorStop(1, "transparent");
+    ctx.fillStyle = gArch;
+    ctx.fillRect(0, 0, W, H);
+
+    // Incandescent horizon hotspot
+    const gHot = ctx.createRadialGradient(W * 0.5, H * 1.12, 10, W * 0.5, H * 1.12, W * 0.48);
+    gHot.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+    gHot.addColorStop(0.4, "rgba(255, 255, 255, 0.40)");
+    gHot.addColorStop(1, "transparent");
+    ctx.fillStyle = gHot;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top atmospheric crown
+    const gCrown = ctx.createRadialGradient(W * 0.5, 0, 10, W * 0.5, 0, W * 0.75);
+    gCrown.addColorStop(0, rgbStr(c2, 0.20));
+    gCrown.addColorStop(0.7, "transparent");
+    ctx.fillStyle = gCrown;
+    ctx.fillRect(0, 0, W, H);
+  } else if (style === "drift") {
+    // ── Style 3: Chromatic Drift / Floating Iridescent Clouds Canvas ──
+    const c1 = uniqueColors[0];
+    const c2 = uniqueColors[1] || uniqueColors[0];
+    const c3 = uniqueColors[2] || uniqueColors[1] || uniqueColors[0];
+
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F3F1EB");
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top-right cloud
+    const g1 = ctx.createRadialGradient(W * 0.88, H * 0.12, 20, W * 0.88, H * 0.12, W * 0.75);
+    g1.addColorStop(0, rgbStr(c1, 0.68));
+    g1.addColorStop(0.35, rgbStr(c1, 0.38));
+    g1.addColorStop(0.70, rgbStr(c1, 0.10));
     g1.addColorStop(1, "transparent");
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    // Secondary ambient soft glow
-    const g2 = ctx.createRadialGradient(W * 0.28, H * 0.66, 20, W * 0.28, H * 0.66, W * 0.58);
-    g2.addColorStop(0, rgbStr(c, 0.26));
+    // Bottom-left cloud
+    const g2 = ctx.createRadialGradient(W * 0.10, H * 0.90, 20, W * 0.10, H * 0.90, W * 0.78);
+    g2.addColorStop(0, rgbStr(c2, 0.64));
+    g2.addColorStop(0.35, rgbStr(c2, 0.34));
+    g2.addColorStop(0.70, rgbStr(c2, 0.08));
+    g2.addColorStop(1, "transparent");
+    ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
+
+    // Central luminous wash
+    const gh = ctx.createRadialGradient(W * 0.50, H * 0.50, 10, W * 0.50, H * 0.50, W * 0.50);
+    gh.addColorStop(0, "rgba(255, 255, 255, 0.88)");
+    gh.addColorStop(0.65, "transparent");
+    ctx.fillStyle = gh;
+    ctx.fillRect(0, 0, W, H);
+  } else if (uniqueColors.length === 1) {
+    const c = uniqueColors[0];
+
+    // Tactile warm linen paper base
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F3F1EB");
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Primary vibrant chromatic aura bloom with cubic non-linear feathering
+    const g1 = ctx.createRadialGradient(W * 0.62, H * 0.42, 20, W * 0.62, H * 0.42, W * 0.76);
+    g1.addColorStop(0, rgbStr(c, 0.68));
+    g1.addColorStop(0.26, rgbStr(c, 0.44));
+    g1.addColorStop(0.52, rgbStr(c, 0.18));
+    g1.addColorStop(0.76, rgbStr(c, 0.04));
+    g1.addColorStop(1, "transparent");
+    ctx.fillStyle = g1;
+    ctx.fillRect(0, 0, W, H);
+
+    // Luminous hotspot core
+    const gh = ctx.createRadialGradient(W * 0.60, H * 0.40, 10, W * 0.60, H * 0.40, W * 0.44);
+    gh.addColorStop(0, "rgba(255, 255, 255, 0.88)");
+    gh.addColorStop(0.60, "transparent");
+    gh.addColorStop(1, "transparent");
+    ctx.fillStyle = gh;
+    ctx.fillRect(0, 0, W, H);
+
+    // Ambient counter-glow on bottom-left for dynamic balance
+    const g2 = ctx.createRadialGradient(W * 0.22, H * 0.76, 20, W * 0.22, H * 0.76, W * 0.72);
+    g2.addColorStop(0, rgbStr(c, 0.32));
+    g2.addColorStop(0.42, rgbStr(c, 0.12));
     g2.addColorStop(1, "transparent");
     ctx.fillStyle = g2;
     ctx.fillRect(0, 0, W, H);
@@ -392,49 +539,79 @@ async function generateHighResAuraCard({
     const c1 = uniqueColors[0];
     const c2 = uniqueColors[1];
 
-    ctx.fillStyle = "#FAF9F5";
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F3F1EB");
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.34, H * 0.36, 20, W * 0.34, H * 0.36, W * 0.70);
-    g1.addColorStop(0, rgbStr(c1, 0.44));
-    g1.addColorStop(0.45, rgbStr(c1, 0.16));
+    // Emotion 1 bloom (top-left)
+    const g1 = ctx.createRadialGradient(W * 0.28, H * 0.30, 20, W * 0.28, H * 0.30, W * 0.75);
+    g1.addColorStop(0, rgbStr(c1, 0.62));
+    g1.addColorStop(0.28, rgbStr(c1, 0.38));
+    g1.addColorStop(0.54, rgbStr(c1, 0.14));
     g1.addColorStop(1, "transparent");
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    const g2 = ctx.createRadialGradient(W * 0.68, H * 0.64, 20, W * 0.68, H * 0.64, W * 0.70);
-    g2.addColorStop(0, rgbStr(c2, 0.42));
-    g2.addColorStop(0.45, rgbStr(c2, 0.15));
+    // Emotion 2 bloom (bottom-right)
+    const g2 = ctx.createRadialGradient(W * 0.72, H * 0.70, 20, W * 0.72, H * 0.70, W * 0.75);
+    g2.addColorStop(0, rgbStr(c2, 0.60));
+    g2.addColorStop(0.28, rgbStr(c2, 0.36));
+    g2.addColorStop(0.54, rgbStr(c2, 0.12));
     g2.addColorStop(1, "transparent");
     ctx.fillStyle = g2;
+    ctx.fillRect(0, 0, W, H);
+
+    // Central diffusion bridge
+    const gh = ctx.createRadialGradient(W * 0.50, H * 0.50, 10, W * 0.50, H * 0.50, W * 0.48);
+    gh.addColorStop(0, "rgba(255, 255, 255, 0.82)");
+    gh.addColorStop(0.65, "transparent");
+    gh.addColorStop(1, "transparent");
+    ctx.fillStyle = gh;
     ctx.fillRect(0, 0, W, H);
   } else {
     const c1 = uniqueColors[0];
     const c2 = uniqueColors[1];
     const c3 = uniqueColors[2];
 
-    ctx.fillStyle = "#FAF9F5";
+    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
+    baseGrad.addColorStop(0, "#FAF9F6");
+    baseGrad.addColorStop(1, "#F3F1EB");
+    ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.26, H * 0.30, 20, W * 0.26, H * 0.30, W * 0.68);
-    g1.addColorStop(0, rgbStr(c1, 0.40));
-    g1.addColorStop(0.45, rgbStr(c1, 0.14));
+    // Tri-chromatic blooms
+    const g1 = ctx.createRadialGradient(W * 0.20, H * 0.25, 20, W * 0.20, H * 0.25, W * 0.70);
+    g1.addColorStop(0, rgbStr(c1, 0.56));
+    g1.addColorStop(0.30, rgbStr(c1, 0.32));
+    g1.addColorStop(0.60, rgbStr(c1, 0.08));
     g1.addColorStop(1, "transparent");
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    const g2 = ctx.createRadialGradient(W * 0.76, H * 0.32, 20, W * 0.76, H * 0.32, W * 0.68);
-    g2.addColorStop(0, rgbStr(c2, 0.38));
-    g2.addColorStop(0.45, rgbStr(c2, 0.14));
+    const g2 = ctx.createRadialGradient(W * 0.80, H * 0.28, 20, W * 0.80, H * 0.28, W * 0.70);
+    g2.addColorStop(0, rgbStr(c2, 0.52));
+    g2.addColorStop(0.30, rgbStr(c2, 0.28));
+    g2.addColorStop(0.60, rgbStr(c2, 0.08));
     g2.addColorStop(1, "transparent");
     ctx.fillStyle = g2;
     ctx.fillRect(0, 0, W, H);
 
-    const g3 = ctx.createRadialGradient(W * 0.52, H * 0.76, 20, W * 0.52, H * 0.76, W * 0.68);
-    g3.addColorStop(0, rgbStr(c3, 0.36));
-    g3.addColorStop(0.45, rgbStr(c3, 0.12));
+    const g3 = ctx.createRadialGradient(W * 0.50, H * 0.82, 20, W * 0.50, H * 0.82, W * 0.75);
+    g3.addColorStop(0, rgbStr(c3, 0.50));
+    g3.addColorStop(0.30, rgbStr(c3, 0.26));
+    g3.addColorStop(0.60, rgbStr(c3, 0.06));
     g3.addColorStop(1, "transparent");
     ctx.fillStyle = g3;
+    ctx.fillRect(0, 0, W, H);
+
+    // Central luminous core
+    const gh = ctx.createRadialGradient(W * 0.50, H * 0.48, 10, W * 0.50, H * 0.48, W * 0.45);
+    gh.addColorStop(0, "rgba(255, 255, 255, 0.88)");
+    gh.addColorStop(0.60, "transparent");
+    gh.addColorStop(1, "transparent");
+    ctx.fillStyle = gh;
     ctx.fillRect(0, 0, W, H);
   }
 
@@ -547,13 +724,14 @@ function AestheticAuraCard({
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+  const [auraStyle, setAuraStyle] = useState<AuraStyle>("bloom");
   const hasColors = colors.length > 0;
   const count = drawingCount !== undefined ? drawingCount : flowers?.length || 0;
 
   const cardStyle = hasColors
-    ? getAuraGradientStyle(colors)
+    ? getAuraGradientStyle(colors, auraStyle)
     : {
-        background: "#EBEAE5", // Quiet matte grey, zero gradient
+        background: "linear-gradient(165deg, #FAF9F6 0%, #F3F1EB 100%)",
       };
 
   const dayNum = date.getDate();
@@ -580,6 +758,7 @@ function AestheticAuraCard({
         date,
         colors,
         flowers,
+        style: auraStyle,
       });
       const filename = `canopy-aura-${date.toISOString().slice(0, 10)}.png`;
 
@@ -615,11 +794,29 @@ function AestheticAuraCard({
         date,
         colors,
         flowers,
+        style: auraStyle,
       });
       setPreviewDataUrl(dataUrl);
       setShowPreview(true);
     } catch (err) {
       console.error("Failed to prepare aura preview", err);
+    }
+  };
+
+  const handleStyleChange = async (newStyle: AuraStyle) => {
+    setAuraStyle(newStyle);
+    if (showPreview) {
+      try {
+        const dataUrl = await generateHighResAuraCard({
+          date,
+          colors,
+          flowers,
+          style: newStyle,
+        });
+        setPreviewDataUrl(dataUrl);
+      } catch (err) {
+        console.error("Failed to re-render preview with new aura style", err);
+      }
     }
   };
 
@@ -630,8 +827,8 @@ function AestheticAuraCard({
         className="group relative w-full rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-lg active:scale-[0.99]"
         style={{
           ...cardStyle,
-          minHeight: 135,
-          padding: "20px 22px",
+          minHeight: 140,
+          padding: "18px 20px",
           boxShadow: "0 4px 20px rgba(28,46,42,0.05)",
           border: `1px solid ${BORDER}`,
         }}
@@ -649,11 +846,12 @@ function AestheticAuraCard({
         />
 
         {/* Aesthetic Content Overlay */}
-        <div className="relative z-10 flex flex-col justify-between h-full min-h-[100px]">
-          {/* Top row: Drawings Badge + Clean Save button */}
-          <div className="flex items-center justify-between">
+        <div className="relative z-10 flex flex-col justify-between h-full min-h-[105px]">
+          {/* Top row: Drawings Badge + Ideation Style Tabs + Clean Save button */}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            {/* Clean Pill with Glowing Dot (Strictly no emojis) */}
             <div
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md transition-all"
+              className="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md transition-all shrink-0"
               style={{
                 background: "rgba(255,255,255,0.78)",
                 color: INK,
@@ -662,9 +860,55 @@ function AestheticAuraCard({
                 boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
               }}
             >
+              <span
+                className="w-2 h-2 rounded-full shrink-0"
+                style={{
+                  background: colors.length > 0 ? rgbStr(colors[0], 0.95) : KEPT,
+                  boxShadow: colors.length > 0 ? `0 0 6px ${rgbStr(colors[0], 0.6)}` : "none",
+                }}
+              />
               <span>
-                🌸 {count} {count === 1 ? "drawing" : "drawings"}
+                {count} {count === 1 ? "drawing" : "drawings"}
               </span>
+            </div>
+
+            {/* Aura Ideation Switcher Tabs: Bloom, Halo, Drift */}
+            <div
+              className="flex items-center p-0.5 rounded-full backdrop-blur-md shrink-0"
+              style={{
+                background: "rgba(255,255,255,0.78)",
+                border: `1px solid ${BORDER}`,
+                boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
+              }}
+            >
+              {(["bloom", "halo", "drift"] as const).map((styleKey) => {
+                const labels: Record<AuraStyle, string> = {
+                  bloom: "Bloom",
+                  halo: "Halo",
+                  drift: "Drift",
+                };
+                const isActive = auraStyle === styleKey;
+                return (
+                  <button
+                    key={styleKey}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleStyleChange(styleKey);
+                    }}
+                    className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold transition-all cursor-pointer"
+                    style={{
+                      background: isActive ? INK : "transparent",
+                      color: isActive ? "#FFFFFF" : INK_SOFT,
+                      boxShadow: isActive ? "0 1px 4px rgba(28,46,42,0.15)" : "none",
+                      fontFamily: BODY,
+                    }}
+                    title={`Switch to ${labels[styleKey]} aura design`}
+                  >
+                    {labels[styleKey]}
+                  </button>
+                );
+              })}
             </div>
 
             <button
@@ -672,7 +916,7 @@ function AestheticAuraCard({
               type="button"
               onClick={handleDownload}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium backdrop-blur-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium backdrop-blur-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer shrink-0"
               style={{
                 background: "rgba(255,255,255,0.78)",
                 color: INK,
@@ -771,16 +1015,50 @@ function AestheticAuraCard({
                   <img
                     src={previewDataUrl}
                     alt={`Canopy Aura ${dayNum} ${monthName}`}
-                    className="h-auto w-auto max-w-full max-h-[68vh] object-contain block rounded-2xl"
+                    className="h-auto w-auto max-w-full max-h-[64vh] object-contain block rounded-2xl shadow-2xl"
                   />
 
-                  {/* Modal Download Actions */}
-                  <div className="flex items-center justify-center gap-3 mt-4 w-full">
+                  {/* Modal Style Switcher & Download Actions */}
+                  <div className="flex flex-col items-center gap-3 mt-4 w-full">
+                    {/* Style switcher inside preview */}
+                    <div
+                      className="flex items-center p-1 rounded-full backdrop-blur-md"
+                      style={{
+                        background: "rgba(255,255,255,0.18)",
+                        border: "1px solid rgba(255,255,255,0.25)",
+                      }}
+                    >
+                      {(["bloom", "halo", "drift"] as const).map((styleKey) => {
+                        const labels: Record<AuraStyle, string> = {
+                          bloom: "Bloom",
+                          halo: "Halo",
+                          drift: "Drift",
+                        };
+                        const isActive = auraStyle === styleKey;
+                        return (
+                          <button
+                            key={styleKey}
+                            type="button"
+                            onClick={() => handleStyleChange(styleKey)}
+                            className="px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer"
+                            style={{
+                              background: isActive ? "#FFFFFF" : "transparent",
+                              color: isActive ? INK : "rgba(255,255,255,0.85)",
+                              boxShadow: isActive ? "0 2px 6px rgba(0,0,0,0.18)" : "none",
+                              fontFamily: BODY,
+                            }}
+                          >
+                            {labels[styleKey]}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => handleDownload()}
                       disabled={saving}
-                      className="flex-1 flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-sm font-semibold transition-all active:scale-98 shadow-xl"
+                      className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-sm font-semibold transition-all active:scale-98 shadow-xl cursor-pointer"
                       style={{
                         background: KEPT,
                         color: "#FFFFFF",
@@ -788,7 +1066,7 @@ function AestheticAuraCard({
                       }}
                     >
                       <Download size={16} />
-                      <span>{saving ? "Saving…" : "Save"}</span>
+                      <span>{saving ? "Saving…" : "Save Art Card"}</span>
                     </button>
                   </div>
                 </motion.div>
@@ -1705,15 +1983,15 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
 
   if (flowers.length === 0) return null;
 
-  const itemEmoji = (cat: string) => {
+  const renderItemIcon = (cat: string) => {
     const c = cat.toLowerCase();
-    if (c.includes("coffee") || c.includes("tea")) return "☕";
-    if (c.includes("food") || c.includes("dining")) return "🍕";
-    if (c.includes("tech") || c.includes("gadget")) return "🎧";
-    if (c.includes("cloth") || c.includes("fashion")) return "👗";
-    if (c.includes("book")) return "📚";
-    if (c.includes("game")) return "🎮";
-    return "🌱";
+    if (c.includes("coffee") || c.includes("tea")) return <Coffee size={15} color={INK} />;
+    if (c.includes("food") || c.includes("dining")) return <Utensils size={15} color={INK} />;
+    if (c.includes("tech") || c.includes("gadget")) return <Headphones size={15} color={INK} />;
+    if (c.includes("cloth") || c.includes("fashion")) return <Shirt size={15} color={INK} />;
+    if (c.includes("book")) return <BookOpen size={15} color={INK} />;
+    if (c.includes("game")) return <Gamepad2 size={15} color={INK} />;
+    return <Tag size={15} color={INK} />;
   };
 
   return (
@@ -1727,8 +2005,8 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
             <span style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, width: 14 }}>
               {item.rank}.
             </span>
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(28,46,42,0.06)", fontSize: 16 }}>
-              {itemEmoji(item.category)}
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: "rgba(28,46,42,0.06)" }}>
+              {renderItemIcon(item.category)}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-baseline justify-between">
