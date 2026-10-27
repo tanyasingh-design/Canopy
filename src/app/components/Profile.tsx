@@ -1221,6 +1221,29 @@ export function Profile() {
   });
   const [tempWage, setTempWage] = useState(String(monthlySalary));
 
+  // Onboarded profile intentions & goals
+  const [profileName, setProfileName] = useState(() => localStorage.getItem("userName") || "");
+  const [profileProblem, setProfileProblem] = useState(() => localStorage.getItem("userSpendingProblem") || "");
+  const [profileGoal, setProfileGoal] = useState(() => localStorage.getItem("userPersonalGoal") || "");
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [tempGoal, setTempGoal] = useState(profileGoal);
+  const [isEditingProblem, setIsEditingProblem] = useState(false);
+  const [tempProblem, setTempProblem] = useState(profileProblem);
+
+  function saveGoal() {
+    const val = tempGoal.trim() || "Financial peace of mind";
+    setProfileGoal(val);
+    localStorage.setItem("userPersonalGoal", val);
+    setIsEditingGoal(false);
+  }
+
+  function saveProblem() {
+    const val = tempProblem.trim() || "Impulse spending";
+    setProfileProblem(val);
+    localStorage.setItem("userSpendingProblem", val);
+    setIsEditingProblem(false);
+  }
+
   // Hours -> friendly time (days once it's a full working day)
   const fmtWork = (hours: number) => {
     if (hours >= 8) {
@@ -1512,8 +1535,20 @@ export function Profile() {
   }
 
   function resetData() {
-    ["gardenFlowers", "bloomData"].forEach((k) => localStorage.removeItem(k));
+    [
+      "gardenFlowers",
+      "bloomData",
+      "canopy_onboarded",
+      "userName",
+      "userSpendingProblem",
+      "userSpendingProblemKey",
+      "userPersonalGoal",
+      "userPersonalGoalKey",
+    ].forEach((k) => localStorage.removeItem(k));
     setAllFlowers([]);
+    setProfileName("");
+    setProfileProblem("");
+    setProfileGoal("");
     setConfirmReset(false);
   }
 
@@ -2231,12 +2266,123 @@ export function Profile() {
           </Card>
         )}
 
-        {/* ── Hourly Wage & Settings ─────────────────────────────────────────── */}
+        {/* ── Intentions & Settings ─────────────────────────────────────────── */}
         <Card>
-          <Title hint="We use this to show what things cost in days of your work">
-            Your salary & settings
+          <Title hint="Your grounded intentions and work conversion">
+            Your canopy intentions & settings
           </Title>
           <div className="flex flex-col gap-3.5">
+            {/* User problem to soften */}
+            <div
+              className="rounded-2xl p-4 flex items-center justify-between"
+              style={{ background: EMPTY }}
+            >
+              <div className="flex-1 mr-2 min-w-0">
+                <p style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  🛡️ Impulse pattern to soften
+                </p>
+                {isEditingProblem ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type="text"
+                      value={tempProblem}
+                      onChange={(e) => setTempProblem(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white border border-gray-300 outline-none"
+                      style={{ fontFamily: BODY, fontSize: 14 }}
+                      placeholder="e.g. Late-night scrolling"
+                      autoFocus
+                    />
+                    <button
+                      onClick={saveProblem}
+                      className="p-2 rounded-lg text-white shrink-0 cursor-pointer"
+                      style={{ background: KEPT }}
+                      title="Save"
+                    >
+                      <Check size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <p style={{ fontFamily: BODY, fontSize: 15, fontWeight: 600, color: INK, marginTop: 2 }}>
+                    {profileProblem || "Late-night scrolling & impulse shopping"}
+                  </p>
+                )}
+              </div>
+              {!isEditingProblem && (
+                <button
+                  onClick={() => {
+                    setTempProblem(profileProblem || "Late-night scrolling");
+                    setIsEditingProblem(true);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                  style={{
+                    background: CARD,
+                    color: INK,
+                    fontFamily: BODY,
+                    border: `1px solid ${BORDER}`,
+                  }}
+                >
+                  <Edit2 size={12} />
+                  Change
+                </button>
+              )}
+            </div>
+
+            {/* Personal goal to grow */}
+            <div
+              className="rounded-2xl p-4 flex items-center justify-between"
+              style={{ background: EMPTY }}
+            >
+              <div className="flex-1 mr-2 min-w-0">
+                <p style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  🌱 Growing money towards
+                </p>
+                {isEditingGoal ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <input
+                      type="text"
+                      value={tempGoal}
+                      onChange={(e) => setTempGoal(e.target.value)}
+                      className="w-full px-2.5 py-1.5 rounded-lg text-sm bg-white border border-gray-300 outline-none"
+                      style={{ fontFamily: BODY, fontSize: 14 }}
+                      placeholder="e.g. Dream travel & adventures"
+                      autoFocus
+                    />
+                    <button
+                      onClick={saveGoal}
+                      className="p-2 rounded-lg text-white shrink-0 cursor-pointer"
+                      style={{ background: KEPT }}
+                      title="Save"
+                    >
+                      <Check size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <p style={{ fontFamily: BODY, fontSize: 15, fontWeight: 600, color: FOREST, marginTop: 2 }}>
+                    {profileGoal || "Financial peace of mind"}
+                  </p>
+                )}
+              </div>
+              {!isEditingGoal && (
+                <button
+                  onClick={() => {
+                    setTempGoal(profileGoal || "Financial peace of mind");
+                    setIsEditingGoal(true);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl text-xs flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                  style={{
+                    background: CARD,
+                    color: INK,
+                    fontFamily: BODY,
+                    border: `1px solid ${BORDER}`,
+                  }}
+                >
+                  <Edit2 size={12} />
+                  Change
+                </button>
+              )}
+            </div>
+
+            {/* Salary setting */}
             <div
               className="rounded-2xl p-4 flex items-center justify-between"
               style={{ background: EMPTY }}
@@ -2258,7 +2404,7 @@ export function Profile() {
                     />
                     <button
                       onClick={saveWage}
-                      className="p-1.5 rounded-lg text-white"
+                      className="p-1.5 rounded-lg text-white cursor-pointer"
                       style={{ background: KEPT }}
                       title="Save"
                     >
@@ -2282,7 +2428,7 @@ export function Profile() {
                     setTempWage(String(monthlySalary));
                     setIsEditingWage(true);
                   }}
-                  className="px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all"
+                  className="px-3 py-1.5 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                   style={{
                     background: CARD,
                     color: INK,
@@ -2291,15 +2437,25 @@ export function Profile() {
                   }}
                 >
                   <Edit2 size={12} />
-                  Change salary
+                  Change
                 </button>
               )}
             </div>
 
-            <button onClick={exportData} className="w-full text-left rounded-2xl px-4 py-3" style={{ background: EMPTY, fontFamily: BODY, fontSize: 16, color: INK }}>
+            <button
+              onClick={() => {
+                localStorage.removeItem("canopy_onboarded");
+                window.location.href = "/?reboard=1";
+              }}
+              className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100"
+              style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: FOREST }}
+            >
+              🌱 Revisit Onboarding Journey
+            </button>
+            <button onClick={exportData} className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100" style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: INK }}>
               Export my data
             </button>
-            <button onClick={() => setConfirmReset(true)} className="w-full text-left rounded-2xl px-4 py-3" style={{ background: EMPTY, fontFamily: BODY, fontSize: 16, color: SPENT }}>
+            <button onClick={() => setConfirmReset(true)} className="w-full text-left rounded-2xl px-4 py-3 cursor-pointer transition-colors hover:bg-stone-100" style={{ background: EMPTY, fontFamily: BODY, fontSize: 15, color: SPENT }}>
               Reset all data
             </button>
           </div>

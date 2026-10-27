@@ -116,10 +116,83 @@ export function PlantFlower() {
   const buyingReason =
     localStorage.getItem("buyingReason") || "an impulse trigger";
 
-  const [compostReason, setCompostReason] = useState("Quick dopamine spike");
+  // Onboarded user intentions
+  const userName = localStorage.getItem("userName") || "";
+  const userProblem = localStorage.getItem("userSpendingProblem") || "";
+  const userProblemKey = localStorage.getItem("userSpendingProblemKey") || "";
+  const userGoal = localStorage.getItem("userPersonalGoal") || "";
+  const monthlySalary = parseFloat(localStorage.getItem("userMonthlySalary") || "0");
+
+  const daysOfWork = monthlySalary > 0
+    ? Math.round((cost / (monthlySalary / 22)) * 10) / 10
+    : Math.round((cost / 500 / 8) * 10) / 10;
+  const workDurationText = daysOfWork >= 1
+    ? `${daysOfWork} day${daysOfWork === 1 ? "" : "s"} of work`
+    : `${parseFloat(laborHours) || (cost > 0 ? (cost / 500).toFixed(1) : "1")}h of work`;
+
+  const [compostReason, setCompostReason] = useState(userProblem || "Quick dopamine spike");
   const [customCompost, setCustomCompost] = useState("");
 
-  const futureReflection = "Will this purchase bring you meaningful value 30 days from now, or is it a 15-minute dopamine salve?";
+  const tailoredReflection = useMemo(() => {
+    const goalPhrase = userGoal ? `your ${userGoal.toLowerCase()}` : "what truly matters to you";
+    const itemPhrase = urgeItem && urgeItem !== "this item" ? `"${urgeItem}"` : "this purchase";
+    const costPhrase = cost > 0 ? `₹${cost.toLocaleString("en-IN")}` : "this amount";
+
+    if (userProblemKey === "late_night" || userProblem.toLowerCase().includes("night") || userProblem.toLowerCase().includes("scroll")) {
+      return {
+        tag: "Breaking Late-Night Urges",
+        prompt: `Is ${itemPhrase} solving a real daylight need, or is it late-night fatigue and scrolling craving a quick dopamine salve?`,
+        tradeoff: `Letting this go saves ${costPhrase} (${workDurationText}) straight towards ${goalPhrase}.`,
+        closing: `Does buying this now serve your future self, or just a sleepy impulse?`,
+      };
+    }
+    if (userProblemKey === "stress" || userProblem.toLowerCase().includes("stress") || userProblem.toLowerCase().includes("exhaust")) {
+      return {
+        tag: "Stress & Exhaustion Check",
+        prompt: `Work was demanding, but buying ${itemPhrase} won't undo that stress — it trades away ${workDurationText} of the very labor that tired you.`,
+        tradeoff: `Keep this ${costPhrase} to fund ${goalPhrase} instead of soothing temporary exhaustion.`,
+        closing: `Give yourself real rest and peace instead of a checkout screen.`,
+      };
+    }
+    if (userProblemKey === "discount" || userProblem.toLowerCase().includes("discount") || userProblem.toLowerCase().includes("sale") || userProblem.toLowerCase().includes("fomo")) {
+      return {
+        tag: "Sale & Discount Reality Check",
+        prompt: `A discount is only a saving if you were already looking for ${itemPhrase}. Were you planning on this before seeing the price tag?`,
+        tradeoff: `Skipping it keeps ${costPhrase} (${workDurationText}) intact for ${goalPhrase}.`,
+        closing: `100% off is what you save when you choose not to buy at all.`,
+      };
+    }
+    if (userProblemKey === "boredom" || userProblem.toLowerCase().includes("bored") || userProblem.toLowerCase().includes("dopamine")) {
+      return {
+        tag: "Dopamine & Boredom Pause",
+        prompt: `The fleeting excitement of ordering ${itemPhrase} fades in minutes, but the ${workDurationText} spent working for it is gone permanently.`,
+        tradeoff: `Direct this ${costPhrase} into growing ${goalPhrase}.`,
+        closing: `Sit with the boredom for a few moments — notice how the urge dissolves.`,
+      };
+    }
+    if (userProblemKey === "fantasy_self" || userProblem.toLowerCase().includes("fantasy")) {
+      return {
+        tag: "Fantasy Self vs Reality",
+        prompt: `Will ${itemPhrase} genuinely fit your daily routine, or is it for an idealized version of yourself that lives in your imagination?`,
+        tradeoff: `Real progress comes from protecting ${goalPhrase} with this ${costPhrase} (${workDurationText}).`,
+        closing: `Honor where you are today before buying gear for an imaginary tomorrow.`,
+      };
+    }
+    if (userProblem) {
+      return {
+        tag: `Conquering ${userProblem}`,
+        prompt: `You stepped into Canopy to break free from "${userProblem}". Does buying ${itemPhrase} repeat that familiar cycle?`,
+        tradeoff: `Letting it go keeps ${costPhrase} (${workDurationText}) to protect ${goalPhrase}.`,
+        closing: `The pause you took today is proof you are already in control.`,
+      };
+    }
+    return {
+      tag: "Future Utility Reflection",
+      prompt: `Will ${itemPhrase} bring you meaningful value 30 days from now, or is it a 15-minute dopamine salve?`,
+      tradeoff: `Letting this go saves ${costPhrase} (${workDurationText}) for ${goalPhrase}.`,
+      closing: `Take a deep breath and decide with full clarity.`,
+    };
+  }, [userProblemKey, userProblem, userGoal, urgeItem, cost, workDurationText]);
 
   const emotion = localStorage.getItem("currentEmotion")
     ? JSON.parse(localStorage.getItem("currentEmotion")!)
@@ -782,13 +855,14 @@ export function PlantFlower() {
                   {/* Emotion chips */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {[
+                      ...(userProblem ? [userProblem] : []),
                       "Tired & low energy",
                       "Reward after work",
                       "Social obligation",
                       "Boredom & stimulation",
                       "Idealized self fantasy",
                       "Quick dopamine salve",
-                    ].map((reason) => {
+                    ].filter((v, i, a) => a.indexOf(v) === i).map((reason) => {
                       const selected = compostReason === reason && !customCompost;
                       return (
                         <button
@@ -798,7 +872,7 @@ export function PlantFlower() {
                             setCompostReason(reason);
                             setCustomCompost("");
                           }}
-                          className="px-3 py-1.5 rounded-xl text-xs transition-all"
+                          className="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer"
                           style={{
                             background: selected ? TEAL : "rgba(28,46,42,0.05)",
                             color: selected ? "#FAFAFA" : TEAL,
@@ -833,7 +907,7 @@ export function PlantFlower() {
                         setPhase("wilting");
                         setTimeout(() => plantNow(true, customCompost.trim() || compostReason), 1500);
                       }}
-                      className="w-full py-3.5 rounded-2xl"
+                      className="w-full py-3.5 rounded-2xl cursor-pointer"
                       style={{
                         background: TEAL,
                         color: "#FAFAFA",
@@ -848,7 +922,7 @@ export function PlantFlower() {
                     <button
                       type="button"
                       onClick={() => setPhase("asking")}
-                      className="w-full py-2.5 rounded-2xl"
+                      className="w-full py-2.5 rounded-2xl cursor-pointer"
                       style={{
                         background: "transparent",
                         color: "rgba(28,46,42,0.6)",
@@ -861,9 +935,9 @@ export function PlantFlower() {
                   </div>
                 </div>
               ) : (
-                /* phase === "asking" Dynamic Reflection Generator */
+                /* phase === "asking" Tailored Reflection & Decision Generator */
                 <div>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-3.5">
                     <div className="flex items-center gap-2">
                       <div
                         style={{
@@ -877,11 +951,11 @@ export function PlantFlower() {
                         style={{
                           fontFamily: BODY,
                           fontSize: 11,
-                          color: "rgba(28,46,42,0.5)",
+                          color: "rgba(28,46,42,0.55)",
                           letterSpacing: "0.05em",
                         }}
                       >
-                        Somatic Pause Complete
+                        {userName ? `${userName} · Pause Complete` : "Somatic Pause Complete"}
                       </span>
                     </div>
 
@@ -895,76 +969,119 @@ export function PlantFlower() {
                         fontWeight: 600,
                       }}
                     >
-                      ⚡ {laborHours}h of work
+                      ⚡ {workDurationText}
                     </span>
                   </div>
 
-                  {/* Future Utility Reflection Card */}
+                  {/* Tailored Reflection Card */}
                   <div
                     className="p-4 rounded-2xl mb-4 transition-all"
                     style={{
-                      background: "rgba(28,46,42,0.03)",
-                      border: "1px solid rgba(28,46,42,0.08)",
+                      background: "rgba(47,107,94,0.06)",
+                      border: "1px solid rgba(47,107,94,0.18)",
                     }}
                   >
-                    <p
-                      style={{
-                        fontFamily: BODY,
-                        fontSize: 10,
-                        color: "rgba(28,46,42,0.45)",
-                        letterSpacing: "0.06em",
-                        marginBottom: 6,
-                        fontWeight: 600,
-                      }}
-                    >
-                      FUTURE UTILITY REFLECTION
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p
+                        style={{
+                          fontFamily: BODY,
+                          fontSize: 10,
+                          color: FOREST,
+                          letterSpacing: "0.08em",
+                          textTransform: "uppercase",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {tailoredReflection.tag}
+                      </p>
+                      {userGoal && (
+                        <span
+                          style={{
+                            fontFamily: BODY,
+                            fontSize: 10.5,
+                            color: "rgba(28,46,42,0.5)",
+                          }}
+                        >
+                          Target: {userGoal}
+                        </span>
+                      )}
+                    </div>
+
                     <p
                       style={{
                         fontFamily: BODY,
                         fontSize: 13.5,
                         color: TEAL,
                         lineHeight: 1.5,
+                        fontWeight: 500,
                       }}
                     >
-                      "{futureReflection}"
+                      {tailoredReflection.prompt}
+                    </p>
+
+                    <p
+                      style={{
+                        fontFamily: BODY,
+                        fontSize: 12,
+                        color: "rgba(28,46,42,0.7)",
+                        lineHeight: 1.45,
+                        marginTop: 8,
+                        paddingTop: 8,
+                        borderTop: "1px dashed rgba(47,107,94,0.2)",
+                      }}
+                    >
+                      💡 {tailoredReflection.tradeoff}
                     </p>
                   </div>
 
+                  <p
+                    style={{
+                      fontFamily: HEAD,
+                      fontSize: 16,
+                      color: TEAL,
+                      textAlign: "center",
+                      marginBottom: 12,
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    Do you still buy it?
+                  </p>
+
                   {/* Dual Action Choices */}
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2.5">
                     <button
                       type="button"
                       onClick={() => plantNow(false)}
-                      className="w-full py-3.5 rounded-2xl flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]"
                       style={{
                         background: GREEN,
                         color: "#FAFAFA",
                         fontFamily: BODY,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        letterSpacing: "0.03em",
                         boxShadow: `0 4px 18px ${GREEN}40`,
                       }}
                     >
-                      <span>Let It Go</span>
-                      <span className="opacity-80 text-xs">
-                        {cost > 0 ? `· Save ₹${cost} (${laborHours}h)` : `· Reclaim ${laborHours}h`}
+                      <span style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "0.02em" }}>
+                        🌱 Let It Go & Save
+                      </span>
+                      <span className="opacity-90 text-xs font-medium">
+                        {cost > 0 ? `+₹${cost.toLocaleString("en-IN")}` : `Keep ${workDurationText}`}
                       </span>
                     </button>
+
                     <button
                       type="button"
                       onClick={() => setPhase("composting")}
-                      className="w-full py-2.5 rounded-2xl"
+                      className="w-full py-2.5 px-4 rounded-2xl flex items-center justify-center gap-1.5 cursor-pointer transition-all"
                       style={{
                         background: "rgba(28,46,42,0.05)",
-                        color: TEAL,
+                        color: "rgba(28,46,42,0.75)",
                         fontFamily: BODY,
                         fontSize: 12,
-                        border: "1px solid rgba(28,46,42,0.08)",
+                        border: "1px solid rgba(28,46,42,0.1)",
                       }}
                     >
-                      Buy Anyway (Trigger insula pain & compost)
+                      <span>I still buy it</span>
+                      <span style={{ opacity: 0.55 }}>(compost urge)</span>
                     </button>
                   </div>
                 </div>

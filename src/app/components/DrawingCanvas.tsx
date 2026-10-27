@@ -655,6 +655,14 @@ export function DrawingCanvas() {
   const laborHours =
     localStorage.getItem("laborHours") ||
     (price > 0 ? (price / 500).toFixed(1) : "0");
+  const userGoal = localStorage.getItem("userPersonalGoal") || "";
+  const monthlySalary = parseFloat(localStorage.getItem("userMonthlySalary") || "0");
+  const daysOfWork = monthlySalary > 0
+    ? Math.round((price / (monthlySalary / 22)) * 10) / 10
+    : Math.round((price / 500 / 8) * 10) / 10;
+  const workDurationText = daysOfWork >= 1
+    ? `${daysOfWork} day${daysOfWork === 1 ? "" : "s"} of work`
+    : `${laborHours}h of work`;
 
   const somaticDuration = useMemo(() => {
     if (price <= 50) return Math.min(75, Math.max(60, Math.round(60 + price * 0.3)));
@@ -1310,11 +1318,11 @@ export function DrawingCanvas() {
             style={{
               fontFamily: SPACE,
               fontSize: 12,
-              color: "rgba(26,36,32,0.45)",
+              color: "rgba(26,36,32,0.55)",
               textAlign: "center",
             }}
           >
-            ⚡ That's {laborHours}h of work to earn · Take a slow breath
+            ⚡ That's {workDurationText} to earn {userGoal ? `· Saving towards ${userGoal}` : "· Take a slow breath"}
           </p>
         </div>
       )}
