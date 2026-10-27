@@ -54,7 +54,7 @@ const GRAY_CONTRAST = "#FFFFFF"; // --gray-contrast card surface
 const INK = GRAY_12;            // high contrast dark ink (#21201f)
 const INK_SOFT = GRAY_11;       // soft body / label text (#646261)
 const INK_FAINT = GRAY_8;       // faint inactive lines & dates (#bcbbb9)
-const BG = GRAY_1;              // app canvas background (#fdfdfc)
+const BG = "#FFFFFF";           // pure white app canvas background
 const CARD = GRAY_CONTRAST;     // pure white card
 const BORDER = "transparent";   // clean borderless
 
@@ -2415,7 +2415,7 @@ export function Profile() {
 
 
   return (
-    <div className="min-h-screen flex flex-col w-full pb-36" style={{ background: BG, color: INK }}>
+    <div className="flex flex-col w-full pb-4" style={{ background: BG, color: INK }}>
       {/* ── Profile Header ────────────────────────────────────────────── */}
       <div className="px-5 pt-3 pb-3 flex items-center justify-between">
         <div>

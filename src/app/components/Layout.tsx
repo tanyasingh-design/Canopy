@@ -32,7 +32,7 @@ export function Layout({
       <div
         className="min-h-screen flex flex-col relative items-center"
         style={{
-          background: "#FAFAFA",
+          background: isProfile ? "#FFFFFF" : "#FAFAFA",
           fontFamily: "'Fraunces', serif",
         }}
       >
@@ -43,14 +43,14 @@ export function Layout({
             backgroundImage: `url(${imgLayout})`,
             backgroundRepeat: "repeat",
             backgroundSize: "256px 256px",
-            opacity: 0.2,
+            opacity: isProfile ? 0 : 0.2,
             mixBlendMode: "multiply",
           }}
         />
 
         {/* Main content */}
         <div
-          className="flex-1 relative z-10 pb-28 overflow-hidden w-full"
+          className={`flex-1 relative z-10 ${isProfile ? "pb-20" : "pb-28"} overflow-hidden w-full`}
           style={{ maxWidth: 480 }}
         >
           {children}
