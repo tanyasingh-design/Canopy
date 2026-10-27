@@ -2531,19 +2531,18 @@ export function Profile() {
         {/* ── 2. STATISTICAL SUMMARY & DISTRIBUTION (FOREST-STYLE) ───────────── */}
         {timeScope === "month" && (
           <Card pad={20}>
-            <div className="flex items-center justify-between mb-1">
-              <Title>
-                Diverted Spending & Time Distribution
-              </Title>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
+                Diverted Spending & Time
+              </h2>
               <span
-                className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1"
                 style={{
-                  background: "rgba(47,107,94,0.12)",
                   color: KEPT,
                   fontFamily: BODY,
                 }}
               >
-                <Zap size={12} />
+                <Zap size={13} />
                 {fmtWork(activeKeptHours)} saved
               </span>
             </div>
@@ -2582,19 +2581,18 @@ export function Profile() {
 
         {timeScope === "week" && (
           <Card pad={20}>
-            <div className="flex items-center justify-between mb-1">
-              <Title>
-                Diverted Spending & Time Distribution
-              </Title>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
+                Diverted Spending & Time
+              </h2>
               <span
-                className="px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1"
+                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1"
                 style={{
-                  background: "rgba(47,107,94,0.12)",
                   color: KEPT,
                   fontFamily: BODY,
                 }}
               >
-                <Zap size={12} />
+                <Zap size={13} />
                 {fmtWork(weekKeptHours)} saved
               </span>
             </div>
@@ -2728,15 +2726,14 @@ export function Profile() {
 
         {/* ── 8. LABOR & VALUE BALANCE ────────────────────────────────────────── */}
         <Card pad={22}>
-          <div className="flex items-center justify-between mb-1">
-            <Title>
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
               Labor & value balance
-            </Title>
+            </h2>
             <span
-              className="px-2.5 py-1 rounded-full text-[11px] font-semibold"
+              className="shrink-0 whitespace-nowrap text-xs font-medium mt-1"
               style={{
-                background: "rgba(28,46,42,0.06)",
-                color: INK,
+                color: INK_SOFT,
                 fontFamily: BODY,
               }}
             >
