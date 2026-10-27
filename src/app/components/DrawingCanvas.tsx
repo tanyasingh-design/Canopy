@@ -1314,7 +1314,7 @@ export function DrawingCanvas() {
               textAlign: "center",
             }}
           >
-            ⚡ Costs {laborHours}h of your life force · Lowering cortisol
+            ⚡ That's {laborHours}h of work to earn · Take a slow breath
           </p>
         </div>
       )}

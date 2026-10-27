@@ -87,7 +87,7 @@ export function Success() {
             marginBottom: "8px",
           }}
         >
-          {boughtAnyway ? "Urge Composted" : "Life Force Reclaimed"}
+          {boughtAnyway ? "Logged. No judgment" : "Money & Time Saved"}
         </h1>
         <p
           style={{
@@ -145,7 +145,7 @@ export function Success() {
                 marginTop: "4px",
               }}
             >
-              ⚡ +{(savedAmount / (parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500)).toFixed(1)}h of life force preserved
+              ⚡ +{(savedAmount / (parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500)).toFixed(1)}h of work saved
             </p>
           </motion.div>
         )}

@@ -1349,6 +1349,24 @@ export function LogUrgeSheet({
     }
   });
   const [showWageEdit, setShowWageEdit] = useState(false);
+  // Monthly salary (asked once); ~22 working days a month, 8h a day
+  const [monthlySalary, setMonthlySalary] = useState<number>(() => {
+    try {
+      return parseFloat(localStorage.getItem("userMonthlySalary") || "") || 0;
+    } catch {
+      return 0;
+    }
+  });
+  const daysOfWork = (cost: number) => {
+    const daily = hourlyWage * 8;
+    return daily > 0 ? cost / daily : 0;
+  };
+  const formatWorkTime = (cost: number) => {
+    const d = daysOfWork(cost);
+    if (d >= 1) return `${d.toFixed(1).replace(/\.0$/, "")} day${d >= 1.95 ? "s" : ""}`;
+    const h = d * 8;
+    return `${h.toFixed(1).replace(/\.0$/, "")} hours`;
+  };
 
   const fileRef = useRef<HTMLInputElement>(null);
   const costInputRef = useRef<HTMLInputElement>(null);
@@ -1359,17 +1377,17 @@ export function LogUrgeSheet({
   const mathResult = useMemo(() => {
     const trimmed = costInput.trim();
     if (!trimmed) return null;
-    if (!/[+\-*/]/.test(trimmed)) return null;
-    // Incomplete expression ending in operator
-    if (/[+\-*/]\s*$/.test(trimmed)) return null;
+    // Ignore a trailing operator so the answer stays visible while typing
+    const expr = trimmed.replace(/[+\-*/\s]+$/, "");
+    if (!/[0-9.]\s*[+*/]|[0-9.]\s*-\s*[0-9.]/.test(expr)) return null;
 
-    const sanitized = trimmed.replace(/[^0-9.+\-*/]/g, "");
+    const sanitized = expr.replace(/[^0-9.+\-*/]/g, "");
     if (!sanitized) return null;
 
     try {
       // eslint-disable-next-line no-new-func
       const res = new Function(`"use strict"; return (${sanitized})`)();
-      if (typeof res === "number" && !isNaN(res) && isFinite(res) && res >= 0) {
+      if (typeof res === "number" && !isNaN(res) && isFinite(res) && true) {
         return parseFloat(res.toFixed(2));
       }
       return null;
@@ -1379,7 +1397,7 @@ export function LogUrgeSheet({
   }, [costInput]);
 
   const totalCost = useMemo(() => {
-    if (mathResult !== null) return mathResult;
+    if (mathResult !== null) return Math.max(0, mathResult);
     const trimmed = costInput.trim();
     if (!trimmed) return 0;
     const match = trimmed.match(/^([0-9.]+)/);
@@ -1395,7 +1413,7 @@ export function LogUrgeSheet({
   function insertOperation(op: string) {
     setCostInput((prev) => {
       const trimmed = prev.trim();
-      if (!trimmed) return `0 ${op} `;
+      if (!trimmed) return op === "+" ? prev : prev;
       if (/[+\-*/]$/.test(trimmed)) {
         return `${trimmed.slice(0, -1).trim()} ${op} `;
       }
@@ -1701,91 +1719,57 @@ export function LogUrgeSheet({
                       caretColor: BLUE,
                     }}
                   />
-                  {mathResult !== null && (
-                    <button
-                      type="button"
-                      onClick={() => setCostInput(mathResult.toString())}
-                      title="Click to apply calculated amount"
-                      className="shrink-0 text-xs px-2 py-0.5 rounded-md hover:opacity-80 transition-opacity cursor-pointer flex items-center gap-1"
-                      style={{
-                        fontFamily: BODY,
-                        background: "rgba(60,50,40,0.08)",
-                        color: INK,
-                        fontWeight: 600,
-                      }}
-                    >
-                      <span>= ₹{mathResult.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
-                      <span className="text-[10px] opacity-50">↵</span>
-                    </button>
-                  )}
                 </div>
 
-                {/* Calculation Dropdown (Custom, clean, single chevron) */}
-                <div className="relative shrink-0" ref={calcMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowCalcMenu((prev) => !prev)}
-                    className="flex items-center gap-1.5 text-xs py-1.5 px-3 rounded-full transition-all cursor-pointer"
-                    style={{
-                      fontFamily: BODY,
-                      background: showCalcMenu ? INK : "rgba(60,50,40,0.06)",
-                      color: showCalcMenu ? "#FAFAFA" : INK,
-                      border: "1px solid rgba(28,46,42,0.12)",
-                      fontWeight: 500,
-                    }}
-                  >
-                    <span>+ Calculate</span>
-                    <ChevronDown
-                      size={12}
-                      className={`transition-transform duration-200 ${showCalcMenu ? "rotate-180" : ""}`}
-                      strokeWidth={2}
-                    />
-                  </button>
-
-                  {showCalcMenu && (
-                    <div
-                      className="absolute right-0 top-full mt-1.5 w-44 rounded-2xl py-1.5 z-50 shadow-xl"
-                      style={{
-                        background: "#FFFFFF",
-                        border: "1px solid rgba(28,46,42,0.12)",
-                        boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.05)",
+                {/* Inline one-tap operators (no dropdown) */}
+                <div
+                  className="shrink-0 flex items-center gap-0.5 p-0.5 rounded-full"
+                  style={{ background: "rgba(60,50,40,0.06)", border: "1px solid rgba(28,46,42,0.12)" }}
+                  role="group"
+                  aria-label="Calculate"
+                >
+                  {[
+                    { label: "Add", op: "+", symbol: "+" },
+                    { label: "Discount", op: "-", symbol: "−" },
+                    { label: "Multiply", op: "*", symbol: "×" },
+                    { label: "Split", op: "/", symbol: "÷" },
+                  ].map((item) => (
+                    <button
+                      key={item.op}
+                      type="button"
+                      title={item.label}
+                      aria-label={item.label}
+                      onClick={() => {
+                        insertOperation(item.op);
+                        costInputRef.current?.focus();
                       }}
+                      className="w-8 h-8 flex items-center justify-center rounded-full text-sm font-semibold transition-all active:scale-90 hover:bg-white cursor-pointer"
+                      style={{ fontFamily: "monospace", color: INK }}
                     >
-                      {[
-                        { label: "Add amount", op: "+", symbol: "+" },
-                        { label: "Discount", op: "-", symbol: "−" },
-                        { label: "Multiply", op: "*", symbol: "×" },
-                        { label: "Split cost", op: "/", symbol: "÷" },
-                      ].map((item) => (
-                        <button
-                          key={item.op}
-                          type="button"
-                          onClick={() => {
-                            insertOperation(item.op);
-                            setShowCalcMenu(false);
-                          }}
-                          className="w-full flex items-center justify-between px-3.5 py-2 text-xs hover:bg-[rgba(60,50,40,0.06)] transition-colors text-left cursor-pointer"
-                          style={{ fontFamily: BODY, color: INK }}
-                        >
-                          <span>{item.label}</span>
-                          <span
-                            className="text-xs font-semibold px-1.5 py-0.5 rounded"
-                            style={{
-                              background: "rgba(28,46,42,0.06)",
-                              color: INK,
-                              fontFamily: "monospace",
-                            }}
-                          >
-                            {item.symbol}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                      {item.symbol}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* ── Life-Energy Conversion (Salary Conversion) ── */}
+              {/* Live answer row */}
+              {mathResult !== null && (
+                <button
+                  type="button"
+                  disabled={mathResult <= 0}
+                  onClick={() => setCostInput(Math.max(0, mathResult).toString())}
+                  className="mt-2 w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all active:scale-[0.99] cursor-pointer"
+                  style={{ background: "rgba(47,107,94,0.10)", border: "1px solid rgba(47,107,94,0.2)", fontFamily: BODY }}
+                >
+                  <span style={{ fontSize: 12.5, color: INK }}>Answer</span>
+                  <span style={{ fontFamily: HEAD, fontSize: 20, color: mathResult < 0 ? "#B5836A" : FOREST }}>
+                    {mathResult < 0 ? "−" : ""}₹{Math.abs(mathResult).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+                  </span>
+                  <span style={{ fontSize: 11.5, color: INK, opacity: 0.6 }}>{mathResult > 0 ? "Tap to use" : "Check numbers"}</span>
+                </button>
+              )}
+
+              {/* Time-cost conversion */}
               {totalCost > 0 && (
                 <div className="pt-1.5">
                   <div className="flex items-center justify-between">
@@ -1797,7 +1781,11 @@ export function LogUrgeSheet({
                           color: INK,
                         }}
                       >
-                        Costs <strong style={{ color: "#697472", fontWeight: 500 }}>{laborHours} hours</strong> of your life force
+                        {monthlySalary > 0 ? (
+                          <>That's about <strong style={{ color: "#697472", fontWeight: 600 }}>{formatWorkTime(totalCost)} of work</strong> to earn this</>
+                        ) : (
+                          <>See how many days of work this costs</>
+                        )}
                       </span>
                     </div>
                     <button
@@ -1806,27 +1794,34 @@ export function LogUrgeSheet({
                       className="text-[11px] underline opacity-60 hover:opacity-100 cursor-pointer"
                       style={{ fontFamily: BODY, color: INK }}
                     >
-                      ₹{hourlyWage}/hr
+                      {monthlySalary > 0 ? `₹${monthlySalary.toLocaleString("en-IN")}/month · change` : "Add salary"}
                     </button>
                   </div>
 
-                  {showWageEdit && (
+                  {(showWageEdit || monthlySalary <= 0) && (
                     <div
                       className="mt-1.5 flex items-center justify-between text-xs"
                       style={{ fontFamily: BODY, color: INK }}
                     >
-                      <span className="opacity-75">Your hourly wage:</span>
+                      <span className="opacity-75">Your monthly salary:</span>
                       <div className="flex items-center gap-1">
                         <span style={{ fontFamily: HEAD, color: FOREST }}>₹</span>
                         <input
                           type="number"
-                          value={hourlyWage}
+                          inputMode="numeric"
+                          placeholder="e.g. 40000"
+                          value={monthlySalary || ""}
                           onChange={(e) => {
                             const val = parseFloat(e.target.value) || 0;
-                            setHourlyWage(val);
-                            localStorage.setItem("userHourlyWage", val.toString());
+                            setMonthlySalary(val);
+                            localStorage.setItem("userMonthlySalary", val.toString());
+                            if (val > 0) {
+                              const hw = val / 22 / 8;
+                              setHourlyWage(hw);
+                              localStorage.setItem("userHourlyWage", hw.toString());
+                            }
                           }}
-                          className="w-16 bg-transparent border-b border-[rgba(28,46,42,0.25)] text-xs text-center outline-none py-0.5"
+                          className="w-24 bg-transparent border-b border-[rgba(28,46,42,0.25)] text-xs text-center outline-none py-0.5"
                         />
                       </div>
                     </div>

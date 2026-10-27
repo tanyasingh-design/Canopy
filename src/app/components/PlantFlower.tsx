@@ -895,7 +895,7 @@ export function PlantFlower() {
                         fontWeight: 600,
                       }}
                     >
-                      ⚡ {laborHours}h life force
+                      ⚡ {laborHours}h of work
                     </span>
                   </div>
 
