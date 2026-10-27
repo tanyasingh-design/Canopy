@@ -41,10 +41,10 @@ const INK_SOFT = "rgba(28,46,42,0.62)";
 const INK_FAINT = "rgba(28,46,42,0.12)";
 const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
-const BORDER = "rgba(28,46,42,0.08)";
-const KEPT = "#2F6B5E"; // single calm accent for money kept
-const FOREST = "#2F6B5E";
-const SPENT = "#B5836A"; // muted clay for money spent
+// Canopy brand & emotion color system (matching user's palette)
+const KEPT = "#2DC84D"; // Canopy Intentional green
+const FOREST = "#2DC84D"; // Canopy primary accent
+const SPENT = "#FB5607"; // Canopy Craving orange for spent/bought
 const EMPTY = "#EFEEEA";
 
 // Emotion colours — vibrant pastel palette
@@ -985,7 +985,7 @@ function MoodGradientCalendar({
                     : !hasColors && isCurrentDay
                     ? `1.5px solid ${INK}`
                     : "1.5px solid transparent",
-                  boxShadow: isSelected ? "0 0 0 2px rgba(47,107,94,0.3), 0 3px 10px rgba(47,107,94,0.25)" : "none",
+                  boxShadow: isSelected ? "0 0 0 2px rgba(45,200,77,0.3), 0 3px 10px rgba(45,200,77,0.25)" : "none",
                   transform: isSelected ? "scale(1.08)" : "scale(1)",
                   pointerEvents: isFuture ? "none" : "auto",
                 }}
@@ -1320,15 +1320,18 @@ function describeArc(cx: number, cy: number, r1: number, r2: number, startAngle:
   return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${largeArcFlag} 0 ${p4.x} ${p4.y} Z`;
 }
 
-// ── Botanical Color Palette for Data Visuals ──────────────────────────────────
+// ── Canopy Signature Vibrant Emotion Palette for Data Visuals ─────────────────
 const BOTANICAL_COLORS = [
-  "#2F6B5E", // Forest green
-  "#B5836A", // Warm terracotta
-  "#E5A93B", // Amber honey
-  "#729B79", // Sage
-  "#8E7DBE", // Lavender
-  "#4A90A4", // Ocean teal
-  "#C06C84", // Rose
+  "#2DC84D", // Intentional (Fresh Green)
+  "#FB5607", // Craving (Vibrant Orange)
+  "#619EFF", // Calm (Sky Blue)
+  "#FF006E", // FOMO (Hot Pink)
+  "#FFBE0B", // Bored (Bright Gold)
+  "#8338EC", // Anxious (Deep Violet)
+  "#FF9C33", // Excited (Warm Tangerine)
+  "#E03C31", // Stressed (Crimson Red)
+  "#FF7F41", // Happy (Coral)
+  "#8A8F98", // Neutral (Cool Grey)
 ];
 
 // ── Most Vulnerable Day of The Week (Line Chart matching Forest App) ──────────
@@ -1387,7 +1390,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
               y1={points[peakIndex].y}
               x2={points[peakIndex].x}
               y2={84}
-              stroke="rgba(47,107,94,0.4)"
+              stroke="rgba(45,200,77,0.4)"
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
@@ -1499,8 +1502,8 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
         <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="forestAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#2F6B5E" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#2F6B5E" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#2DC84D" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#2DC84D" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -1517,7 +1520,7 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
               y1={points[peakHour].y}
               x2={points[peakHour].x}
               y2={84}
-              stroke="rgba(47,107,94,0.4)"
+              stroke="rgba(45,200,77,0.4)"
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
@@ -1934,7 +1937,7 @@ function SettingsModal({
               type="button"
               onClick={onResetData}
               className="w-full py-2.5 px-4 rounded-xl text-left text-sm font-medium transition-colors hover:bg-red-50 cursor-pointer"
-              style={{ background: "rgba(181,131,106,0.12)", fontFamily: BODY, color: SPENT }}
+              style={{ background: "rgba(251,86,7,0.12)", fontFamily: BODY, color: SPENT }}
             >
               Reset all data
             </button>
@@ -2407,10 +2410,10 @@ export function Profile() {
               onClick={jumpToToday}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-transform active:scale-95 cursor-pointer"
               style={{
-                background: "rgba(47,107,94,0.12)",
+                background: "rgba(45,200,77,0.12)",
                 color: KEPT,
                 fontFamily: BODY,
-                border: "1px solid rgba(47,107,94,0.2)",
+                border: "1px solid rgba(45,200,77,0.2)",
               }}
             >
               <RotateCcw size={12} />
@@ -2824,7 +2827,7 @@ export function Profile() {
                         <span
                           className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                           style={{
-                            background: isItemSpent ? "rgba(181,131,106,0.15)" : "rgba(47,107,94,0.12)",
+                            background: isItemSpent ? "rgba(251,86,7,0.14)" : "rgba(45,200,77,0.14)",
                             color: isItemSpent ? SPENT : KEPT,
                           }}
                         >
