@@ -36,28 +36,36 @@ import { createPortal } from "react-dom";
 const HEAD = "'Passion One', sans-serif";
 const BODY = "'Fraunces', serif";
 
-const INK = "#1C2E2A";
-const INK_SOFT = "rgba(28,46,42,0.62)";
-const INK_FAINT = "rgba(28,46,42,0.12)";
-const BG = "#FAFAFA";
-const CARD = "#FFFFFF";
-const BORDER = "transparent"; // borderless clean visual aesthetic
+// ── Canopy Profile Radix Gray Contrast Palette ─────────────────────────────────
+const GRAY_1 = "#fdfdfc";       // --gray-1 app canvas
+const GRAY_2 = "#f9f9f9";       // --gray-2 subtle surface
+const GRAY_3 = "#f1f0ef";       // --gray-3 chip / badge / icon surface
+const GRAY_4 = "#e9e8e7";       // --gray-4 bar tracks & subtle lines
+const GRAY_5 = "#e2e1e0";       // --gray-5
+const GRAY_6 = "#dad9d7";       // --gray-6
+const GRAY_7 = "#d0cecd";       // --gray-7
+const GRAY_8 = "#bcbbb9";       // --gray-8 borders & baseline chart lines
+const GRAY_9 = "#8e8c8b";       // --gray-9 secondary indicator / subtle line
+const GRAY_10 = "#838180";      // --gray-10 secondary text
+const GRAY_11 = "#646261";      // --gray-11 body / label text
+const GRAY_12 = "#21201f";      // --gray-12 high contrast ink & headings
+const GRAY_CONTRAST = "#FFFFFF"; // --gray-contrast card surface
 
-// ── Canopy Profile Secondary Palette & Shades (Radix Pink/Plum System) ─────────
-const SEC_PLUM = "#2C1320";       // --pink-9 deep plum (primary focal ink & hero accents)
-const SEC_PLUM_HOVER = "#442937"; // --pink-10 warm deep plum (rank 2, secondary bars)
-const SEC_ROSE = "#7D586A";       // --pink-11 muted rose (charts, secondary labels, rank 3+)
-const SEC_BORDER = "#DDABC2";     // --pink-8 soft rose lines & node markers
-const SEC_MUTED = "#E8C3D4";      // --pink-7 gentle rose tint
-const SEC_TRACK = "#F7E2EB";      // --pink-4 rose blush for progress tracks
-const SEC_BLUSH = "#F7E2EB";      // --pink-4 subtle rose border / badges
-const SEC_PETAL = "#FCEBF2";      // --pink-3 soft blush surface / chips / badges
-const SEC_BG = "#FFF7FB";         // --pink-2 whisper background
-const EMPTY = "#F7E2EB";          // bar track
-const KEPT = "#2C1320";           // kept / diverted in deep plum
-const FOREST = "#2C1320";         // secondary deep plum
-const PRIMARY_GREEN = "#2C1320";  // secondary deep plum for profile
-const SPENT = "#FB5607";          // Canopy Craving orange for spent/bought
+const INK = GRAY_12;            // high contrast dark ink (#21201f)
+const INK_SOFT = GRAY_11;       // soft body / label text (#646261)
+const INK_FAINT = GRAY_8;       // faint inactive lines & dates (#bcbbb9)
+const BG = GRAY_1;              // app canvas background (#fdfdfc)
+const CARD = GRAY_CONTRAST;     // pure white card
+const BORDER = "transparent";   // clean borderless
+
+// ── Secondary Highlight (Only used to highlight any word or important thing, or in pie chart) ──
+const SECONDARY_HIGHLIGHT = "#2C1320"; // --pink-9 secondary deep plum
+const SEC_PLUM = "#2C1320";            // secondary plum
+const EMPTY = GRAY_4;                  // grey contrast bar track
+const KEPT = SECONDARY_HIGHLIGHT;      // kept / diverted highlight
+const FOREST = SECONDARY_HIGHLIGHT;
+const PRIMARY_GREEN = SECONDARY_HIGHLIGHT;
+const SPENT = "#FB5607";               // Canopy Craving orange for spent/bought
 
 // Emotion colours — vibrant pastel palette
 const EMOTION_RGB: Record<string, [number, number, number]> = {
@@ -205,7 +213,7 @@ function Card({ children, pad = 20, className = "" }: { children: React.ReactNod
       style={{
         background: CARD,
         border: "none",
-        boxShadow: "0 2px 14px rgba(28,46,42,0.04)",
+        boxShadow: "0 2px 14px rgba(33,32,31,0.04)",
         padding: pad,
       }}
     >
@@ -687,7 +695,7 @@ function AestheticAuraCard({
           backgroundRepeat: "no-repeat",
           minHeight: 140,
           padding: "18px 20px",
-          boxShadow: "0 4px 20px rgba(28,46,42,0.05)",
+          boxShadow: "0 4px 20px rgba(33,32,31,0.05)",
           border: "none",
         }}
         title="Tap to preview or save aesthetic art card"
@@ -756,7 +764,7 @@ function AestheticAuraCard({
                 fontFamily: HEAD,
                 fontSize: 13,
                 letterSpacing: "1px",
-                color: "rgba(28,46,42,0.35)",
+                color: GRAY_9,
                 textTransform: "uppercase",
               }}
             >
@@ -777,7 +785,7 @@ function AestheticAuraCard({
                 exit={{ opacity: 0 }}
                 className="fixed inset-0 z-[300] flex flex-col items-center justify-center p-4 sm:p-6"
                 style={{
-                  background: "#2E3F3A",
+                  background: "rgba(33,32,31,0.88)",
                   willChange: "opacity",
                 }}
                 onClick={() => setShowPreview(false)}
@@ -908,9 +916,9 @@ function InsightCard({
       <div className="flex items-center gap-4">
         <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
           <svg width="64" height="64" viewBox="0 0 64 64" style={{ transform: "rotate(-90deg)" }}>
-            <circle cx="32" cy="32" r={R} fill="none" stroke="rgba(28,46,42,0.08)" strokeWidth="6" />
+            <circle cx="32" cy="32" r={R} fill="none" stroke={GRAY_4} strokeWidth="6" />
             <circle
-              cx="32" cy="32" r={R} fill="none" stroke={KEPT} strokeWidth="6" strokeLinecap="round"
+              cx="32" cy="32" r={R} fill="none" stroke={SECONDARY_HIGHLIGHT} strokeWidth="6" strokeLinecap="round"
               strokeDasharray={C} strokeDashoffset={C - (C * rate) / 100}
               style={{ transition: "stroke-dashoffset 600ms cubic-bezier(0.23,1,0.32,1)" }}
             />
@@ -930,8 +938,8 @@ function InsightCard({
         <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, lineHeight: 1.5, marginTop: 6 }}>{pattern}</p>
       )}
 
-      <div className="mt-4 p-3.5 rounded-2xl" style={{ background: "rgba(255,255,255,0.75)", border: `1px solid ${BORDER}` }}>
-        <p style={{ fontFamily: BODY, fontSize: 11, letterSpacing: "1.2px", color: KEPT, textTransform: "uppercase", fontWeight: 600 }}>Try next time</p>
+      <div className="mt-4 p-3.5 rounded-2xl" style={{ background: GRAY_2, border: `1px solid ${BORDER}` }}>
+        <p style={{ fontFamily: BODY, fontSize: 11, letterSpacing: "1.2px", color: SECONDARY_HIGHLIGHT, textTransform: "uppercase", fontWeight: 600 }}>Try next time</p>
         <p style={{ fontFamily: BODY, fontSize: 14.5, color: INK, marginTop: 3, lineHeight: 1.45 }}>{tip.act}</p>
         <p style={{ fontFamily: BODY, fontSize: 12.5, color: INK_SOFT, marginTop: 4, fontStyle: "italic", lineHeight: 1.4 }}>{tip.why}</p>
       </div>
@@ -1260,9 +1268,9 @@ function DayScrubber({
               isFuture ? "cursor-default opacity-25 pointer-events-none" : ""
             }`}
             style={{
-              background: isSelected ? KEPT : "rgba(28,46,42,0.04)",
+              background: isSelected ? SECONDARY_HIGHLIGHT : GRAY_3,
               color: isSelected ? "#FFFFFF" : INK,
-              border: isSelected ? `1.5px solid ${KEPT}` : isToday ? `1.5px solid ${INK}` : `1px solid ${BORDER}`,
+              border: isSelected ? "none" : isToday ? `1.5px solid ${INK}` : "none",
               minWidth: 44,
             }}
           >
@@ -1275,7 +1283,7 @@ function DayScrubber({
             {hasUrges && !isFuture && (
               <span
                 className="w-1.5 h-1.5 rounded-full mt-1"
-                style={{ background: isSelected ? "#FFFFFF" : KEPT }}
+                style={{ background: isSelected ? "#FFFFFF" : SECONDARY_HIGHLIGHT }}
               />
             )}
           </button>
@@ -1315,9 +1323,9 @@ function WeekScrubber({
               isFuture ? "cursor-default opacity-25 pointer-events-none" : "cursor-pointer active:scale-95"
             }`}
             style={{
-              background: isSelected ? KEPT : "rgba(28,46,42,0.04)",
+              background: isSelected ? SECONDARY_HIGHLIGHT : GRAY_3,
               color: isSelected ? "#FFFFFF" : INK,
-              border: isSelected ? `1.5px solid ${KEPT}` : isToday ? `1.5px solid ${INK}` : `1px solid ${BORDER}`,
+              border: isSelected ? "none" : isToday ? `1.5px solid ${INK}` : "none",
               minWidth: 44,
             }}
           >
@@ -1410,7 +1418,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
         Most impulses on{" "}
-        <strong style={{ color: SEC_PLUM, fontWeight: 700 }}>
+        <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
           {allFlowers.length > 0 ? peakDayName : "—"}
         </strong>{" "}
         every week in general
@@ -1419,28 +1427,28 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
       <div className="w-full relative mt-1">
         <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
           {/* Subtle horizontal grid lines */}
-          <line x1="16" y1="26" x2="304" y2="26" stroke="rgba(28,46,42,0.06)" strokeDasharray="3 3" />
-          <line x1="16" y1="55" x2="304" y2="55" stroke="rgba(28,46,42,0.06)" strokeDasharray="3 3" />
-          <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
+          <line x1="16" y1="26" x2="304" y2="26" stroke={GRAY_4} strokeDasharray="3 3" />
+          <line x1="16" y1="55" x2="304" y2="55" stroke={GRAY_4} strokeDasharray="3 3" />
+          <line x1="16" y1="84" x2="304" y2="84" stroke={GRAY_4} />
 
-          {/* Vertical dashed line at peak day (secondary rose accent) */}
+          {/* Vertical dashed line at peak day */}
           {allFlowers.length > 0 && (
             <line
               x1={points[peakIndex].x}
               y1={points[peakIndex].y}
               x2={points[peakIndex].x}
               y2={84}
-              stroke="rgba(125, 88, 106, 0.45)"
+              stroke={GRAY_8}
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
           )}
 
-          {/* Smooth connecting line (secondary rose) */}
+          {/* Smooth connecting line (grey contrast) */}
           <path
             d={pathD}
             fill="none"
-            stroke={SEC_ROSE}
+            stroke={GRAY_8}
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -1455,8 +1463,8 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                   cx={p.x}
                   cy={p.y}
                   r={isPeak ? 5.5 : 3.5}
-                  fill={isPeak ? "#FFFFFF" : SEC_BORDER}
-                  stroke={isPeak ? SEC_PLUM : SEC_ROSE}
+                  fill={isPeak ? GRAY_CONTRAST : GRAY_3}
+                  stroke={isPeak ? SECONDARY_HIGHLIGHT : GRAY_8}
                   strokeWidth={isPeak ? 3 : 1.5}
                 />
                 {isPeak && (
@@ -1464,7 +1472,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                     x={p.x}
                     y={p.y - 8}
                     textAnchor="middle"
-                    fill={SEC_PLUM}
+                    fill={SECONDARY_HIGHLIGHT}
                     style={{ fontFamily: HEAD, fontSize: 13, fontWeight: 700 }}
                   >
                     {p.cnt}
@@ -1474,7 +1482,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                   x={p.x}
                   y={102}
                   textAnchor="middle"
-                  fill={isPeak ? INK : "rgba(28,46,42,0.5)"}
+                  fill={isPeak ? GRAY_12 : GRAY_10}
                   style={{
                     fontFamily: BODY,
                     fontSize: 11,
@@ -1532,7 +1540,7 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
         Most impulses around{" "}
-        <strong style={{ color: SEC_PLUM, fontWeight: 700 }}>
+        <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
           {allFlowers.length > 0 ? peakHourLabel : "—"}
         </strong>{" "}
         every day in general
@@ -1542,48 +1550,48 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
         <svg viewBox="0 0 320 110" className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="forestAreaGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#DDABC2" stopOpacity="0.28" />
-              <stop offset="100%" stopColor="#DDABC2" stopOpacity="0.0" />
+              <stop offset="0%" stopColor={GRAY_4} stopOpacity="0.55" />
+              <stop offset="100%" stopColor={GRAY_4} stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
           {/* Horizontal base line */}
-          <line x1="16" y1="84" x2="304" y2="84" stroke="rgba(28,46,42,0.08)" />
+          <line x1="16" y1="84" x2="304" y2="84" stroke={GRAY_4} />
 
-          {/* Area fill (secondary rose glow) */}
+          {/* Area fill (grey contrast glow) */}
           {allFlowers.length > 0 && <path d={areaD} fill="url(#forestAreaGrad)" />}
 
-          {/* Vertical dashed line at peak hour (secondary rose accent) */}
+          {/* Vertical dashed line at peak hour */}
           {allFlowers.length > 0 && (
             <line
               x1={points[peakHour].x}
               y1={points[peakHour].y}
               x2={points[peakHour].x}
               y2={84}
-              stroke="rgba(125, 88, 106, 0.45)"
+              stroke={GRAY_8}
               strokeDasharray="2 3"
               strokeWidth={1.5}
             />
           )}
 
-          {/* Stroke line (secondary rose) */}
+          {/* Stroke line (grey contrast) */}
           <path
             d={pathD}
             fill="none"
-            stroke={SEC_ROSE}
+            stroke={GRAY_8}
             strokeWidth={2.2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
-          {/* Peak dot (secondary deep plum accent) */}
+          {/* Peak dot (secondary highlight accent) */}
           {allFlowers.length > 0 && (
             <circle
               cx={points[peakHour].x}
               cy={points[peakHour].y}
               r={5}
-              fill="#FFFFFF"
-              stroke={SEC_PLUM}
+              fill={GRAY_CONTRAST}
+              stroke={SECONDARY_HIGHLIGHT}
               strokeWidth={3}
             />
           )}
@@ -1598,7 +1606,7 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
                 x={p.x}
                 y={100}
                 textAnchor="middle"
-                fill="rgba(28,46,42,0.5)"
+                fill={GRAY_10}
                 style={{ fontFamily: BODY, fontSize: 10.5 }}
               >
                 {label}
@@ -1743,13 +1751,13 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
 
   const renderItemIcon = (cat: string) => {
     const c = cat.toLowerCase();
-    if (c.includes("coffee") || c.includes("tea")) return <Coffee size={15} color={SEC_PLUM} />;
-    if (c.includes("food") || c.includes("dining")) return <Utensils size={15} color={SEC_PLUM} />;
-    if (c.includes("tech") || c.includes("gadget")) return <Headphones size={15} color={SEC_PLUM} />;
-    if (c.includes("cloth") || c.includes("fashion")) return <Shirt size={15} color={SEC_PLUM} />;
-    if (c.includes("book")) return <BookOpen size={15} color={SEC_PLUM} />;
-    if (c.includes("game")) return <Gamepad2 size={15} color={SEC_PLUM} />;
-    return <Tag size={15} color={SEC_PLUM} />;
+    if (c.includes("coffee") || c.includes("tea")) return <Coffee size={15} color={GRAY_12} />;
+    if (c.includes("food") || c.includes("dining")) return <Utensils size={15} color={GRAY_12} />;
+    if (c.includes("tech") || c.includes("gadget")) return <Headphones size={15} color={GRAY_12} />;
+    if (c.includes("cloth") || c.includes("fashion")) return <Shirt size={15} color={GRAY_12} />;
+    if (c.includes("book")) return <BookOpen size={15} color={GRAY_12} />;
+    if (c.includes("game")) return <Gamepad2 size={15} color={GRAY_12} />;
+    return <Tag size={15} color={GRAY_12} />;
   };
 
   return (
@@ -1765,7 +1773,7 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
             </span>
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: SEC_PETAL }}
+              style={{ background: GRAY_3 }}
             >
               {renderItemIcon(item.category)}
             </div>
@@ -1778,17 +1786,12 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
                   {item.count} {item.count === 1 ? "time" : "times"} · {fmt(item.total)}
                 </span>
               </div>
-              <div className="w-full rounded-full overflow-hidden mt-1.5" style={{ height: 6.5, background: SEC_BLUSH }}>
+              <div className="w-full rounded-full overflow-hidden mt-1.5" style={{ height: 6.5, background: GRAY_4 }}>
                 <div
                   className="h-full rounded-full transition-all duration-500"
                   style={{
                     width: `${item.barWidth}%`,
-                    background:
-                      item.rank === 1
-                        ? SEC_PLUM
-                        : item.rank === 2
-                        ? SEC_PLUM_HOVER
-                        : SEC_ROSE,
+                    background: item.rank === 1 ? SECONDARY_HIGHLIGHT : GRAY_8,
                   }}
                 />
               </div>
@@ -1858,7 +1861,7 @@ function SettingsModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ background: "rgba(28,46,42,0.45)", backdropFilter: "blur(6px)" }}
+      style={{ background: "rgba(33,32,31,0.5)", backdropFilter: "blur(6px)" }}
       onClick={onClose}
     >
       <div
@@ -1866,7 +1869,7 @@ function SettingsModal({
         style={{ background: BG, color: INK }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-4 border-b border-[rgba(28,46,42,0.08)]">
+        <div className="flex items-center justify-between pb-4 border-b border-[var(--gray-4)]">
           <div>
             <h2 style={{ fontFamily: HEAD, fontSize: 26, color: INK }}>Settings & Profile</h2>
             <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
@@ -1876,7 +1879,7 @@ function SettingsModal({
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
-            style={{ background: "rgba(28,46,42,0.06)" }}
+            style={{ background: GRAY_3 }}
             aria-label="Close settings"
           >
             <X size={16} color={INK} />
@@ -1894,7 +1897,7 @@ function SettingsModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Alex"
-              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[var(--gray-6)] bg-white outline-none"
               style={{ fontFamily: BODY, fontSize: 15 }}
             />
           </div>
@@ -1906,7 +1909,7 @@ function SettingsModal({
                 Monthly Take-Home Salary
               </label>
               {parsedSalary > 0 && (
-                <span style={{ fontFamily: BODY, fontSize: 12, color: FOREST, fontWeight: 600 }}>
+                <span style={{ fontFamily: BODY, fontSize: 12, color: SECONDARY_HIGHLIGHT, fontWeight: 600 }}>
                   @ ₹{derivedWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr · ≈ ₹{Math.round(parsedSalary / 22).toLocaleString("en-IN")}/day
                 </span>
               )}
@@ -1921,7 +1924,7 @@ function SettingsModal({
                 value={salary}
                 onChange={(e) => setSalary(e.target.value)}
                 placeholder="e.g. 50000"
-                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-[var(--gray-6)] bg-white outline-none"
                 style={{ fontFamily: HEAD, fontSize: 18 }}
               />
             </div>
@@ -1940,7 +1943,7 @@ function SettingsModal({
               value={problem}
               onChange={(e) => setProblem(e.target.value)}
               placeholder="e.g. Late-night scrolling, Sales and discounts"
-              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[var(--gray-6)] bg-white outline-none"
               style={{ fontFamily: BODY, fontSize: 15 }}
             />
           </div>
@@ -1955,7 +1958,7 @@ function SettingsModal({
               value={goal}
               onChange={(e) => setGoal(e.target.value)}
               placeholder="e.g. Dream travel, Emergency peace fund"
-              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[rgba(28,46,42,0.15)] bg-white outline-none"
+              className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[var(--gray-6)] bg-white outline-none"
               style={{ fontFamily: BODY, fontSize: 15 }}
             />
           </div>
@@ -1969,7 +1972,7 @@ function SettingsModal({
                 window.location.href = "/?reboard=1";
               }}
               className="w-full py-2.5 px-4 rounded-xl text-left text-sm font-medium transition-colors hover:bg-stone-200/60 cursor-pointer"
-              style={{ background: EMPTY, fontFamily: BODY, color: FOREST }}
+              style={{ background: GRAY_3, fontFamily: BODY, color: INK }}
             >
               Revisit onboarding journey
             </button>
@@ -1977,7 +1980,7 @@ function SettingsModal({
               type="button"
               onClick={onExportData}
               className="w-full py-2.5 px-4 rounded-xl text-left text-sm font-medium transition-colors hover:bg-stone-200/60 cursor-pointer"
-              style={{ background: EMPTY, fontFamily: BODY, color: INK }}
+              style={{ background: GRAY_3, fontFamily: BODY, color: INK }}
             >
               Export data backup (JSON)
             </button>
@@ -1997,7 +2000,7 @@ function SettingsModal({
               type="button"
               onClick={handleSave}
               className="w-full py-3 rounded-2xl text-white font-semibold transition-transform active:scale-[0.99] cursor-pointer"
-              style={{ background: FOREST, fontFamily: HEAD, fontSize: 18 }}
+              style={{ background: SECONDARY_HIGHLIGHT, fontFamily: HEAD, fontSize: 18 }}
             >
               Save Changes
             </button>
@@ -2456,12 +2459,12 @@ export function Profile() {
           {!isCurrentPeriod && (
             <button
               onClick={jumpToToday}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold shadow-sm transition-transform active:scale-95 cursor-pointer"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-transform active:scale-95 cursor-pointer"
               style={{
-                background: "rgba(45,200,77,0.12)",
-                color: KEPT,
+                background: GRAY_3,
+                color: SECONDARY_HIGHLIGHT,
                 fontFamily: BODY,
-                border: "1px solid rgba(45,200,77,0.2)",
+                border: "none",
               }}
             >
               <RotateCcw size={12} />
@@ -2473,7 +2476,7 @@ export function Profile() {
             onClick={() => setShowSettings(true)}
             className="w-9 h-9 rounded-full flex items-center justify-center transition-transform active:scale-90 cursor-pointer"
             style={{
-              background: "rgba(28,46,42,0.06)",
+              background: GRAY_3,
               border: `1px solid ${BORDER}`,
             }}
             aria-label="Settings and Profile"
@@ -2489,7 +2492,7 @@ export function Profile() {
         <div
           className="relative flex p-1 rounded-2xl"
           style={{
-            background: SEC_PETAL,
+            background: GRAY_3,
             border: `1px solid ${BORDER}`,
           }}
         >
@@ -2513,8 +2516,8 @@ export function Profile() {
                     layoutId="activeScopePill"
                     className="absolute inset-0 rounded-xl"
                     style={{
-                      background: "#FFFFFF",
-                      boxShadow: "0 2px 10px rgba(28,46,42,0.08)",
+                      background: GRAY_CONTRAST,
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                       border: `1px solid ${BORDER}`,
                     }}
                     transition={{ type: "spring", stiffness: 450, damping: 36 }}
@@ -2536,7 +2539,7 @@ export function Profile() {
           <button
             onClick={() => shiftPeriod(-1)}
             className={arrowBtn}
-            style={{ background: SEC_PETAL }}
+            style={{ background: GRAY_3 }}
             aria-label="Previous period"
           >
             <ChevronLeft size={18} color={INK} />
@@ -2559,7 +2562,7 @@ export function Profile() {
             onClick={() => shiftPeriod(1)}
             disabled={isCurrentPeriod}
             className={arrowBtn}
-            style={{ background: SEC_PETAL }}
+            style={{ background: GRAY_3 }}
             aria-label="Next period"
           >
             <ChevronRight size={18} color={INK} />
@@ -2587,9 +2590,10 @@ export function Profile() {
                 Diverted Spending & Time
               </h2>
               <span
-                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1"
+                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1 px-2.5 py-1 rounded-full"
                 style={{
-                  color: KEPT,
+                  color: SECONDARY_HIGHLIGHT,
+                  background: GRAY_3,
                   fontFamily: BODY,
                 }}
               >
@@ -2600,7 +2604,7 @@ export function Profile() {
 
             <div className="flex items-baseline justify-between mb-4">
               <div>
-                <span style={{ fontFamily: HEAD, fontSize: 34, color: KEPT }}>
+                <span style={{ fontFamily: HEAD, fontSize: 34, color: SECONDARY_HIGHLIGHT }}>
                   {fmt(stats.kept)}
                 </span>
                 <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
@@ -2637,9 +2641,10 @@ export function Profile() {
                 Diverted Spending & Time
               </h2>
               <span
-                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1"
+                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1 px-2.5 py-1 rounded-full"
                 style={{
-                  color: KEPT,
+                  color: SECONDARY_HIGHLIGHT,
+                  background: GRAY_3,
                   fontFamily: BODY,
                 }}
               >
@@ -2736,9 +2741,9 @@ export function Profile() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
                   style={{
                     fontFamily: BODY,
-                    background: SEC_PETAL,
+                    background: GRAY_3,
                     border: `1px solid ${BORDER}`,
-                    color: INK,
+                    color: GRAY_12,
                   }}
                 >
                   <i
@@ -2751,8 +2756,8 @@ export function Profile() {
                     }}
                   />
                   <span>{m.name}</span>
-                  <strong style={{ fontFamily: HEAD, fontSize: 16, color: SEC_PLUM }}>{m.pct}%</strong>
-                  <span style={{ color: SEC_ROSE, fontSize: 12 }}>({m.count})</span>
+                  <strong style={{ fontFamily: HEAD, fontSize: 16, color: GRAY_12 }}>{m.pct}%</strong>
+                  <span style={{ color: GRAY_10, fontSize: 12 }}>({m.count})</span>
                 </span>
               ))}
             </div>
@@ -2767,7 +2772,7 @@ export function Profile() {
                 }}
               >
                 Primary impulse trigger:{" "}
-                <strong style={{ color: moodMix[0]?.rgb ? rgbStr(moodMix[0].rgb) : SEC_PLUM, fontWeight: 700 }}>
+                <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
                   {moodMix[0].name}
                 </strong>
                 , accounting for {moodMix[0].pct}% of all logged moments in this period.
@@ -2788,8 +2793,8 @@ export function Profile() {
             <span
               className="shrink-0 whitespace-nowrap text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1"
               style={{
-                color: SEC_PLUM,
-                background: SEC_PETAL,
+                color: GRAY_11,
+                background: GRAY_3,
                 fontFamily: BODY,
               }}
             >
@@ -2799,7 +2804,7 @@ export function Profile() {
 
           <div className="flex items-baseline justify-between mb-2">
             <div>
-              <span style={{ fontFamily: HEAD, fontSize: 28, color: SEC_PLUM }}>
+              <span style={{ fontFamily: HEAD, fontSize: 28, color: SECONDARY_HIGHLIGHT }}>
                 {activeKeptHours}h
               </span>
               <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
@@ -2816,13 +2821,13 @@ export function Profile() {
             </div>
           </div>
 
-          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 12, background: SEC_PETAL }}>
+          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 12, background: GRAY_4 }}>
             {activeKeptHours > 0 && (
               <div
                 className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
                 style={{
                   width: `${(activeKeptHours / (activeKeptHours + activeSpentHours || 0.01)) * 100}%`,
-                  background: SEC_PLUM,
+                  background: SECONDARY_HIGHLIGHT,
                   fontFamily: HEAD,
                 }}
               >
@@ -2843,9 +2848,9 @@ export function Profile() {
             )}
           </div>
 
-          <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(28,46,42,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
+          <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(0,0,0,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
             <span>
-              Saved: <strong style={{ color: SEC_PLUM, fontWeight: 700 }}>{fmt(stats.kept)}</strong>
+              Saved: <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>{fmt(stats.kept)}</strong>
             </span>
             <span>
               Spent: <strong style={{ color: INK, fontWeight: 600 }}>{fmt(stats.spent)}</strong>
@@ -2872,8 +2877,8 @@ export function Profile() {
                     key={f.id}
                     className="p-3.5 rounded-2xl flex flex-col gap-2"
                     style={{
-                      background: "rgba(28,46,42,0.03)",
-                      border: `1px solid ${BORDER}`,
+                      background: GRAY_2,
+                      border: "none",
                     }}
                   >
                     <div className="flex items-center justify-between">
@@ -2884,8 +2889,8 @@ export function Profile() {
                         <span
                           className="px-2.5 py-0.5 rounded-full text-xs font-semibold"
                           style={{
-                            background: isItemSpent ? "rgba(251,86,7,0.14)" : "rgba(45,200,77,0.14)",
-                            color: isItemSpent ? SPENT : KEPT,
+                            background: isItemSpent ? "rgba(251,86,7,0.14)" : GRAY_3,
+                            color: isItemSpent ? SPENT : SECONDARY_HIGHLIGHT,
                           }}
                         >
                           {isItemSpent ? "Bought" : "Let go"}
@@ -2911,7 +2916,7 @@ export function Profile() {
                     )}
 
                     <div
-                      className="flex items-center justify-between text-xs pt-1 border-t border-[rgba(28,46,42,0.05)]"
+                      className="flex items-center justify-between text-xs pt-1 border-t border-[var(--gray-4)]"
                       style={{ fontFamily: BODY, color: INK_SOFT }}
                     >
                       <span className="flex items-center gap-1.5">
@@ -2973,7 +2978,7 @@ export function Profile() {
 
       {/* ── Confirmation Modal ──────────────────────────────────────────────── */}
       {confirmReset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ background: "rgba(28,46,42,0.45)" }} onClick={() => setConfirmReset(false)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ background: "rgba(33,32,31,0.5)" }} onClick={() => setConfirmReset(false)}>
           <div className="w-full max-w-sm rounded-3xl p-6" style={{ background: BG }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ fontFamily: HEAD, fontSize: 26, color: INK }}>Reset all data?</h3>
             <p style={{ fontFamily: BODY, fontSize: 16, lineHeight: 1.5, color: INK_SOFT, marginTop: 8 }}>
