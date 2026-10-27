@@ -31,6 +31,7 @@ const BG = "#FAFAFA";
 const CARD = "#FFFFFF";
 const BORDER = "rgba(28,46,42,0.08)";
 const KEPT = "#2F6B5E"; // single calm accent for money kept
+const FOREST = "#2F6B5E";
 const SPENT = "#B5836A"; // muted clay for money spent
 const EMPTY = "#EFEEEA";
 

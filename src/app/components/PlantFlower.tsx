@@ -22,6 +22,7 @@ type Phase = "idle" | "asking" | "composting" | "wilting";
 const BG = "#FAFAFA";
 const TEAL = "#1C2E2A";
 const GREEN = "#4DAA57";
+const FOREST = "#2F6B5E";
 const HEAD = "'Passion One', sans-serif";
 const BODY = "'Fraunces', serif";
 
