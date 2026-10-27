@@ -1817,7 +1817,7 @@ export function LogUrgeSheet({
                             setMonthlySalary(val);
                             localStorage.setItem("userMonthlySalary", val.toString());
                             if (val > 0) {
-                              const hw = val / 22 / 8;
+                              const hw = Math.round((val / 22 / 8) * 100) / 100;
                               setHourlyWage(hw);
                               localStorage.setItem("userHourlyWage", hw.toString());
                             }

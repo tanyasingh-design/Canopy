@@ -322,7 +322,8 @@ export function Onboarding() {
     const titles = problemTitles();
     localStorage.setItem("userName", name.trim() || "Friend");
     localStorage.setItem("userMonthlySalary", String(parsedSalary));
-    localStorage.setItem("userHourlyWage", String(parsedSalary / 22 / 8));
+    const calculatedHourlyWage = Math.round((parsedSalary / 22 / 8) * 100) / 100;
+    localStorage.setItem("userHourlyWage", String(calculatedHourlyWage));
     localStorage.setItem("userSpendingProblems", JSON.stringify(titles));
     localStorage.setItem("userSpendingProblemKeys", JSON.stringify(problems));
     localStorage.setItem("userSpendingProblem", titles.join(", "));
@@ -480,7 +481,15 @@ export function Onboarding() {
           >
             <div />
             <div className="flex flex-col items-center gap-8 px-8">
-              <div className="flex flex-col items-center gap-6">
+              <div className="flex flex-col items-center gap-4">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.82 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="mb-1"
+                >
+                  <SunShapeSvg width={72} height={72} />
+                </motion.div>
                 <h1
                   style={{
                     fontFamily: HEAD,
