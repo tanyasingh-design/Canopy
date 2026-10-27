@@ -197,7 +197,7 @@ function Title({ children, hint }: { children: React.ReactNode; hint?: string })
   );
 }
 
-// ── True Emotion Aura Gradient Generator ──────────────────────────────────────
+// ── Ethereal Softened True-Emotion Aura Gradient Generator ─────────────────────
 function getAuraGradientStyle(colors: [number, number, number][]) {
   // Deduplicate colors to distinct logged emotion colors
   const uniqueColors: [number, number, number][] = [];
@@ -211,64 +211,53 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
     }
   });
 
-  // 0 emotions: Quiet, light tactile matte linen — zero muddy dark green
+  // 0 emotions: Quiet, pure tactile linen cream
   if (uniqueColors.length === 0) {
     return {
-      background: "#EBEAE5",
+      background: "#FAF9F5",
     };
   }
 
   // 1 emotion logged (e.g. Craving [212, 134, 74]):
-  // Aura is 100% made from that single emotion — strictly NO foreign pinks or swamp dark-greens!
+  // Ethereal soft glowing bloom diffused on a warm light linen backdrop
   if (uniqueColors.length === 1) {
     const c = uniqueColors[0];
-    const cLight = [
-      Math.min(255, Math.round(c[0] * 1.16 + 18)),
-      Math.min(255, Math.round(c[1] * 1.16 + 18)),
-      Math.min(255, Math.round(c[2] * 1.16 + 18)),
-    ];
-    const cDeep = [
-      Math.round(c[0] * 0.6),
-      Math.round(c[1] * 0.6),
-      Math.round(c[2] * 0.6),
-    ];
-
     return {
       background: `
-        radial-gradient(circle at 26% 28%, ${rgbStr(cLight, 0.96)} 0%, transparent 60%),
-        radial-gradient(circle at 78% 74%, ${rgbStr(c, 0.92)} 0%, transparent 62%),
-        radial-gradient(circle at 50% 45%, ${rgbStr(c, 0.88)} 0%, transparent 68%),
-        linear-gradient(145deg, ${rgbStr(c, 0.95)} 0%, ${rgbStr(cDeep, 0.98)} 100%)
+        radial-gradient(circle at 62% 40%, ${rgbStr(c, 0.46)} 0%, ${rgbStr(c, 0.20)} 42%, transparent 72%),
+        radial-gradient(circle at 28% 66%, ${rgbStr(c, 0.26)} 0%, transparent 58%),
+        radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.8) 0%, transparent 60%),
+        #FAF9F5
       `,
     };
   }
 
-  // 2 emotions logged: Dual aura blend of strictly those 2 emotions
+  // 2 emotions logged: Dual softened aura blooms bleeding softly across light canvas
   if (uniqueColors.length === 2) {
     const c1 = uniqueColors[0];
     const c2 = uniqueColors[1];
 
     return {
       background: `
-        radial-gradient(circle at 22% 26%, ${rgbStr(c1, 0.95)} 0%, transparent 62%),
-        radial-gradient(circle at 78% 74%, ${rgbStr(c2, 0.95)} 0%, transparent 62%),
-        radial-gradient(circle at 50% 50%, ${rgbStr(c1, 0.55)} 0%, transparent 68%),
-        linear-gradient(135deg, ${rgbStr(c1, 0.92)} 0%, ${rgbStr(c2, 0.92)} 100%)
+        radial-gradient(circle at 34% 36%, ${rgbStr(c1, 0.44)} 0%, ${rgbStr(c1, 0.16)} 45%, transparent 72%),
+        radial-gradient(circle at 68% 64%, ${rgbStr(c2, 0.42)} 0%, ${rgbStr(c2, 0.15)} 45%, transparent 72%),
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0%, transparent 60%),
+        #FAF9F5
       `,
     };
   }
 
-  // 3+ emotions logged: Multi-focal aura blend of strictly those logged emotions
+  // 3+ emotions logged: Multicolor ethereal harmony (like the board's multicolor cards)
   const c1 = uniqueColors[0];
   const c2 = uniqueColors[1];
   const c3 = uniqueColors[2];
 
   return {
     background: `
-      radial-gradient(circle at 20% 25%, ${rgbStr(c1, 0.95)} 0%, transparent 60%),
-      radial-gradient(circle at 80% 30%, ${rgbStr(c2, 0.95)} 0%, transparent 60%),
-      radial-gradient(circle at 50% 82%, ${rgbStr(c3, 0.95)} 0%, transparent 62%),
-      linear-gradient(135deg, ${rgbStr(c1, 0.9)} 0%, ${rgbStr(c2, 0.9)} 50%, ${rgbStr(c3, 0.9)} 100%)
+      radial-gradient(circle at 26% 30%, ${rgbStr(c1, 0.40)} 0%, ${rgbStr(c1, 0.14)} 45%, transparent 70%),
+      radial-gradient(circle at 76% 32%, ${rgbStr(c2, 0.38)} 0%, ${rgbStr(c2, 0.14)} 45%, transparent 70%),
+      radial-gradient(circle at 52% 76%, ${rgbStr(c3, 0.36)} 0%, ${rgbStr(c3, 0.12)} 45%, transparent 70%),
+      #FAF9F5
     `,
   };
 }
@@ -373,38 +362,29 @@ async function generateHighResAuraCard({
     }
   });
 
-  // 1. Base Layer (Pure True-Emotion Aura)
+  // 1. Base Layer (Softened True-Emotion Aura matching the light board)
   if (uniqueColors.length === 0) {
-    // Pure matte tactile linen for empty days - zero dark mud
-    ctx.fillStyle = "#EBEAE5";
+    // Pure matte tactile linen for empty days
+    ctx.fillStyle = "#FAF9F5";
     ctx.fillRect(0, 0, W, H);
   } else if (uniqueColors.length === 1) {
     const c = uniqueColors[0];
-    const cLight = [
-      Math.min(255, Math.round(c[0] * 1.16 + 18)),
-      Math.min(255, Math.round(c[1] * 1.16 + 18)),
-      Math.min(255, Math.round(c[2] * 1.16 + 18)),
-    ];
-    const cDeep = [
-      Math.round(c[0] * 0.6),
-      Math.round(c[1] * 0.6),
-      Math.round(c[2] * 0.6),
-    ];
 
-    const baseGrad = ctx.createLinearGradient(0, 0, W, H);
-    baseGrad.addColorStop(0, rgbStr(c, 0.95));
-    baseGrad.addColorStop(1, rgbStr(cDeep, 0.98));
-    ctx.fillStyle = baseGrad;
+    // Light airy linen canvas base
+    ctx.fillStyle = "#FAF9F5";
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.26, H * 0.28, 20, W * 0.26, H * 0.28, W * 0.7);
-    g1.addColorStop(0, rgbStr(cLight, 0.96));
+    // Primary glowing soft aura bloom
+    const g1 = ctx.createRadialGradient(W * 0.62, H * 0.40, 20, W * 0.62, H * 0.40, W * 0.68);
+    g1.addColorStop(0, rgbStr(c, 0.46));
+    g1.addColorStop(0.42, rgbStr(c, 0.20));
     g1.addColorStop(1, "transparent");
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    const g2 = ctx.createRadialGradient(W * 0.78, H * 0.74, 20, W * 0.78, H * 0.74, W * 0.72);
-    g2.addColorStop(0, rgbStr(c, 0.92));
+    // Secondary ambient soft glow
+    const g2 = ctx.createRadialGradient(W * 0.28, H * 0.66, 20, W * 0.28, H * 0.66, W * 0.58);
+    g2.addColorStop(0, rgbStr(c, 0.26));
     g2.addColorStop(1, "transparent");
     ctx.fillStyle = g2;
     ctx.fillRect(0, 0, W, H);
@@ -412,20 +392,19 @@ async function generateHighResAuraCard({
     const c1 = uniqueColors[0];
     const c2 = uniqueColors[1];
 
-    const baseGrad = ctx.createLinearGradient(0, 0, W, H);
-    baseGrad.addColorStop(0, rgbStr(c1, 0.92));
-    baseGrad.addColorStop(1, rgbStr(c2, 0.92));
-    ctx.fillStyle = baseGrad;
+    ctx.fillStyle = "#FAF9F5";
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.22, H * 0.26, 20, W * 0.22, H * 0.26, W * 0.75);
-    g1.addColorStop(0, rgbStr(c1, 0.95));
+    const g1 = ctx.createRadialGradient(W * 0.34, H * 0.36, 20, W * 0.34, H * 0.36, W * 0.70);
+    g1.addColorStop(0, rgbStr(c1, 0.44));
+    g1.addColorStop(0.45, rgbStr(c1, 0.16));
     g1.addColorStop(1, "transparent");
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    const g2 = ctx.createRadialGradient(W * 0.78, H * 0.74, 20, W * 0.78, H * 0.74, W * 0.75);
-    g2.addColorStop(0, rgbStr(c2, 0.95));
+    const g2 = ctx.createRadialGradient(W * 0.68, H * 0.64, 20, W * 0.68, H * 0.64, W * 0.70);
+    g2.addColorStop(0, rgbStr(c2, 0.42));
+    g2.addColorStop(0.45, rgbStr(c2, 0.15));
     g2.addColorStop(1, "transparent");
     ctx.fillStyle = g2;
     ctx.fillRect(0, 0, W, H);
@@ -434,27 +413,26 @@ async function generateHighResAuraCard({
     const c2 = uniqueColors[1];
     const c3 = uniqueColors[2];
 
-    const baseGrad = ctx.createLinearGradient(0, 0, W, H);
-    baseGrad.addColorStop(0, rgbStr(c1, 0.9));
-    baseGrad.addColorStop(0.5, rgbStr(c2, 0.9));
-    baseGrad.addColorStop(1, rgbStr(c3, 0.9));
-    ctx.fillStyle = baseGrad;
+    ctx.fillStyle = "#FAF9F5";
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.2, H * 0.25, 20, W * 0.2, H * 0.25, W * 0.7);
-    g1.addColorStop(0, rgbStr(c1, 0.95));
+    const g1 = ctx.createRadialGradient(W * 0.26, H * 0.30, 20, W * 0.26, H * 0.30, W * 0.68);
+    g1.addColorStop(0, rgbStr(c1, 0.40));
+    g1.addColorStop(0.45, rgbStr(c1, 0.14));
     g1.addColorStop(1, "transparent");
     ctx.fillStyle = g1;
     ctx.fillRect(0, 0, W, H);
 
-    const g2 = ctx.createRadialGradient(W * 0.8, H * 0.3, 20, W * 0.8, H * 0.3, W * 0.7);
-    g2.addColorStop(0, rgbStr(c2, 0.95));
+    const g2 = ctx.createRadialGradient(W * 0.76, H * 0.32, 20, W * 0.76, H * 0.32, W * 0.68);
+    g2.addColorStop(0, rgbStr(c2, 0.38));
+    g2.addColorStop(0.45, rgbStr(c2, 0.14));
     g2.addColorStop(1, "transparent");
     ctx.fillStyle = g2;
     ctx.fillRect(0, 0, W, H);
 
-    const g3 = ctx.createRadialGradient(W * 0.5, H * 0.82, 20, W * 0.5, H * 0.82, W * 0.7);
-    g3.addColorStop(0, rgbStr(c3, 0.95));
+    const g3 = ctx.createRadialGradient(W * 0.52, H * 0.76, 20, W * 0.52, H * 0.76, W * 0.68);
+    g3.addColorStop(0, rgbStr(c3, 0.36));
+    g3.addColorStop(0.45, rgbStr(c3, 0.12));
     g3.addColorStop(1, "transparent");
     ctx.fillStyle = g3;
     ctx.fillRect(0, 0, W, H);
@@ -472,42 +450,36 @@ async function generateHighResAuraCard({
     buf[i] = v;
     buf[i + 1] = v;
     buf[i + 2] = v;
-    buf[i + 3] = hasColors ? 24 : 18;
+    buf[i + 3] = 16;
   }
   nCtx.putImageData(imgData, 0, 0);
 
   ctx.save();
-  ctx.globalCompositeOperation = hasColors ? "overlay" : "multiply";
+  ctx.globalCompositeOperation = "multiply";
   ctx.drawImage(noiseCanvas, 0, 0, W, H);
   ctx.restore();
 
   // 3. Clean Minimalist Top Header (NO border lines, NO divider lines)
   ctx.save();
-  ctx.fillStyle = hasColors ? "#FFFFFF" : INK;
+  ctx.fillStyle = INK;
   ctx.font = `bold 30px 'Passion One', sans-serif`;
   ctx.letterSpacing = "4px";
   ctx.fillText("CANOPY", 90, 120);
 
   ctx.textAlign = "right";
   ctx.font = `500 16px 'Fraunces', serif`;
-  ctx.fillStyle = hasColors ? "rgba(255, 255, 255, 0.75)" : INK_SOFT;
+  ctx.fillStyle = INK_SOFT;
   ctx.letterSpacing = "2px";
   ctx.fillText(weekday, W - 90, 118);
   ctx.restore();
 
-  // 4. Day Text Hero Section (Spacious, elegant, zero chips, zero divider lines)
+  // 4. Day Text Hero Section (Spacious, elegant, editorial dark ink)
   ctx.save();
   ctx.font = `bold 100px 'Passion One', sans-serif`;
-  ctx.fillStyle = hasColors ? "#FFFFFF" : INK;
+  ctx.fillStyle = INK;
   ctx.letterSpacing = "1px";
-  if (hasColors) {
-    ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
-    ctx.shadowBlur = 14;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 4;
-  }
-  ctx.fillText(`${dayNum} ${monthName} ${year}`, 90, 275);
   ctx.shadowColor = "transparent";
+  ctx.fillText(`${dayNum} ${monthName} ${year}`, 90, 275);
 
   // 4. Subtitle: Number of drawings (strictly no "logged")
   const count = flowers?.length || 0;
@@ -517,7 +489,7 @@ async function generateHighResAuraCard({
       : "0 drawings · Stillness";
 
   ctx.font = `italic 30px 'Fraunces', serif`;
-  ctx.fillStyle = hasColors ? "rgba(255, 255, 255, 0.88)" : INK_SOFT;
+  ctx.fillStyle = INK_SOFT;
   ctx.letterSpacing = "0.5px";
   ctx.fillText(daySubtitleText, 90, 335);
   ctx.restore();
@@ -529,7 +501,7 @@ async function generateHighResAuraCard({
   if (reflectionQuote && !isEmotionWord) {
     ctx.save();
     ctx.font = `italic 32px 'Fraunces', serif`;
-    ctx.fillStyle = hasColors ? "#FFFFFF" : INK;
+    ctx.fillStyle = INK;
     ctx.letterSpacing = "0.3px";
     drawWrappedText(ctx, `“${reflectionQuote}”`, 90, 560, W - 180, 52, 6);
     ctx.restore();
@@ -538,13 +510,13 @@ async function generateHighResAuraCard({
   // 6. Minimalist Footer (NO divider line)
   ctx.save();
   ctx.font = `bold 18px 'Passion One', sans-serif`;
-  ctx.fillStyle = hasColors ? "rgba(255, 255, 255, 0.75)" : INK;
+  ctx.fillStyle = INK_SOFT;
   ctx.letterSpacing = "3px";
   ctx.fillText("CANOPY", 90, H - 75);
 
   ctx.textAlign = "right";
   ctx.font = `14px 'Fraunces', serif`;
-  ctx.fillStyle = hasColors ? "rgba(255, 255, 255, 0.55)" : INK_SOFT;
+  ctx.fillStyle = INK_SOFT;
   ctx.letterSpacing = "1.5px";
   ctx.fillText(`${dayNum} ${monthName} ${year}`, W - 90, H - 75);
   ctx.restore();
@@ -660,10 +632,8 @@ function AestheticAuraCard({
           ...cardStyle,
           minHeight: 135,
           padding: "20px 22px",
-          boxShadow: hasColors
-            ? "0 8px 24px rgba(28,46,42,0.12), inset 0 1px 2px rgba(255,255,255,0.3)"
-            : "0 2px 12px rgba(28,46,42,0.04), inset 0 1px 2px rgba(0,0,0,0.02)",
-          border: `1px solid ${hasColors ? "rgba(255,255,255,0.22)" : "rgba(28,46,42,0.08)"}`,
+          boxShadow: "0 4px 20px rgba(28,46,42,0.05)",
+          border: `1px solid ${BORDER}`,
         }}
         title="Tap to preview or save aesthetic art card"
       >
@@ -673,8 +643,8 @@ function AestheticAuraCard({
           style={{
             backgroundImage: NOISE_DATA_URI,
             backgroundRepeat: "repeat",
-            opacity: hasColors ? 0.38 : 0.22,
-            mixBlendMode: hasColors ? "overlay" : "multiply",
+            opacity: 0.18,
+            mixBlendMode: "multiply",
           }}
         />
 
@@ -685,11 +655,11 @@ function AestheticAuraCard({
             <div
               className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md transition-all"
               style={{
-                background: hasColors ? "rgba(255,255,255,0.24)" : "rgba(28,46,42,0.06)",
-                color: hasColors ? "#FFFFFF" : INK,
-                border: hasColors ? "1px solid rgba(255,255,255,0.35)" : `1px solid ${BORDER}`,
+                background: "rgba(255,255,255,0.78)",
+                color: INK,
+                border: `1px solid ${BORDER}`,
                 fontFamily: BODY,
-                boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+                boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
               }}
             >
               <span>
@@ -704,11 +674,11 @@ function AestheticAuraCard({
               disabled={saving}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium backdrop-blur-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               style={{
-                background: hasColors ? "rgba(255,255,255,0.24)" : "rgba(28,46,42,0.08)",
-                color: hasColors ? "#FFFFFF" : INK,
-                border: `1px solid ${hasColors ? "rgba(255,255,255,0.35)" : "rgba(28,46,42,0.12)"}`,
+                background: "rgba(255,255,255,0.78)",
+                color: INK,
+                border: `1px solid ${BORDER}`,
                 fontFamily: BODY,
-                boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
+                boxShadow: "0 1px 4px rgba(28,46,42,0.04)",
               }}
               title="Save aesthetic aura image"
             >
@@ -725,9 +695,9 @@ function AestheticAuraCard({
                   fontFamily: HEAD,
                   fontSize: customTitle ? 28 : 32,
                   lineHeight: 1.05,
-                  color: hasColors ? "#FFFFFF" : INK,
+                  color: INK,
                   letterSpacing: "0.5px",
-                  textShadow: hasColors ? "0 1px 4px rgba(0,0,0,0.25)" : "none",
+                  textShadow: "none",
                 }}
               >
                 {customTitle || `${dayNum} ${monthName} ${year}`}
@@ -736,7 +706,7 @@ function AestheticAuraCard({
                 style={{
                   fontFamily: BODY,
                   fontSize: 14,
-                  color: hasColors ? "rgba(255,255,255,0.92)" : INK_SOFT,
+                  color: INK_SOFT,
                   marginTop: 4,
                   fontStyle: "italic",
                 }}
@@ -753,7 +723,7 @@ function AestheticAuraCard({
                 fontFamily: HEAD,
                 fontSize: 13,
                 letterSpacing: "1px",
-                color: hasColors ? "rgba(255,255,255,0.6)" : "rgba(28,46,42,0.35)",
+                color: "rgba(28,46,42,0.35)",
                 textTransform: "uppercase",
               }}
             >
