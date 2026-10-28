@@ -1987,10 +1987,10 @@ function EmotionalDriversCard({
   const topMood = moodMix[0];
   const count = moodMix.length;
 
-  // Responsive font sizes in Fraunces if more categories are added
-  const nameFontSize = count <= 4 ? 15 : count <= 6 ? 13 : 11;
-  const pctFontSize = count <= 4 ? 26 : count <= 6 ? 20 : 16;
-  const pctOffset = count <= 4 ? 25 : count <= 6 ? 20 : 16;
+  // Simple, clean font sizes (not bold, not too big)
+  const nameFontSize = count <= 4 ? 12 : count <= 6 ? 11 : 10;
+  const pctFontSize = count <= 4 ? 16 : count <= 6 ? 14 : 12;
+  const pctOffset = count <= 4 ? 15 : count <= 6 ? 13 : 11;
 
   const cx = 190;
   const cy = 170;
@@ -2012,8 +2012,8 @@ function EmotionalDriversCard({
     const gapX = Math.cos(midRad) * sliceGap;
     const gapY = Math.sin(midRad) * sliceGap;
 
-    // Translation vector when slice is exploded/popped out (ample distance so dotted outline is fully visible)
-    const explodeDist = 20;
+    // Translation vector when slice is exploded (closer to dotted line)
+    const explodeDist = 5.5;
     const popX = Math.cos(midRad) * explodeDist;
     const popY = Math.sin(midRad) * explodeDist;
 
@@ -2024,21 +2024,21 @@ function EmotionalDriversCard({
 
     if (count === 4) {
       if (isRight) {
-        lx = 348;
-        ly = midAngle < 90 ? 72 : 265;
+        lx = 328;
+        ly = midAngle < 90 ? 90 : 246;
       } else {
-        lx = 32;
-        ly = midAngle > 270 ? 72 : 265;
+        lx = 52;
+        ly = midAngle > 270 ? 90 : 246;
       }
     } else {
-      const distOuterX = r + (count <= 6 ? 60 : 50);
-      const distOuterY = r + (count <= 6 ? 48 : 38);
+      const distOuterX = r + (count <= 6 ? 54 : 46);
+      const distOuterY = r + (count <= 6 ? 42 : 34);
       lx = cx + Math.cos(midRad) * distOuterX;
       ly = cy + Math.sin(midRad) * distOuterY;
       if (isRight) {
-        lx = Math.min(365, Math.max(cx + 55, lx + 16));
+        lx = Math.min(350, Math.max(cx + 55, lx + 12));
       } else {
-        lx = Math.max(15, Math.min(cx - 55, lx - 16));
+        lx = Math.max(30, Math.min(cx - 55, lx - 12));
       }
     }
 
@@ -2067,23 +2067,19 @@ function EmotionalDriversCard({
 
   return (
     <Card pad={22}>
-      {/* Header with Title and Subtitle */}
-      <div className="mb-2">
-        <h2 style={{ fontFamily: BODY, fontSize: 26, fontWeight: 800, color: INK, letterSpacing: "-0.3px", lineHeight: 1.15 }}>
-          Emotional drivers
-        </h2>
-        <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginTop: 2 }}>
-          Your inner states before each moment of impulse
-        </p>
-      </div>
+      {/* Header with Title and Subtitle - using Title (Passion One) matching all other cards */}
+      <Title>Emotional drivers</Title>
+      <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginTop: -6, marginBottom: 8 }}>
+        Your inner states before each moment of impulse
+      </p>
 
       {/* ── Centered Pie with Surrounding Callouts ──────────────────────── */}
-      <div className="w-full my-3 flex items-center justify-center">
+      <div className="w-full my-2 flex items-center justify-center">
         <svg
           viewBox="0 0 380 340"
           className="w-full max-w-[380px] overflow-visible select-none"
         >
-          {/* Layer 1: Dotted Outline at Resting Footprint (Cleanly Visible!) */}
+          {/* Layer 1: Dotted Outline at Resting Footprint */}
           {pieSlices.map((slice) => {
             const isPopped = slice.name === poppedMoodName;
             if (!isPopped) return null;
@@ -2104,7 +2100,7 @@ function EmotionalDriversCard({
             );
           })}
 
-          {/* Layer 2: Colored Pie Slices (NO WHITE BORDER) */}
+          {/* Layer 2: Colored Pie Slices (NO WHITE BORDER, close to dotted line) */}
           {pieSlices.map((slice) => {
             const isPopped = slice.name === poppedMoodName;
             const shiftX = isPopped ? slice.gapX + slice.popX : slice.gapX;
@@ -2125,7 +2121,7 @@ function EmotionalDriversCard({
                   strokeLinejoin="round"
                   className="hover:opacity-95 transition-opacity"
                   style={{
-                    filter: isPopped ? "drop-shadow(0 4px 12px rgba(0,0,0,0.12))" : "none",
+                    filter: isPopped ? "drop-shadow(0 2px 6px rgba(0,0,0,0.08))" : "none",
                   }}
                 >
                   <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
@@ -2134,10 +2130,10 @@ function EmotionalDriversCard({
             );
           })}
 
-          {/* Layer 3: External Surrounding Callout Labels in Fraunces */}
+          {/* Layer 3: External Surrounding Callout Labels - Simple, clean, not bold, not too big */}
           {pieSlices.map((slice) => {
             const isPopped = slice.name === poppedMoodName;
-            const dotRadius = Math.max(3.5, nameFontSize * 0.28);
+            const dotRadius = Math.max(2.8, nameFontSize * 0.24);
 
             return (
               <g
@@ -2154,9 +2150,9 @@ function EmotionalDriversCard({
                       textAnchor="end"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: BODY,
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                         fontSize: nameFontSize,
-                        fontWeight: 700,
+                        fontWeight: isPopped ? 500 : 400,
                         fill: INK,
                       }}
                     >
@@ -2169,18 +2165,17 @@ function EmotionalDriversCard({
                       fill={rgbStr(slice.rgb)}
                     />
 
-                    {/* Line 2: Large Bold Percentage in Fraunces */}
+                    {/* Line 2: Simple Clean Percentage (not bold, not too big) */}
                     <text
                       x={slice.lx}
                       y={slice.ly + pctOffset}
                       textAnchor="end"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: BODY,
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                         fontSize: pctFontSize,
-                        fontWeight: 800,
+                        fontWeight: 500,
                         fill: INK,
-                        letterSpacing: "-0.3px",
                       }}
                     >
                       {slice.pct}%
@@ -2201,27 +2196,26 @@ function EmotionalDriversCard({
                       textAnchor="start"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: BODY,
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                         fontSize: nameFontSize,
-                        fontWeight: 700,
+                        fontWeight: isPopped ? 500 : 400,
                         fill: INK,
                       }}
                     >
                       {slice.name}
                     </text>
 
-                    {/* Line 2: Large Bold Percentage in Fraunces */}
+                    {/* Line 2: Simple Clean Percentage (not bold, not too big) */}
                     <text
                       x={slice.lx}
                       y={slice.ly + pctOffset}
                       textAnchor="start"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: BODY,
+                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
                         fontSize: pctFontSize,
-                        fontWeight: 800,
+                        fontWeight: 500,
                         fill: INK,
-                        letterSpacing: "-0.3px",
                       }}
                     >
                       {slice.pct}%
