@@ -565,9 +565,9 @@ async function generateHighResAuraCard({
 
   ctx.save();
   ctx.fillStyle = INK;
-  ctx.font = `bold 28px 'Passion One', sans-serif`;
-  ctx.letterSpacing = "3px";
-  ctx.fillText(daySubtitleText.toUpperCase(), 90, 120);
+  ctx.font = `600 18px 'Fraunces', serif`;
+  ctx.letterSpacing = "2px";
+  ctx.fillText(daySubtitleText.toUpperCase(), 90, 118);
 
   ctx.textAlign = "right";
   ctx.font = `600 18px 'Fraunces', serif`;
