@@ -1988,8 +1988,6 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
 }
 
 // ── Emotional Spectrum & Drivers Visual Chart ────────────────────────────────
-type EmotionTabMode = "spectrum" | "donut" | "pie";
-
 function EmotionalDriversCard({
   moodMix,
   totalFlowers,
@@ -1998,23 +1996,10 @@ function EmotionalDriversCard({
   totalFlowers: number;
 }) {
   const [activeMood, setActiveMood] = useState<string | null>(null);
-  const [tabMode, setTabMode] = useState<EmotionTabMode>("spectrum");
 
   if (moodMix.length === 0) return null;
 
   const topMood = moodMix[0];
-  const maxPct = Math.max(...moodMix.map((m) => m.pct), 1);
-
-  // Donut arc calculation
-  let accumulatedAngle = 0;
-  const donutArcs = moodMix.map((m) => {
-    const sweep = (m.count / (totalFlowers || 1)) * 360;
-    const startAngle = accumulatedAngle;
-    const endAngle = accumulatedAngle + sweep;
-    accumulatedAngle += sweep;
-    const path = describeArc(100, 100, 56, 84, startAngle, endAngle);
-    return { ...m, path };
-  });
 
   // Pie slice calculation
   let accumulatedPieAngle = 0;
@@ -2029,309 +2014,93 @@ function EmotionalDriversCard({
     return { ...m, sweep, startAngle, endAngle, path, labelPos };
   });
 
-  const selectedOrTopMood = activeMood
-    ? moodMix.find((m) => m.name === activeMood) || topMood
-    : topMood;
-
   return (
     <Card pad={22}>
-      {/* Header with Title and Mode Switcher Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2">
-        <div>
-          <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
-            Emotional drivers & spectrum
-          </h2>
-          <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginTop: 2 }}>
-            Your inner states before each moment of impulse
-          </p>
-        </div>
-
-        {/* Tab Switcher */}
-        <div
-          className="flex p-1 rounded-xl self-start sm:self-auto shrink-0"
-          style={{ background: GRAY_3 }}
-        >
-          {(
-            [
-              { key: "spectrum", label: "Spectrum" },
-              { key: "donut", label: "Donut" },
-              { key: "pie", label: "Pie" },
-            ] as const
-          ).map((tab) => {
-            const active = tabMode === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setTabMode(tab.key)}
-                className="px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer relative"
-                style={{
-                  fontFamily: BODY,
-                  background: active ? GRAY_CONTRAST : "transparent",
-                  color: active ? INK : INK_SOFT,
-                  boxShadow: active ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+      {/* Header with Title */}
+      <div className="mb-2">
+        <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
+          Emotional drivers & spectrum
+        </h2>
+        <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginTop: 2 }}>
+          Your inner states before each moment of impulse
+        </p>
       </div>
 
-      {/* ── TAB 1: SPECTRUM VIEW ────────────────────────────────────────── */}
-      {tabMode === "spectrum" && (
-        <div className="mt-3">
-          {/* Continuous Macro Spectrum Ribbon */}
-          <div
-            className="w-full flex h-3.5 rounded-full overflow-hidden p-[2px] gap-[2px]"
-            style={{ background: GRAY_3 }}
-          >
-            {moodMix.map((m) => {
-              const isSelected = activeMood === m.name;
-              return (
-                <div
-                  key={m.name}
-                  onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className="h-full rounded-full cursor-pointer transition-all duration-300 hover:opacity-100"
-                  style={{
-                    width: `${m.pct}%`,
-                    backgroundColor: rgbStr(m.rgb),
-                    opacity: activeMood && !isSelected ? 0.35 : 1,
-                    transform: isSelected ? "scaleY(1.2)" : "scaleY(1)",
-                  }}
-                  title={`${m.name}: ${m.pct}% (${m.count})`}
-                />
-              );
-            })}
-          </div>
-
-          {/* Micro Driver Progress Breakdown Rows */}
-          <div className="flex flex-col gap-2 mt-4">
-            {moodMix.map((m) => {
-              const isSelected = activeMood === m.name;
-              return (
-                <div
-                  key={m.name}
-                  onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className={`p-2.5 rounded-2xl transition-all duration-200 cursor-pointer ${
-                    isSelected ? "ring-1" : "hover:bg-[var(--gray-2)]"
-                  }`}
-                  style={{
-                    background: isSelected ? GRAY_2 : "transparent",
-                    borderColor: isSelected ? rgbStr(m.rgb, 0.4) : "transparent",
-                  }}
-                >
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
-                        style={{ background: rgbStr(m.rgb) }}
-                      />
-                      <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 600 }}>
-                        {m.name}
-                      </span>
-                      <span className="whitespace-nowrap" style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
-                        · {m.count} {m.count === 1 ? "moment" : "moments"}
-                      </span>
-                    </div>
-
-                    <span style={{ fontFamily: HEAD, fontSize: 17, color: INK, letterSpacing: "0.3px" }}>
-                      {m.pct}%
-                    </span>
-                  </div>
-
-                  {/* Proportional Driver Bar */}
-                  <div className="w-full rounded-full overflow-hidden" style={{ height: 6.5, background: GRAY_3 }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-500 ease-out"
+      {/* Main Pie Chart & Legend View */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 my-4">
+        {/* Left Column: SVG Pie Chart with Percentages inside */}
+        <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+          <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
+            <g>
+              {pieSlices.map((slice) => {
+                const isSelected = activeMood === slice.name;
+                return (
+                  <g key={slice.name}>
+                    <path
+                      d={slice.path}
+                      fill={rgbStr(slice.rgb)}
+                      stroke="#FFFFFF"
+                      strokeWidth={2.5}
+                      strokeLinejoin="round"
+                      className="transition-all duration-300 cursor-pointer hover:opacity-95"
                       style={{
-                        width: `${m.pct}%`,
-                        backgroundColor: rgbStr(m.rgb),
+                        filter: isSelected
+                          ? "drop-shadow(0 6px 14px rgba(0,0,0,0.22))"
+                          : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
+                        transform: isSelected ? "scale(1.05)" : "scale(1)",
+                        transformOrigin: "100px 100px",
+                        opacity: activeMood && !isSelected ? 0.35 : 1,
                       }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                      onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
+                    >
+                      <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
+                    </path>
+
+                    {/* Percentage inside the slice */}
+                    {slice.pct >= 6 && (
+                      <text
+                        x={slice.labelPos.x}
+                        y={slice.labelPos.y}
+                        textAnchor="middle"
+                        dominantBaseline="central"
+                        fill="#FFFFFF"
+                        fontSize="14"
+                        fontWeight="800"
+                        fontFamily={HEAD}
+                        style={{
+                          pointerEvents: "none",
+                          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.55))",
+                          letterSpacing: "0.2px",
+                        }}
+                      >
+                        {slice.pct}%
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </g>
+          </svg>
         </div>
-      )}
 
-      {/* ── TAB 2: DONUT CHART VIEW ─────────────────────────────────────── */}
-      {tabMode === "donut" && (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 my-4">
-          {/* SVG Donut */}
-          <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
-            <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
-              {donutArcs.map((arc) => (
-                <path
-                  key={arc.name}
-                  d={arc.path}
-                  fill={rgbStr(arc.rgb)}
-                  className="transition-all duration-300 cursor-pointer hover:opacity-90"
-                  style={{
-                    filter: activeMood === arc.name ? "drop-shadow(0 2px 8px rgba(0,0,0,0.25))" : "none",
-                    transform: activeMood === arc.name ? "scale(1.04)" : "scale(1)",
-                    transformOrigin: "100px 100px",
-                  }}
-                  onClick={() => setActiveMood(activeMood === arc.name ? null : arc.name)}
-                >
-                  <title>{`${arc.name}: ${arc.pct}% (${arc.count})`}</title>
-                </path>
-              ))}
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span style={{ fontFamily: HEAD, fontSize: 32, lineHeight: 1, color: INK }}>
-                {activeMood ? `${selectedOrTopMood.pct}%` : `${totalFlowers}`}
-              </span>
-              <span style={{ fontFamily: BODY, fontSize: 11.5, color: INK_SOFT, marginTop: 2 }}>
-                {activeMood ? activeMood : totalFlowers === 1 ? "impulse" : "impulses"}
-              </span>
-            </div>
-          </div>
-
-          {/* Donut Legend */}
-          <div className="flex-1 flex flex-col gap-1.5 w-full min-w-0">
-            {moodMix.map((m) => {
-              const isSelected = activeMood === m.name;
-              return (
-                <div
-                  key={m.name}
-                  onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
-                    isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
-                  }`}
-                  style={{
-                    border: isSelected ? `1px solid ${rgbStr(m.rgb, 0.5)}` : "1px solid transparent",
-                  }}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-110"
-                      style={{ background: rgbStr(m.rgb) }}
-                    />
-                    <span className="text-sm font-semibold whitespace-nowrap" style={{ fontFamily: BODY, color: INK }}>
-                      {m.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3.5 shrink-0 ml-3">
-                    <span className="text-xs whitespace-nowrap" style={{ fontFamily: BODY, color: INK_SOFT }}>
-                      {m.count} {m.count === 1 ? "moment" : "moments"}
-                    </span>
-                    <span className="text-base font-bold text-right min-w-[36px]" style={{ fontFamily: HEAD, color: INK }}>
-                      {m.pct}%
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 3: PIE CHART VIEW ───────────────────────────────────────── */}
-      {tabMode === "pie" && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 my-4">
-          {/* Left Column: SVG Pie Chart with Percentages inside + Moments readout below */}
-          <div className="flex flex-col items-center shrink-0">
-            <div className="relative w-44 h-44 flex items-center justify-center">
-              <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
-                <g>
-                  {pieSlices.map((slice) => {
-                    const isSelected = activeMood === slice.name;
-                    return (
-                      <g key={slice.name}>
-                        <path
-                          d={slice.path}
-                          fill={rgbStr(slice.rgb)}
-                          stroke="#FFFFFF"
-                          strokeWidth={2.5}
-                          strokeLinejoin="round"
-                          className="transition-all duration-300 cursor-pointer hover:opacity-95"
-                          style={{
-                            filter: isSelected
-                              ? "drop-shadow(0 6px 14px rgba(0,0,0,0.22))"
-                              : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
-                            transform: isSelected ? "scale(1.05)" : "scale(1)",
-                            transformOrigin: "100px 100px",
-                            opacity: activeMood && !isSelected ? 0.35 : 1,
-                          }}
-                          onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
-                        >
-                          <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
-                        </path>
-
-                        {/* Percentage inside the slice */}
-                        {slice.pct >= 6 && (
-                          <text
-                            x={slice.labelPos.x}
-                            y={slice.labelPos.y}
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            fill="#FFFFFF"
-                            fontSize="14"
-                            fontWeight="800"
-                            fontFamily={HEAD}
-                            style={{
-                              pointerEvents: "none",
-                              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.55))",
-                              letterSpacing: "0.2px",
-                            }}
-                          >
-                            {slice.pct}%
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </g>
-              </svg>
-            </div>
-
-            {/* Readout below pie chart showing moments and percentage for selected or top emotion */}
-            <div
-              className="mt-3 px-3.5 py-1.5 rounded-full flex items-center gap-2 transition-all cursor-pointer shadow-sm"
-              style={{
-                background: GRAY_2,
-                border: `1px solid ${GRAY_4}`,
-              }}
-              onClick={() => setActiveMood(null)}
-              title="Click to reset selection"
-            >
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
-                style={{ background: rgbStr(selectedOrTopMood.rgb) }}
-              />
-              <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, color: INK }}>
-                {selectedOrTopMood.name}
-              </span>
-              <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
-                · {selectedOrTopMood.count} {selectedOrTopMood.count === 1 ? "moment" : "moments"}
-              </span>
-              <span style={{ fontFamily: HEAD, fontSize: 13, fontWeight: 700, color: INK }}>
-                ({selectedOrTopMood.pct}%)
-              </span>
-            </div>
-          </div>
-
-          {/* Right Column: Clean Emotion Legend (Color Dot + Full Emotion Name Only) */}
-          <div className="flex-1 flex flex-col gap-2 w-full max-w-xs">
-            {moodMix.map((m) => {
-              const isSelected = activeMood === m.name;
-              return (
-                <div
-                  key={m.name}
-                  onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
-                    isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
-                  }`}
-                  style={{
-                    border: isSelected
-                      ? `1.5px solid ${rgbStr(m.rgb, 0.6)}`
-                      : "1.5px solid transparent",
-                  }}
-                >
+        {/* Right Column: Clean Emotion Legend (Color Dot + Name + Moments) */}
+        <div className="flex-1 flex flex-col gap-2 w-full max-w-sm">
+          {moodMix.map((m) => {
+            const isSelected = activeMood === m.name;
+            return (
+              <div
+                key={m.name}
+                onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                  isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
+                }`}
+                style={{
+                  border: isSelected
+                    ? `1.5px solid ${rgbStr(m.rgb, 0.6)}`
+                    : "1.5px solid transparent",
+                }}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
                   <span
                     className="w-3 h-3 rounded-full shrink-0 shadow-sm transition-transform"
                     style={{
@@ -2343,7 +2112,7 @@ function EmotionalDriversCard({
                     style={{
                       fontFamily: BODY,
                       fontSize: 14,
-                      fontWeight: isSelected ? 700 : 500,
+                      fontWeight: isSelected ? 700 : 600,
                       color: INK,
                       whiteSpace: "nowrap",
                     }}
@@ -2351,11 +2120,18 @@ function EmotionalDriversCard({
                     {m.name}
                   </span>
                 </div>
-              );
-            })}
-          </div>
+
+                <span
+                  className="text-xs whitespace-nowrap ml-4 shrink-0"
+                  style={{ fontFamily: BODY, color: INK_SOFT }}
+                >
+                  {m.count} {m.count === 1 ? "moment" : "moments"}
+                </span>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       {/* ── Primary Impulse Trigger Takeaway Box ──────────────────────────── */}
       {topMood && (
