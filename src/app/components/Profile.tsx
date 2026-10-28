@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
+import { flowerPct } from "./gardenZ";
 
 // ── Typography & Palette ──────────────────────────────────────────────────────
 const HEAD = "'Passion One', sans-serif";
@@ -239,6 +240,7 @@ function isDateInWeek(target: Date, weekRef: Date) {
 }
 
 const fmt = (n: number) => `₹${Math.round(n).toLocaleString()}`;
+const amt = (f: FlowerEntry) => Number(f.amount) || 0;
 
 // ── Card Shell ────────────────────────────────────────────────────────────────
 function Card({ children, pad = 20, className = "" }: { children: React.ReactNode; pad?: number; className?: string }) {
@@ -482,6 +484,33 @@ function drawWrappedText(
   }
   if (line && linesDrawn < maxLines) {
     ctx.fillText(line.trim(), x, currentY);
+  }
+}
+
+// ── Canvas Rounded Rectangle Helper (Cross-browser safe) ─────────────────────
+function drawCanvasRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  if (typeof (ctx as any).roundRect === "function") {
+    ctx.beginPath();
+    (ctx as any).roundRect(x, y, w, h, r);
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
   }
 }
 
@@ -747,11 +776,357 @@ async function generateHighResAuraCard({
 
 
 
+// Botanical flower doodle glyph for fallback rendering in drawing grids
+function BotanicalGlyph({
+  color = "#4DAA57",
+  wilted = false,
+  size = 26,
+}: {
+  color?: string;
+  wilted?: boolean;
+  size?: number;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{
+        filter: wilted ? "grayscale(1) brightness(0.65) opacity(0.6)" : "none",
+        display: "block",
+      }}
+    >
+      <path
+        d="M12 21V12M12 12C12 8 8 6 6 8C4 10 6 14 12 12ZM12 12C12 8 16 6 18 8C20 10 18 14 12 12ZM12 12C9 12 7 15 9 17C11 19 13 17 12 12ZM12 12C15 12 17 15 15 17C13 19 11 17 12 12Z"
+        stroke={color}
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="2" fill={color} />
+    </svg>
+  );
+}
+
+// ── Canopy Diptych Card (Matching User Wireframe & Audio Feedback) ──
+function DiptychCard({
+  scope = "month",
+  date,
+  year,
+  dayNum,
+  monthName,
+  fullMonthName,
+  customTitle,
+  count,
+  cardStyle,
+  emotionWeights,
+  flowers,
+  isExport = false,
+}: {
+  scope?: "day" | "week" | "month";
+  date: Date;
+  year: number;
+  dayNum: number;
+  monthName: string;
+  fullMonthName: string;
+  customTitle?: string;
+  count: number;
+  cardStyle: React.CSSProperties;
+  emotionWeights: EmotionWeight[];
+  flowers: FlowerEntry[];
+  isExport?: boolean;
+}) {
+  const weekday = date.toLocaleDateString("en-US", { weekday: "long" }).toUpperCase();
+  const totalMonthSlots = Math.max(70, Math.ceil(flowers.length / 7) * 7);
+  const monthRows = Math.max(10, Math.ceil(totalMonthSlots / 7));
+
+  return (
+    <div
+      className={`w-full rounded-[24px] sm:rounded-[28px] overflow-hidden shadow-2xl flex flex-row relative select-none ${
+        isExport ? "h-full" : "aspect-[1.6/1]"
+      }`}
+      style={{
+        background: "#FAF9F6",
+        boxShadow: "0 24px 64px -12px rgba(33, 32, 31, 0.25), 0 4px 16px rgba(0,0,0,0.06)",
+      }}
+    >
+      {/* ── LEFT HALF: AURA SIDE (Restored original aesthetic matching screenshot) ── */}
+      <div
+        className="w-1/2 p-4 sm:p-7 flex flex-col justify-between relative overflow-hidden"
+        style={{
+          ...cardStyle,
+          backgroundRepeat: "no-repeat",
+        }}
+      >
+        {/* Fine Noise Texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: NOISE_DATA_URI,
+            backgroundRepeat: "repeat",
+            opacity: 0.035,
+            mixBlendMode: "multiply",
+          }}
+        />
+
+        <div className="relative z-10 flex flex-col justify-between h-full w-full">
+          {/* Top row: e.g. "4 DRAWINGS" on left, "WEDNESDAY" or "MONTHLY" on right */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+              <span
+                style={{
+                  fontFamily: BODY,
+                  fontSize: isExport ? 13 : "clamp(9px, 1.2vw, 12px)",
+                  fontWeight: 600,
+                  color: "rgba(33,32,31,0.75)",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                }}
+              >
+                {count} {count === 1 ? "DRAWING" : "DRAWINGS"}
+              </span>
+              <span
+                style={{
+                  fontFamily: BODY,
+                  fontSize: isExport ? 13 : "clamp(9px, 1.2vw, 12px)",
+                  fontWeight: 600,
+                  color: "rgba(33,32,31,0.75)",
+                  letterSpacing: "1.5px",
+                  textTransform: "uppercase",
+                }}
+              >
+                {scope === "day" ? weekday : scope === "week" ? "WEEKLY" : "MONTHLY"}
+              </span>
+            </div>
+
+            {/* Big Headline (e.g. "Oct 26 - Nov 1, 2026" or "October 2026") */}
+            <h3
+              style={{
+                fontFamily: HEAD,
+                fontSize: isExport ? 44 : "clamp(22px, 3.4vw, 38px)",
+                lineHeight: 1.05,
+                color: INK,
+                letterSpacing: "0.5px",
+                margin: 0,
+              }}
+            >
+              {scope === "month"
+                ? `${fullMonthName} ${year}`
+                : customTitle || `${dayNum} ${monthName} ${year}`}
+            </h3>
+
+            {/* Horizontal Emotion row directly below date (Petite, single-line matching wireframe reference) */}
+            <div className="flex items-center flex-wrap gap-x-2.5 sm:gap-x-3 gap-y-1 mt-1.5 sm:mt-2">
+              {emotionWeights.map((w, idx) => (
+                <div key={idx} className="flex items-center gap-1 shrink-0">
+                  <span
+                    className={`rounded-full inline-block shrink-0 ${
+                      isExport ? "w-2 h-2" : "w-1.5 h-1.5"
+                    }`}
+                    style={{
+                      background: rgbStr(w.color),
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: BODY,
+                      fontSize: isExport ? 12 : "clamp(8px, 1.05vw, 10.5px)",
+                      color: INK,
+                      fontWeight: 600,
+                      letterSpacing: "0.2px",
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {w.name} {w.pct}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Bottom row: canopy logo wordmark */}
+          <div className="mt-auto pt-3 flex items-end justify-between">
+            <span
+              style={{
+                fontFamily: HEAD,
+                fontSize: isExport ? 26 : "clamp(18px, 2.4vw, 24px)",
+                color: INK,
+                letterSpacing: "0.5px",
+                lineHeight: 1,
+              }}
+            >
+              canopy
+            </span>
+            <span
+              style={{
+                fontFamily: BODY,
+                fontSize: isExport ? 13 : "clamp(9px, 1.2vw, 12px)",
+                color: "rgba(33,32,31,0.65)",
+                fontStyle: "italic",
+              }}
+            >
+              {scope === "month" ? fullMonthName : customTitle || `${dayNum} ${monthName}`}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* ── CENTER SEAM: BOOK SPINE CREASE & FOLD SHADOW ── */}
+      <div
+        className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-8 pointer-events-none z-20"
+        style={{
+          background:
+            "linear-gradient(to right, rgba(33,32,31,0.08) 0%, rgba(33,32,31,0.02) 40%, rgba(33,32,31,0.01) 50%, rgba(33,32,31,0.04) 60%, rgba(33,32,31,0) 100%)",
+        }}
+      />
+      <div
+        className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1px] pointer-events-none z-20"
+        style={{ background: "rgba(33, 32, 31, 0.08)" }}
+      />
+
+      {/* ── RIGHT HALF: DRAWINGS SIDE (Entire whole width & height, dense 10-row dotted grid) ── */}
+      <div
+        className="w-1/2 h-full relative overflow-hidden flex items-center justify-center"
+        style={{ background: "#FAF9F6" }}
+      >
+        {/* Fine Noise Texture */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: NOISE_DATA_URI,
+            backgroundRepeat: "repeat",
+            opacity: 0.035,
+            mixBlendMode: "multiply",
+          }}
+        />
+
+        {/* Middle: Dotted Grid (Month) or Canvas (Week/Day) taking whole height and width */}
+        {scope === "month" ? (
+          <div className="w-full h-full p-2.5 sm:p-4 flex items-center justify-center relative z-10">
+            <div
+              className="w-full h-full grid items-center justify-items-center"
+              style={{
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gridTemplateRows: `repeat(${monthRows}, minmax(0, 1fr))`,
+                gap: "4px",
+                rowGap: "4px",
+                columnGap: "4px",
+              }}
+            >
+              {Array.from({ length: totalMonthSlots }).map((_, idx) => {
+                if (idx < flowers.length) {
+                  const fl = flowers[idx];
+                  const wilted = isSpent(fl);
+                  return (
+                    <div
+                      key={`diptych-fl-${fl.id || idx}`}
+                      className={`relative w-full h-full ${
+                        isExport ? "max-w-[50px] max-h-[50px]" : "max-w-[36px] sm:max-w-[42px] max-h-[36px] sm:max-h-[42px]"
+                      } flex items-center justify-center`}
+                      title={fl.itemName || "Flower"}
+                    >
+                      {fl.drawing ? (
+                        <img
+                          src={fl.drawing}
+                          alt=""
+                          className={`w-full h-full ${
+                            isExport ? "max-w-[46px] max-h-[46px]" : "max-w-[32px] sm:max-w-[38px] max-h-[32px] sm:max-h-[38px]"
+                          } object-contain pointer-events-none`}
+                          style={{
+                            filter: wilted
+                              ? "grayscale(1) brightness(0.65) opacity(0.55)"
+                              : "none",
+                          }}
+                        />
+                      ) : (
+                        <BotanicalGlyph
+                          color={rgbStr(resolveEmotionRgb(fl.emotion) || [106, 181, 169])}
+                          wilted={wilted}
+                          size={isExport ? 34 : 26}
+                        />
+                      )}
+                    </div>
+                  );
+                }
+                return (
+                  <div
+                    key={`diptych-dot-${idx}`}
+                    className="w-full h-full flex items-center justify-center pointer-events-none"
+                  >
+                    <span
+                      className={`${isExport ? "w-[3.5px] h-[3.5px]" : "w-[2.5px] h-[2.5px]"} rounded-full inline-block`}
+                      style={{ background: "rgba(33,32,31,0.22)" }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="w-full h-full p-4 sm:p-7 relative overflow-hidden z-10">
+            {flowers.length > 0 ? (
+              flowers.map((fl, idx) => {
+                const seed = Math.abs(Math.floor(typeof fl.id === "number" ? fl.id : idx * 7 + 3));
+                const { x: rawX, y: rawY } = flowerPct(fl);
+                const x = Math.min(90, Math.max(10, typeof fl.x === "number" ? rawX : 16 + (seed % 6) * 14));
+                const y = Math.min(88, Math.max(12, typeof fl.y === "number" ? rawY : 18 + ((seed * 3) % 5) * 16));
+                const wilted = isSpent(fl);
+                const size = Math.round((isExport ? 64 : 44) + (y / 100) * (isExport ? 28 : 20));
+                return (
+                  <div
+                    key={fl.id || `diptych-cvs-${idx}`}
+                    className="absolute flex items-center justify-center pointer-events-none select-none"
+                    style={{
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      transform: "translate(-50%, -50%)",
+                      zIndex: Math.round(y),
+                    }}
+                  >
+                    {fl.drawing ? (
+                      <img
+                        src={fl.drawing}
+                        alt=""
+                        style={{
+                          width: size,
+                          height: "auto",
+                          maxHeight: size,
+                          objectFit: "contain",
+                          filter: wilted
+                            ? "grayscale(1) brightness(0.65) opacity(0.55)"
+                            : "none",
+                        }}
+                      />
+                    ) : (
+                      <BotanicalGlyph
+                        color={rgbStr(resolveEmotionRgb(fl.emotion) || [106, 181, 169])}
+                        wilted={wilted}
+                        size={Math.round(size * 0.75)}
+                      />
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, fontStyle: "italic" }}>
+                  Stillness · 0 drawings
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── Aesthetic Downloadable Aura Gradient Card Component ────────────────────
 function AestheticAuraCard({
   date,
   colors,
-  flowers,
+  flowers = [],
   customTitle,
   customSubtitle,
   drawingCount,
@@ -767,7 +1142,7 @@ function AestheticAuraCard({
 }) {
   const [saving, setSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+  const diptychExportRef = useRef<HTMLDivElement>(null);
   const hasColors = colors.length > 0;
   const count = drawingCount !== undefined ? drawingCount : flowers?.length || 0;
 
@@ -780,38 +1155,25 @@ function AestheticAuraCard({
 
   const dayNum = date.getDate();
   const monthName = date.toLocaleDateString("en-US", { month: "short" });
+  const fullMonthName = date.toLocaleDateString("en-US", { month: "long" });
   const year = date.getFullYear();
 
-  // Emotion names for clean day text
-  const emotionNames = useMemo(() => {
-    if (!flowers || flowers.length === 0) return [];
-    const names = new Set<string>();
-    flowers.forEach((f) => {
-      const em = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
-      if (em) names.add(em);
-    });
-    return Array.from(names);
-  }, [flowers]);
+  const emotionWeights = useMemo(
+    () => getEmotionColorWeights(flowers, colors),
+    [flowers, colors]
+  );
 
-  // Emotion breakdown with colors and percentages
-  const emotionStats = useMemo(() => {
-    return getEmotionColorWeights(flowers, colors);
-  }, [flowers, colors]);
-
-  const handleDownload = async (e?: React.MouseEvent) => {
+  const handleDownloadDiptych = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    if (saving) return;
+    if (saving || !diptychExportRef.current) return;
     setSaving(true);
     try {
-      const dataUrl = await generateHighResAuraCard({
-        date,
-        colors,
-        flowers,
-        customTitle,
-        customSubtitle,
-        scope,
+      const { toPng } = await import("html-to-image");
+      const dataUrl = await toPng(diptychExportRef.current, {
+        pixelRatio: 2.5,
+        cacheBust: true,
       });
-      const filename = `canopy-aura-${date.toISOString().slice(0, 10)}.png`;
+      const filename = `canopy-card-${date.toISOString().slice(0, 10)}.png`;
 
       try {
         const res = await fetch(dataUrl);
@@ -820,7 +1182,7 @@ function AestheticAuraCard({
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           await navigator.share({
             files: [file],
-            title: `Canopy Aura - ${dayNum} ${monthName}`,
+            title: `Canopy Card - ${scope === "month" ? fullMonthName : dayNum + " " + monthName}`,
           });
           setSaving(false);
           return;
@@ -832,32 +1194,49 @@ function AestheticAuraCard({
       link.download = filename;
       link.click();
     } catch (err) {
-      console.error("Failed to generate aura image", err);
+      console.error("Failed to export card", err);
     } finally {
       setSaving(false);
     }
   };
 
-  const handleOpenPreview = async (e: React.MouseEvent) => {
+  const handleOpenPreview = (e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      const dataUrl = await generateHighResAuraCard({
-        date,
-        colors,
-        flowers,
-        customTitle,
-        customSubtitle,
-        scope,
-      });
-      setPreviewDataUrl(dataUrl);
-      setShowPreview(true);
-    } catch (err) {
-      console.error("Failed to prepare aura preview", err);
-    }
+    setShowPreview(true);
   };
 
   return (
     <>
+      {/* ── Offscreen clean Diptych Card for 100% pixel-perfect high-res export (2500 × 1562 px) ── */}
+      <div
+        ref={diptychExportRef}
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          width: "1000px",
+          height: "625px",
+          pointerEvents: "none",
+          zIndex: -9999,
+        }}
+      >
+        <DiptychCard
+          scope={scope}
+          date={date}
+          year={year}
+          dayNum={dayNum}
+          monthName={monthName}
+          fullMonthName={fullMonthName}
+          customTitle={customTitle}
+          count={count}
+          cardStyle={cardStyle}
+          emotionWeights={emotionWeights}
+          flowers={flowers}
+          isExport={true}
+        />
+      </div>
+
+      {/* ── Standalone Top Aura Art Card on Profile feed (Untouched original clean single-sided) ── */}
       <div
         onClick={handleOpenPreview}
         className="group relative w-full rounded-3xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-lg active:scale-[0.99]"
@@ -884,26 +1263,26 @@ function AestheticAuraCard({
 
         {/* Aesthetic Content Overlay */}
         <div className="relative z-10 flex flex-col justify-between h-full min-h-[105px]">
-          {/* Top row: Minimal clean Save action (Strictly NO chips, NO pills) */}
+          {/* Top row: Minimal clean Save action */}
           <div className="flex items-center justify-end">
             <button
               id="aura-download-btn"
               type="button"
-              onClick={handleDownload}
+              onClick={handleDownloadDiptych}
               disabled={saving}
               className="flex items-center gap-1.5 text-xs font-semibold transition-opacity opacity-75 hover:opacity-100 active:scale-95 disabled:opacity-30 cursor-pointer"
               style={{
                 color: INK,
                 fontFamily: BODY,
               }}
-              title="Save aesthetic aura image"
+              title="Save aesthetic diptych card (Aura + Botanical Record)"
             >
               <Download size={13} />
               <span>{saving ? "Saving…" : "Save"}</span>
             </button>
           </div>
 
-          {/* Bottom row: Title on left & Drawings count on right (CANOPY removed) */}
+          {/* Bottom row: Title on left & Drawings count on right */}
           <div className="mt-4 flex items-end justify-between">
             <p
               style={{
@@ -935,11 +1314,11 @@ function AestheticAuraCard({
         </div>
       </div>
 
-      {/* ── Fullscreen High-Resolution Aura Card Modal via Portal ─────────── */}
+      {/* ── Fullscreen Save Card Modal via Portal (Exact Wireframe Diptych Card Presentation) ── */}
       {typeof document !== "undefined" &&
         createPortal(
           <AnimatePresence>
-            {showPreview && previewDataUrl && (
+            {showPreview && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -957,32 +1336,59 @@ function AestheticAuraCard({
                   exit={{ scale: 0.94, opacity: 0, y: 16 }}
                   transition={{ type: "spring", damping: 25, stiffness: 300 }}
                   onClick={(e) => e.stopPropagation()}
-                  className="relative flex flex-col items-center max-w-sm sm:max-w-md w-full"
-                  style={{ maxHeight: "90vh" }}
+                  className="relative flex flex-col items-center w-full max-w-2xl sm:max-w-3xl"
+                  style={{ maxHeight: "94vh" }}
                 >
-                  {/* Close Button */}
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    className="absolute -top-11 right-0 p-2 rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all active:scale-95"
-                    title="Close"
-                  >
-                    <X size={18} />
-                  </button>
+                  {/* Modal Header */}
+                  <div className="w-full flex items-center justify-between mb-3 px-1">
+                    <span
+                      style={{
+                        fontFamily: BODY,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: "rgba(255,255,255,0.85)",
+                        letterSpacing: "1.5px",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      Canopy Keepsake
+                    </span>
 
-                  {/* High-Resolution Aesthetic Card Render (No border line) */}
-                  <img
-                    src={previewDataUrl}
-                    alt={`Canopy Aura ${dayNum} ${monthName}`}
-                    className="h-auto w-auto max-w-full max-h-[68vh] object-contain block rounded-2xl shadow-2xl"
-                  />
+                    {/* Close Button */}
+                    <button
+                      onClick={() => setShowPreview(false)}
+                      className="p-2 rounded-full bg-white/20 text-white backdrop-blur-md hover:bg-white/30 transition-all active:scale-95 cursor-pointer"
+                      title="Close"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
 
-                  {/* Modal Download Action */}
-                  <div className="flex flex-col items-center gap-3 mt-4 w-full">
+                  {/* ── DIPTYCH WIREFRAME CARD PRESENTATION ── */}
+                  <div className="w-full max-h-[70vh] flex items-center justify-center">
+                    <DiptychCard
+                      scope={scope}
+                      date={date}
+                      year={year}
+                      dayNum={dayNum}
+                      monthName={monthName}
+                      fullMonthName={fullMonthName}
+                      customTitle={customTitle}
+                      count={count}
+                      cardStyle={cardStyle}
+                      emotionWeights={emotionWeights}
+                      flowers={flowers}
+                      isExport={false}
+                    />
+                  </div>
+
+                  {/* Modal Download Actions */}
+                  <div className="flex flex-col items-center gap-2 mt-4 w-full max-w-sm">
                     <button
                       type="button"
-                      onClick={() => handleDownload()}
+                      onClick={handleDownloadDiptych}
                       disabled={saving}
-                      className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-2xl text-sm font-semibold transition-all active:scale-98 shadow-xl cursor-pointer"
+                      className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl text-sm font-semibold transition-all active:scale-98 shadow-xl cursor-pointer"
                       style={{
                         background: KEPT,
                         color: "#FFFFFF",
@@ -990,7 +1396,7 @@ function AestheticAuraCard({
                       }}
                     >
                       <Download size={16} />
-                      <span>{saving ? "Saving…" : "Save Art Card"}</span>
+                      <span>{saving ? "Saving…" : "Save Card"}</span>
                     </button>
                   </div>
                 </motion.div>
@@ -2065,18 +2471,26 @@ function EmotionalDriversCard({
     ? moodMix.find((m) => m.name === activeMood) || topMood
     : topMood;
 
+  // Compute tight vertical bounds to eliminate dead space above and below the pie
+  let minY = cy - r;
+  let maxY = cy + r;
+  pieSlices.forEach((s) => {
+    minY = Math.min(minY, s.ly - nameFontSize - 6);
+    maxY = Math.max(maxY, s.ly + pctOffset + 6);
+  });
+  const padY = 8;
+  const vbY = Math.max(0, Math.floor(minY - padY));
+  const vbH = Math.ceil(maxY - minY + padY * 2);
+
   return (
     <Card pad={22}>
-      {/* Header with Title and Subtitle - using Title (Passion One) matching all other cards */}
+      {/* Header with Title - using Title (Passion One) matching all other cards */}
       <Title>Emotional drivers</Title>
-      <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginTop: -6, marginBottom: 8 }}>
-        Your inner states before each moment of impulse
-      </p>
 
       {/* ── Centered Pie with Surrounding Callouts ──────────────────────── */}
-      <div className="w-full my-2 flex items-center justify-center">
+      <div className="w-full flex items-center justify-center">
         <svg
-          viewBox="0 0 380 340"
+          viewBox={`0 ${vbY} 380 ${vbH}`}
           className="w-full max-w-[380px] overflow-visible select-none"
         >
           {/* Layer 1: Dotted Outline at Resting Footprint */}
@@ -2929,7 +3343,7 @@ export function Profile() {
         <div
           className="relative flex p-1 rounded-2xl"
           style={{
-            background: GRAY_3,
+            background: GRAY_4,
             border: `1px solid ${BORDER}`,
           }}
         >
