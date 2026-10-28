@@ -233,70 +233,140 @@ function Title({ children }: { children: React.ReactNode; hint?: string }) {
 }
 
 // ── High-End Organic Luminous Halo Semi-Circle Gradient Generator ─────────────
-function getAuraGradientStyle(colors: [number, number, number][]) {
-  // Deduplicate colors to distinct logged emotion colors
-  const uniqueColors: [number, number, number][] = [];
-  const seen = new Set<string>();
-  colors.forEach((c) => {
-    if (!c) return;
-    const k = `${c[0]},${c[1]},${c[2]}`;
-    if (!seen.has(k)) {
-      seen.add(k);
-      uniqueColors.push(c);
-    }
-  });
+interface EmotionWeight {
+  name: string;
+  color: [number, number, number];
+  count: number;
+  pct: number;
+  ratio: number;
+  centerRatio: number;
+}
+
+function getEmotionColorWeights(
+  flowers?: FlowerEntry[],
+  colors?: [number, number, number][]
+): EmotionWeight[] {
+  // If flowers are provided with entries, aggregate from flowers
+  if (flowers && flowers.length > 0) {
+    const counts: Record<string, { count: number; color: [number, number, number] }> = {};
+    flowers.forEach((f) => {
+      const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name || "Emotion";
+      const col = resolveEmotionRgb(f.emotion) || [106, 181, 169];
+      if (!counts[emName]) {
+        counts[emName] = { count: 0, color: col };
+      }
+      counts[emName].count += 1;
+    });
+
+    const total = Object.values(counts).reduce((s, c) => s + c.count, 0) || 1;
+    let cum = 0;
+    return Object.entries(counts).map(([name, data]) => {
+      const ratio = data.count / total;
+      const pct = Math.round(ratio * 100);
+      const start = cum;
+      const end = cum + ratio;
+      cum = end;
+      const centerRatio = (start + end) / 2;
+      return {
+        name,
+        color: data.color,
+        count: data.count,
+        pct,
+        ratio,
+        centerRatio,
+      };
+    });
+  }
+
+  // Fallback: If only colors array is provided
+  if (colors && colors.length > 0) {
+    const counts: Record<string, { count: number; color: [number, number, number] }> = {};
+    colors.forEach((c) => {
+      if (!c) return;
+      const k = `${c[0]},${c[1]},${c[2]}`;
+      if (!counts[k]) {
+        counts[k] = { count: 0, color: c };
+      }
+      counts[k].count += 1;
+    });
+
+    const total = Object.values(counts).reduce((s, c) => s + c.count, 0) || 1;
+    let cum = 0;
+    return Object.entries(counts).map(([k, data], idx) => {
+      const ratio = data.count / total;
+      const pct = Math.round(ratio * 100);
+      const start = cum;
+      const end = cum + ratio;
+      cum = end;
+      const centerRatio = (start + end) / 2;
+      return {
+        name: `Emotion ${idx + 1}`,
+        color: data.color,
+        count: data.count,
+        pct,
+        ratio,
+        centerRatio,
+      };
+    });
+  }
+
+  return [];
+}
+
+function getAuraGradientStyle(
+  colors: [number, number, number][],
+  flowers?: FlowerEntry[]
+) {
+  const weights = getEmotionColorWeights(flowers, colors);
 
   // 0 emotions: Quiet, pure tactile linen cream
-  if (uniqueColors.length === 0) {
+  if (weights.length === 0) {
     return {
       background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
     };
   }
 
-  const N = uniqueColors.length;
+  // 1 emotion (100%): Centered full radiant halo dome
+  if (weights.length === 1) {
+    const c1 = weights[0].color;
+    const cLight = lightenRgb(c1, 0.40);
+    const cUltraLight = lightenRgb(c1, 0.75);
+    return {
+      background: [
+        `radial-gradient(ellipse 90% 150% at 50% 100%,
+          ${rgbStr(c1, 0.92)} 0%,
+          ${rgbStr(c1, 0.68)} 30%,
+          ${rgbStr(cLight, 0.32)} 58%,
+          ${rgbStr(cUltraLight, 0.08)} 80%,
+          transparent 98%
+        )`,
+        "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
+      ].join(",\n"),
+      backgroundRepeat: "no-repeat",
+    };
+  }
 
-  // Dynamically render a radiant bloom for EVERY logged emotion color
-  const layers = uniqueColors.map((color, i) => {
-    const cLight = lightenRgb(color, 0.40);
-    const cUltraLight = lightenRgb(color, 0.75);
+  // Multiple emotions: Each bloom is positioned and sized strictly proportional to its percentage
+  const layers = weights.map((item) => {
+    const cLight = lightenRgb(item.color, 0.40);
+    const cUltraLight = lightenRgb(item.color, 0.75);
 
-    let posX = 50;
-    let posY = 100;
-    let radX = 70;
-    let radY = 150;
+    // Center position directly corresponds to cumulative percentage midpoint
+    const posX = Math.round(item.centerRatio * 100);
+    const posY = 100;
 
-    if (N === 1) {
-      posX = 50;
-      posY = 100;
-      radX = 90;
-      radY = 150;
-    } else if (N === 2) {
-      posX = i === 0 ? 26 : 74;
-      posY = 100;
-      radX = 70;
-      radY = 150;
-    } else if (N === 3) {
-      posX = i === 0 ? 18 : i === 1 ? 50 : 82;
-      posY = i === 1 ? 94 : 100;
-      radX = 60;
-      radY = 145;
-    } else if (N === 4) {
-      posX = i === 0 ? 14 : i === 1 ? 38 : i === 2 ? 62 : 86;
-      posY = (i === 1 || i === 2) ? 93 : 100;
-      radX = 52;
-      radY = 140;
-    } else {
-      posX = Math.round(12 + (i / (N - 1)) * 76);
-      posY = (i % 2 === 1) ? 93 : 100;
-      radX = Math.round(Math.max(40, 190 / N));
-      radY = 135;
-    }
+    // Spread/radius scales with percentage:
+    // A 25% emotion gets ~48% horizontal radius (providing a lush, seamless blend with neighboring blooms)
+    // A 50% emotion gets ~81% horizontal radius
+    // A 10% emotion gets ~29% horizontal radius
+    const radX = Math.round(Math.max(26, item.pct * 1.3 + 16));
+    const radY = Math.round(Math.max(120, 115 + item.pct * 0.7));
 
     return `radial-gradient(ellipse ${radX}% ${radY}% at ${posX}% ${posY}%,
-      ${rgbStr(color, 0.88)} 0%,
-      ${rgbStr(color, 0.65)} 28%,
-      ${rgbStr(cLight, 0.30)} 55%,
-      ${rgbStr(cUltraLight, 0.08)} 78%,
+      ${rgbStr(item.color, 0.90)} 0%,
+      ${rgbStr(item.color, 0.68)} 28%,
+      ${rgbStr(cLight, 0.32)} 56%,
+      ${rgbStr(cUltraLight, 0.08)} 80%,
       transparent 96%
     )`;
   });
@@ -398,27 +468,17 @@ async function generateHighResAuraCard({
     }
   });
 
-  // Deduplicate colors to distinct logged emotion colors
-  const uniqueColors: [number, number, number][] = [];
-  const seenColors = new Set<string>();
-  colors.forEach((c) => {
-    if (!c) return;
-    const k = `${c[0]},${c[1]},${c[2]}`;
-    if (!seenColors.has(k)) {
-      seenColors.add(k);
-      uniqueColors.push(c);
-    }
-  });
+  const weights = getEmotionColorWeights(flowers, colors);
 
   // 1. Base Layer (Solid Halo Semi-Circle dome entirely of emotion color)
-  if (uniqueColors.length === 0) {
+  if (weights.length === 0) {
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, "#FAF9F6");
     baseGrad.addColorStop(1, "#F5F3EC");
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
-  } else if (uniqueColors.length === 1) {
-    const c1 = uniqueColors[0];
+  } else if (weights.length === 1) {
+    const c1 = weights[0].color;
     const c1Light = lightenRgb(c1, 0.40);
     const c1UltraLight = lightenRgb(c1, 0.75);
 
@@ -440,43 +500,28 @@ async function generateHighResAuraCard({
     ctx.fillStyle = gDome;
     ctx.fillRect(0, 0, W, H);
   } else {
-    // 2+ emotions logged: Render radiant blooms for ALL unique logged emotion colors
+    // 2+ emotions logged: Render radiant blooms for ALL logged emotions, strictly proportional to their percentage
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, "#FAF9F6");
     baseGrad.addColorStop(1, "#F5F3EC");
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    const N = uniqueColors.length;
-    uniqueColors.forEach((color, i) => {
-      const cLight = lightenRgb(color, 0.40);
-      const cUltraLight = lightenRgb(color, 0.75);
+    weights.forEach((item) => {
+      const cLight = lightenRgb(item.color, 0.40);
+      const cUltraLight = lightenRgb(item.color, 0.75);
 
-      let cx = W * 0.5;
-      let cy = H;
-      let r = W * 0.75;
-      if (N === 2) {
-        cx = i === 0 ? W * 0.30 : W * 0.70;
-        cy = H;
-        r = W * 0.75;
-      } else if (N === 3) {
-        cx = i === 0 ? W * 0.20 : i === 1 ? W * 0.50 : W * 0.80;
-        cy = i === 1 ? H * 0.94 : H;
-        r = W * 0.65;
-      } else if (N === 4) {
-        cx = i === 0 ? W * 0.16 : i === 1 ? W * 0.38 : i === 2 ? W * 0.62 : W * 0.84;
-        cy = (i === 1 || i === 2) ? H * 0.93 : H;
-        r = W * 0.60;
-      } else {
-        cx = W * (0.14 + (i / (N - 1)) * 0.72);
-        cy = (i % 2 === 1) ? H * 0.93 : H;
-        r = W * Math.max(0.45, 2.0 / N);
-      }
+      // Horizontal center corresponds directly to cumulative percentage midpoint
+      const cx = W * item.centerRatio;
+      const cy = H;
+      // Radius strictly scales with percentage share
+      const r = W * Math.max(0.38, (item.pct / 100) * 1.35 + 0.22);
 
       const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, r);
-      g.addColorStop(0, rgbStr(color, 0.92));
-      g.addColorStop(0.35, rgbStr(color, 0.82));
+      g.addColorStop(0, rgbStr(item.color, 0.92));
+      g.addColorStop(0.35, rgbStr(item.color, 0.82));
       g.addColorStop(0.68, rgbStr(cLight, 0.45));
+      g.addColorStop(0.90, rgbStr(cUltraLight, 0.10));
       g.addColorStop(1, rgbStr(cUltraLight, 0));
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, W, H);
@@ -539,36 +584,22 @@ async function generateHighResAuraCard({
   ctx.fillText(daySubtitleText, 90, 335);
   ctx.restore();
 
-  // Emotion breakdown indicators (colored dot + name + %) on canvas
-  const emotionStats: { name: string; count: number; pct: number; color: [number, number, number] }[] = [];
-  const emotionCounts: Record<string, { count: number; color: [number, number, number] }> = {};
-  flowers?.forEach((f) => {
-    const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
-    if (!emName) return;
-    const col = resolveEmotionRgb(f.emotion) || [106, 181, 169];
-    if (!emotionCounts[emName]) {
-      emotionCounts[emName] = { count: 0, color: col };
-    }
-    emotionCounts[emName].count += 1;
-  });
-  const totalEm = Object.values(emotionCounts).reduce((s, c) => s + c.count, 0) || 1;
-  Object.entries(emotionCounts).forEach(([name, data]) => {
-    emotionStats.push({
-      name,
-      count: data.count,
-      pct: Math.round((data.count / totalEm) * 100),
-      color: data.color,
-    });
-  });
-
-  if (emotionStats.length > 0) {
+  // Emotion breakdown indicators (colored dot + name + %) on canvas directly from weights
+  if (weights.length > 0) {
     ctx.save();
     let curX = 90;
-    const curY = 385;
+    let curY = 385;
     ctx.font = `500 20px 'Fraunces', serif`;
     ctx.letterSpacing = "0.3px";
 
-    emotionStats.forEach((em) => {
+    weights.forEach((em) => {
+      const label = `${em.name} ${em.pct}%`;
+      const textWidth = ctx.measureText(label).width;
+      if (curX + textWidth + 34 > W - 90 && curX > 90) {
+        curX = 90;
+        curY += 34;
+      }
+
       // Draw circular color dot
       ctx.beginPath();
       ctx.arc(curX + 6, curY - 6, 6, 0, Math.PI * 2);
@@ -577,10 +608,9 @@ async function generateHighResAuraCard({
 
       // Text: Name + Percentage
       ctx.fillStyle = INK;
-      const label = `${em.name} ${em.pct}%`;
       ctx.fillText(label, curX + 18, curY);
 
-      curX += ctx.measureText(label).width + 32;
+      curX += textWidth + 34;
     });
     ctx.restore();
   }
@@ -594,7 +624,7 @@ async function generateHighResAuraCard({
     ctx.font = `italic 32px 'Fraunces', serif`;
     ctx.fillStyle = INK;
     ctx.letterSpacing = "0.3px";
-    drawWrappedText(ctx, `“${reflectionQuote}”`, 90, emotionStats.length > 0 ? 590 : 560, W - 180, 52, 6);
+    drawWrappedText(ctx, `“${reflectionQuote}”`, 90, weights.length > 0 ? 590 : 560, W - 180, 52, 6);
     ctx.restore();
   }
 
@@ -642,7 +672,7 @@ function AestheticAuraCard({
   const count = drawingCount !== undefined ? drawingCount : flowers?.length || 0;
 
   const cardStyle = hasColors
-    ? getAuraGradientStyle(colors)
+    ? getAuraGradientStyle(colors, flowers)
     : {
         background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
         backgroundRepeat: "no-repeat",
@@ -665,25 +695,8 @@ function AestheticAuraCard({
 
   // Emotion breakdown with colors and percentages
   const emotionStats = useMemo(() => {
-    if (!flowers || flowers.length === 0) return [];
-    const counts: Record<string, { count: number; color: [number, number, number] }> = {};
-    flowers.forEach((f) => {
-      const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
-      if (!emName) return;
-      const col = resolveEmotionRgb(f.emotion) || [106, 181, 169];
-      if (!counts[emName]) {
-        counts[emName] = { count: 0, color: col };
-      }
-      counts[emName].count += 1;
-    });
-    const total = Object.values(counts).reduce((s, c) => s + c.count, 0) || 1;
-    return Object.entries(counts).map(([name, data]) => ({
-      name,
-      count: data.count,
-      pct: Math.round((data.count / total) * 100),
-      color: data.color,
-    }));
-  }, [flowers]);
+    return getEmotionColorWeights(flowers, colors);
+  }, [flowers, colors]);
 
   const handleDownload = async (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -2355,35 +2368,15 @@ export function Profile() {
   }, [selectedDate]);
 
   const weekColors = useMemo(() => {
-    const seen = new Set<string>();
-    const res: [number, number, number][] = [];
-    weekFlowers.forEach((f) => {
-      const c = resolveEmotionRgb(f.emotion);
-      if (c) {
-        const k = `${c[0]},${c[1]},${c[2]}`;
-        if (!seen.has(k)) {
-          seen.add(k);
-          res.push(c);
-        }
-      }
-    });
-    return res;
+    return weekFlowers
+      .map((f) => resolveEmotionRgb(f.emotion))
+      .filter((c): c is [number, number, number] => c !== null);
   }, [weekFlowers]);
 
   const monthColors = useMemo(() => {
-    const seen = new Set<string>();
-    const res: [number, number, number][] = [];
-    monthFlowers.forEach((f) => {
-      const c = resolveEmotionRgb(f.emotion);
-      if (c) {
-        const k = `${c[0]},${c[1]},${c[2]}`;
-        if (!seen.has(k)) {
-          seen.add(k);
-          res.push(c);
-        }
-      }
-    });
-    return res;
+    return monthFlowers
+      .map((f) => resolveEmotionRgb(f.emotion))
+      .filter((c): c is [number, number, number] => c !== null);
   }, [monthFlowers]);
 
   const heroCount =
