@@ -1544,6 +1544,14 @@ function describeArc(cx: number, cy: number, r1: number, r2: number, startAngle:
   return `M ${p1.x} ${p1.y} A ${r2} ${r2} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${r1} ${r1} 0 ${largeArcFlag} 0 ${p4.x} ${p4.y} Z`;
 }
 
+function describePieSlice(cx: number, cy: number, r: number, startAngle: number, endAngle: number) {
+  const sweep = Math.min(359.99, Math.max(0.1, endAngle - startAngle));
+  const largeArcFlag = sweep <= 180 ? 0 : 1;
+  const p1 = polarToCartesian(cx, cy, r, startAngle);
+  const p2 = polarToCartesian(cx, cy, r, startAngle + sweep);
+  return `M ${cx} ${cy} L ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArcFlag} 1 ${p2.x} ${p2.y} Z`;
+}
+
 // ── Canopy Signature Palette for Data Visuals (Secondary Plum & Rose + Emotions) ─────
 const BOTANICAL_COLORS = [
   "#2C1320", // Secondary Deep Plum (--pink-9)
@@ -1980,7 +1988,7 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
 }
 
 // ── Emotional Spectrum & Drivers Visual Chart ────────────────────────────────
-type EmotionTabMode = "spectrum" | "donut" | "bars";
+type EmotionTabMode = "spectrum" | "donut" | "pie";
 
 function EmotionalDriversCard({
   moodMix,
@@ -2006,6 +2014,19 @@ function EmotionalDriversCard({
     accumulatedAngle += sweep;
     const path = describeArc(100, 100, 56, 84, startAngle, endAngle);
     return { ...m, path };
+  });
+
+  // Pie slice calculation
+  let accumulatedPieAngle = 0;
+  const pieSlices = moodMix.map((m) => {
+    const sweep = (m.count / (totalFlowers || 1)) * 360;
+    const startAngle = accumulatedPieAngle;
+    const endAngle = accumulatedPieAngle + sweep;
+    accumulatedPieAngle += sweep;
+    const path = describePieSlice(100, 100, 84, startAngle, endAngle);
+    const midAngle = startAngle + sweep / 2;
+    const labelPos = polarToCartesian(100, 100, 52, midAngle);
+    return { ...m, sweep, startAngle, endAngle, path, labelPos };
   });
 
   const selectedOrTopMood = activeMood
@@ -2034,7 +2055,7 @@ function EmotionalDriversCard({
             [
               { key: "spectrum", label: "Spectrum" },
               { key: "donut", label: "Donut" },
-              { key: "bars", label: "Bars" },
+              { key: "pie", label: "Pie" },
             ] as const
           ).map((tab) => {
             const active = tabMode === tab.key;
@@ -2202,66 +2223,90 @@ function EmotionalDriversCard({
         </div>
       )}
 
-      {/* ── TAB 3: VERTICAL BAR CHART VIEW ──────────────────────────────── */}
-      {tabMode === "bars" && (
-        <div className="mt-4 mb-2">
-          {/* Columns Container */}
-          <div className="flex items-end justify-around gap-2 h-44 px-2 pt-6 pb-2 border-b border-[var(--gray-4)]">
+      {/* ── TAB 3: PIE CHART VIEW ───────────────────────────────────────── */}
+      {tabMode === "pie" && (
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 my-4">
+          {/* SVG Pie Chart */}
+          <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+            <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
+              <g>
+                {pieSlices.map((slice) => {
+                  const isSelected = activeMood === slice.name;
+                  return (
+                    <g key={slice.name}>
+                      <path
+                        d={slice.path}
+                        fill={rgbStr(slice.rgb)}
+                        stroke="#FFFFFF"
+                        strokeWidth={2}
+                        strokeLinejoin="round"
+                        className="transition-all duration-300 cursor-pointer hover:opacity-95"
+                        style={{
+                          filter: isSelected ? "drop-shadow(0 4px 12px rgba(0,0,0,0.25))" : "none",
+                          transform: isSelected ? "scale(1.05)" : "scale(1)",
+                          transformOrigin: "100px 100px",
+                          opacity: activeMood && !isSelected ? 0.4 : 1,
+                        }}
+                        onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
+                      />
+                      {/* Direct on-slice percentage label for significant slices */}
+                      {slice.pct >= 14 && (
+                        <text
+                          x={slice.labelPos.x}
+                          y={slice.labelPos.y}
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#FFFFFF"
+                          fontSize="13"
+                          fontWeight="700"
+                          fontFamily={HEAD}
+                          style={{
+                            pointerEvents: "none",
+                            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.45))",
+                            letterSpacing: "0.2px",
+                          }}
+                        >
+                          {slice.pct}%
+                        </text>
+                      )}
+                    </g>
+                  );
+                })}
+              </g>
+            </svg>
+          </div>
+
+          {/* Pie Legend */}
+          <div className="flex-1 flex flex-col gap-2 w-full">
             {moodMix.map((m) => {
-              const barHeightPct = Math.max(14, (m.pct / maxPct) * 100);
               const isSelected = activeMood === m.name;
               return (
                 <div
                   key={m.name}
                   onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className="flex-1 flex flex-col items-center justify-end h-full group cursor-pointer transition-transform active:scale-95"
+                  className={`flex items-center justify-between text-xs p-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                    isSelected ? "ring-1" : "hover:bg-[var(--gray-2)]"
+                  }`}
+                  style={{
+                    background: isSelected ? GRAY_2 : "transparent",
+                    borderColor: isSelected ? rgbStr(m.rgb, 0.4) : "transparent",
+                  }}
                 >
-                  {/* Percentage label on top */}
-                  <span
-                    style={{
-                      fontFamily: HEAD,
-                      fontSize: 14,
-                      color: INK,
-                      marginBottom: 6,
-                      letterSpacing: "0.3px",
-                    }}
-                  >
-                    {m.pct}%
-                  </span>
-
-                  {/* Vertical Column Bar */}
-                  <div className="w-full max-w-[42px] flex flex-col justify-end h-full">
-                    <div
-                      className="w-full rounded-t-xl rounded-b-md transition-all duration-500 ease-out group-hover:brightness-105"
-                      style={{
-                        height: `${barHeightPct}%`,
-                        backgroundColor: rgbStr(m.rgb),
-                        opacity: activeMood && !isSelected ? 0.4 : 1,
-                        boxShadow: isSelected ? `0 0 0 2px ${INK}` : "none",
-                      }}
-                    />
-                  </div>
-
-                  {/* Bottom Label: Dot + Name */}
-                  <div className="flex flex-col items-center gap-0.5 mt-2.5 text-center">
+                  <div className="flex items-center gap-2.5">
                     <span
-                      className="w-2 h-2 rounded-full shrink-0"
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                       style={{ background: rgbStr(m.rgb) }}
                     />
-                    <span
-                      style={{
-                        fontFamily: BODY,
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: isSelected ? INK : INK_SOFT,
-                      }}
-                    >
+                    <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 600 }}>
                       {m.name}
                     </span>
-                    <span style={{ fontFamily: BODY, fontSize: 10.5, color: INK_FAINT }}>
-                      {m.count} {m.count === 1 ? "urge" : "urges"}
+                    <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
+                      · {m.count} {m.count === 1 ? "moment" : "moments"}
                     </span>
                   </div>
+                  <span style={{ fontFamily: HEAD, fontSize: 16, color: INK }}>
+                    {m.pct}%
+                  </span>
                 </div>
               );
             })}
