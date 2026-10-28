@@ -2024,7 +2024,9 @@ function EmotionalDriversCard({
     const endAngle = accumulatedPieAngle + sweep;
     accumulatedPieAngle += sweep;
     const path = describePieSlice(100, 100, 84, startAngle, endAngle);
-    return { ...m, sweep, startAngle, endAngle, path };
+    const midAngle = startAngle + sweep / 2;
+    const labelPos = polarToCartesian(100, 100, 50, midAngle);
+    return { ...m, sweep, startAngle, endAngle, path, labelPos };
   });
 
   const selectedOrTopMood = activeMood
@@ -2209,7 +2211,7 @@ function EmotionalDriversCard({
                       className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-110"
                       style={{ background: rgbStr(m.rgb) }}
                     />
-                    <span className="text-sm font-semibold truncate" style={{ fontFamily: BODY, color: INK }}>
+                    <span className="text-sm font-semibold whitespace-nowrap" style={{ fontFamily: BODY, color: INK }}>
                       {m.name}
                     </span>
                   </div>
@@ -2230,84 +2232,124 @@ function EmotionalDriversCard({
 
       {/* ── TAB 3: PIE CHART VIEW ───────────────────────────────────────── */}
       {tabMode === "pie" && (
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 my-4">
-          {/* SVG Pie Chart - Clean, elegant proportion wedges without noisy on-slice clutter */}
-          <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
-            <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
-              <g>
-                {pieSlices.map((slice) => {
-                  const isSelected = activeMood === slice.name;
-                  return (
-                    <path
-                      key={slice.name}
-                      d={slice.path}
-                      fill={rgbStr(slice.rgb)}
-                      stroke="#FFFFFF"
-                      strokeWidth={2.5}
-                      strokeLinejoin="round"
-                      className="transition-all duration-300 cursor-pointer hover:opacity-95"
-                      style={{
-                        filter: isSelected
-                          ? "drop-shadow(0 6px 14px rgba(0,0,0,0.22))"
-                          : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
-                        transform: isSelected ? "scale(1.06)" : "scale(1)",
-                        transformOrigin: "100px 100px",
-                        opacity: activeMood && !isSelected ? 0.35 : 1,
-                      }}
-                      onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
-                    >
-                      <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
-                    </path>
-                  );
-                })}
-              </g>
-            </svg>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 my-4">
+          {/* Left Column: SVG Pie Chart with Percentages inside + Moments readout below */}
+          <div className="flex flex-col items-center shrink-0">
+            <div className="relative w-44 h-44 flex items-center justify-center">
+              <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
+                <g>
+                  {pieSlices.map((slice) => {
+                    const isSelected = activeMood === slice.name;
+                    return (
+                      <g key={slice.name}>
+                        <path
+                          d={slice.path}
+                          fill={rgbStr(slice.rgb)}
+                          stroke="#FFFFFF"
+                          strokeWidth={2.5}
+                          strokeLinejoin="round"
+                          className="transition-all duration-300 cursor-pointer hover:opacity-95"
+                          style={{
+                            filter: isSelected
+                              ? "drop-shadow(0 6px 14px rgba(0,0,0,0.22))"
+                              : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
+                            transform: isSelected ? "scale(1.05)" : "scale(1)",
+                            transformOrigin: "100px 100px",
+                            opacity: activeMood && !isSelected ? 0.35 : 1,
+                          }}
+                          onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
+                        >
+                          <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
+                        </path>
+
+                        {/* Percentage inside the slice */}
+                        {slice.pct >= 6 && (
+                          <text
+                            x={slice.labelPos.x}
+                            y={slice.labelPos.y}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            fill="#FFFFFF"
+                            fontSize="14"
+                            fontWeight="800"
+                            fontFamily={HEAD}
+                            style={{
+                              pointerEvents: "none",
+                              filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.55))",
+                              letterSpacing: "0.2px",
+                            }}
+                          >
+                            {slice.pct}%
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+                </g>
+              </svg>
+            </div>
+
+            {/* Readout below pie chart showing moments and percentage for selected or top emotion */}
+            <div
+              className="mt-3 px-3.5 py-1.5 rounded-full flex items-center gap-2 transition-all cursor-pointer shadow-sm"
+              style={{
+                background: GRAY_2,
+                border: `1px solid ${GRAY_4}`,
+              }}
+              onClick={() => setActiveMood(null)}
+              title="Click to reset selection"
+            >
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                style={{ background: rgbStr(selectedOrTopMood.rgb) }}
+              />
+              <span style={{ fontFamily: BODY, fontSize: 13, fontWeight: 600, color: INK }}>
+                {selectedOrTopMood.name}
+              </span>
+              <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
+                · {selectedOrTopMood.count} {selectedOrTopMood.count === 1 ? "moment" : "moments"}
+              </span>
+              <span style={{ fontFamily: HEAD, fontSize: 13, fontWeight: 700, color: INK }}>
+                ({selectedOrTopMood.pct}%)
+              </span>
+            </div>
           </div>
 
-          {/* Pie Clean Structured Data Legend */}
-          <div className="flex-1 flex flex-col gap-1.5 w-full min-w-0">
+          {/* Right Column: Clean Emotion Legend (Color Dot + Full Emotion Name Only) */}
+          <div className="flex-1 flex flex-col gap-2 w-full max-w-xs">
             {moodMix.map((m) => {
               const isSelected = activeMood === m.name;
               return (
                 <div
                   key={m.name}
                   onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                     isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
                   }`}
                   style={{
-                    border: isSelected ? `1px solid ${rgbStr(m.rgb, 0.5)}` : "1px solid transparent",
+                    border: isSelected
+                      ? `1.5px solid ${rgbStr(m.rgb, 0.6)}`
+                      : "1.5px solid transparent",
                   }}
                 >
-                  {/* Left: Swatch + Emotion Name */}
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-110"
-                      style={{ background: rgbStr(m.rgb) }}
-                    />
-                    <span
-                      className="text-sm font-semibold truncate"
-                      style={{ fontFamily: BODY, color: INK }}
-                    >
-                      {m.name}
-                    </span>
-                  </div>
-
-                  {/* Right: Moments Count + Aligned Percentage */}
-                  <div className="flex items-center gap-3.5 shrink-0 ml-3">
-                    <span
-                      className="text-xs whitespace-nowrap"
-                      style={{ fontFamily: BODY, color: INK_SOFT }}
-                    >
-                      {m.count} {m.count === 1 ? "moment" : "moments"}
-                    </span>
-                    <span
-                      className="text-base font-bold text-right min-w-[36px]"
-                      style={{ fontFamily: HEAD, color: INK, letterSpacing: "0.2px" }}
-                    >
-                      {m.pct}%
-                    </span>
-                  </div>
+                  <span
+                    className="w-3 h-3 rounded-full shrink-0 shadow-sm transition-transform"
+                    style={{
+                      background: rgbStr(m.rgb),
+                      transform: isSelected ? "scale(1.2)" : "scale(1)",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: BODY,
+                      fontSize: 14,
+                      fontWeight: isSelected ? 700 : 500,
+                      color: INK,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {m.name}
+                  </span>
                 </div>
               );
             })}
