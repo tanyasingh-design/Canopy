@@ -32,7 +32,7 @@ export function Layout({
       <div
         className="min-h-screen flex flex-col relative items-center"
         style={{
-          background: isProfile ? "#FFFFFF" : "#FAFAFA",
+          background: isProfile ? "#F2F2F2" : "#FAFAFA",
           fontFamily: "'Fraunces', serif",
         }}
       >

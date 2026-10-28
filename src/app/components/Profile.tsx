@@ -54,7 +54,7 @@ const GRAY_CONTRAST = "#FFFFFF"; // --gray-contrast card surface
 const INK = GRAY_12;            // high contrast dark ink (#21201f)
 const INK_SOFT = GRAY_11;       // soft body / label text (#646261)
 const INK_FAINT = GRAY_8;       // faint inactive lines & dates (#bcbbb9)
-const BG = "#FFFFFF";           // pure white app canvas background
+const BG = "#F2F2F2";           // profile background
 const CARD = GRAY_CONTRAST;     // pure white card
 const BORDER = "transparent";   // clean borderless
 
