@@ -1987,10 +1987,10 @@ function EmotionalDriversCard({
   const topMood = moodMix[0];
   const count = moodMix.length;
 
-  // Simple, clean font sizes (not bold, not too big)
-  const nameFontSize = count <= 4 ? 12 : count <= 6 ? 11 : 10;
-  const pctFontSize = count <= 4 ? 16 : count <= 6 ? 14 : 12;
-  const pctOffset = count <= 4 ? 15 : count <= 6 ? 13 : 11;
+  // Simple, clean font sizes using BODY font (not bold, not too big)
+  const nameFontSize = count <= 4 ? 13 : count <= 6 ? 12 : 11;
+  const pctFontSize = count <= 4 ? 18 : count <= 6 ? 15 : 13;
+  const pctOffset = count <= 4 ? 17 : count <= 6 ? 15 : 13;
 
   const cx = 190;
   const cy = 170;
@@ -2024,11 +2024,11 @@ function EmotionalDriversCard({
 
     if (count === 4) {
       if (isRight) {
-        lx = 328;
-        ly = midAngle < 90 ? 90 : 246;
+        lx = 330;
+        ly = midAngle < 90 ? 88 : 248;
       } else {
-        lx = 52;
-        ly = midAngle > 270 ? 90 : 246;
+        lx = 50;
+        ly = midAngle > 270 ? 88 : 248;
       }
     } else {
       const distOuterX = r + (count <= 6 ? 54 : 46);
@@ -2130,7 +2130,7 @@ function EmotionalDriversCard({
             );
           })}
 
-          {/* Layer 3: External Surrounding Callout Labels - Simple, clean, not bold, not too big */}
+          {/* Layer 3: External Surrounding Callout Labels - using BODY (Fraunces) matching bottom font */}
           {pieSlices.map((slice) => {
             const isPopped = slice.name === poppedMoodName;
             const dotRadius = Math.max(2.8, nameFontSize * 0.24);
@@ -2150,7 +2150,7 @@ function EmotionalDriversCard({
                       textAnchor="end"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                        fontFamily: BODY,
                         fontSize: nameFontSize,
                         fontWeight: isPopped ? 500 : 400,
                         fill: INK,
@@ -2165,14 +2165,14 @@ function EmotionalDriversCard({
                       fill={rgbStr(slice.rgb)}
                     />
 
-                    {/* Line 2: Simple Clean Percentage (not bold, not too big) */}
+                    {/* Line 2: Percentage in BODY font (clean, not bold, not too big) */}
                     <text
                       x={slice.lx}
                       y={slice.ly + pctOffset}
                       textAnchor="end"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                        fontFamily: BODY,
                         fontSize: pctFontSize,
                         fontWeight: 500,
                         fill: INK,
@@ -2196,7 +2196,7 @@ function EmotionalDriversCard({
                       textAnchor="start"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                        fontFamily: BODY,
                         fontSize: nameFontSize,
                         fontWeight: isPopped ? 500 : 400,
                         fill: INK,
@@ -2205,14 +2205,14 @@ function EmotionalDriversCard({
                       {slice.name}
                     </text>
 
-                    {/* Line 2: Simple Clean Percentage (not bold, not too big) */}
+                    {/* Line 2: Percentage in BODY font (clean, not bold, not too big) */}
                     <text
                       x={slice.lx}
                       y={slice.ly + pctOffset}
                       textAnchor="start"
                       dominantBaseline="alphabetic"
                       style={{
-                        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                        fontFamily: BODY,
                         fontSize: pctFontSize,
                         fontWeight: 500,
                         fill: INK,
