@@ -128,6 +128,41 @@ function lightenRgb(
   ];
 }
 
+// ── sRGB to OKLCH Color Conversion ───────────────────────────────────────────
+function srgbToOklch(r255: number, g255: number, b255: number): [number, number, number] {
+  const toLinear = (c: number) => {
+    const v = c / 255;
+    return v > 0.04045 ? Math.pow((v + 0.055) / 1.055, 2.4) : v / 12.92;
+  };
+  const r = toLinear(r255);
+  const g = toLinear(g255);
+  const b = toLinear(b255);
+
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+
+  const L = 0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s;
+  const a = 1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s;
+  const b_ = 0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s;
+
+  const C = Math.sqrt(a * a + b_ * b_);
+  let h = (Math.atan2(b_, a) * 180) / Math.PI;
+  if (h < 0) h += 360;
+
+  return [L, C, h];
+}
+
+function rgbToOklchStr(c: [number, number, number], alpha = 1): string {
+  const [L, C, h] = srgbToOklch(c[0], c[1], c[2]);
+  const lPct = (L * 100).toFixed(1);
+  const cVal = C.toFixed(3);
+  const hDeg = h.toFixed(1);
+  return alpha < 1
+    ? `oklch(${lPct}% ${cVal} ${hDeg} / ${alpha})`
+    : `oklch(${lPct}% ${cVal} ${hDeg})`;
+}
+
 // Ultra-fine micro tactile grain data URI (small particle size, whisper subtle)
 const NOISE_DATA_URI = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.18'/%3E%3C/svg%3E")`;
 
@@ -319,62 +354,95 @@ function getAuraGradientStyle(
 ) {
   const weights = getEmotionColorWeights(flowers, colors);
 
-  // 0 emotions: Quiet, pure tactile linen cream
+  // 0 emotions: Quiet, pure tactile luminous white
   if (weights.length === 0) {
     return {
-      background: "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
+      background: "#FFFFFF",
     };
   }
 
-  // 1 emotion (100%): Centered full radiant halo dome
+  // 1 emotion (100%): Centered HALO gradient from bottom over luminous white
   if (weights.length === 1) {
     const c1 = weights[0].color;
-    const cLight = lightenRgb(c1, 0.40);
-    const cUltraLight = lightenRgb(c1, 0.75);
     return {
       background: [
-        `radial-gradient(ellipse 90% 150% at 50% 100%,
-          ${rgbStr(c1, 0.92)} 0%,
-          ${rgbStr(c1, 0.68)} 30%,
-          ${rgbStr(cLight, 0.32)} 58%,
-          ${rgbStr(cUltraLight, 0.08)} 80%,
-          transparent 98%
+        // Luminous white top shade for blending
+        `linear-gradient(180deg, oklch(100% 0 0 / 0.85) 0%, oklch(100% 0 0 / 0.35) 50%, transparent 100%)`,
+        // Centered HALO dome in OKLCH
+        `radial-gradient(ellipse 95% 150% at 50% 100%,
+          ${rgbToOklchStr(c1, 0.95)} 0%,
+          ${rgbToOklchStr(c1, 0.70)} 35%,
+          ${rgbToOklchStr(c1, 0.30)} 65%,
+          oklch(100% 0 0 / 0.05) 85%,
+          transparent 100%
         )`,
-        "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
+        "#FFFFFF",
       ].join(",\n"),
       backgroundRepeat: "no-repeat",
     };
   }
 
-  // Multiple emotions: Each bloom is positioned and sized strictly proportional to its percentage
-  const layers = weights.map((item) => {
-    const cLight = lightenRgb(item.color, 0.40);
-    const cUltraLight = lightenRgb(item.color, 0.75);
+  // 2 emotions: Dual HALO semi-circle domes in OKLCH over luminous white
+  if (weights.length === 2) {
+    const c1 = weights[0].color;
+    const c2 = weights[1].color;
+    return {
+      background: [
+        // Luminous white top shade for blending
+        `linear-gradient(180deg, oklch(100% 0 0 / 0.85) 0%, oklch(100% 0 0 / 0.35) 50%, transparent 100%)`,
+        // Left HALO dome in OKLCH
+        `radial-gradient(ellipse 75% 140% at 28% 100%,
+          ${rgbToOklchStr(c1, 0.92)} 0%,
+          ${rgbToOklchStr(c1, 0.30)} 60%,
+          transparent 95%
+        )`,
+        // Right HALO dome in OKLCH
+        `radial-gradient(ellipse 75% 140% at 72% 100%,
+          ${rgbToOklchStr(c2, 0.92)} 0%,
+          ${rgbToOklchStr(c2, 0.30)} 60%,
+          transparent 95%
+        )`,
+        "#FFFFFF",
+      ].join(",\n"),
+      backgroundRepeat: "no-repeat",
+    };
+  }
 
-    // Center position directly corresponds to cumulative percentage midpoint
-    const posX = Math.round(item.centerRatio * 100);
-    const posY = 100;
+  // 3+ emotions: Linear / Aura Gradient in OKLCH with luminous white shade blending
+  // 1. Seamless Linear Spectrum Gradient across the card in OKLCH
+  const linearStops: string[] = [];
+  linearStops.push(`${rgbToOklchStr(weights[0].color, 0.92)} 0%`);
+  weights.forEach((w) => {
+    const mid = Math.round(w.centerRatio * 100);
+    linearStops.push(`${rgbToOklchStr(w.color, 0.90)} ${mid}%`);
+  });
+  linearStops.push(`${rgbToOklchStr(weights[weights.length - 1].color, 0.92)} 100%`);
 
-    // Spread/radius scales with percentage:
-    // A 25% emotion gets ~48% horizontal radius (providing a lush, seamless blend with neighboring blooms)
-    // A 50% emotion gets ~81% horizontal radius
-    // A 10% emotion gets ~29% horizontal radius
-    const radX = Math.round(Math.max(26, item.pct * 1.3 + 16));
-    const radY = Math.round(Math.max(120, 115 + item.pct * 0.7));
-
-    return `radial-gradient(ellipse ${radX}% ${radY}% at ${posX}% ${posY}%,
-      ${rgbStr(item.color, 0.90)} 0%,
-      ${rgbStr(item.color, 0.68)} 28%,
-      ${rgbStr(cLight, 0.32)} 56%,
-      ${rgbStr(cUltraLight, 0.08)} 80%,
-      transparent 96%
+  // 2. Organic Aura Depth Blooms in OKLCH
+  const auraBlooms = weights.map((w) => {
+    const posX = Math.round(w.centerRatio * 100);
+    const radX = Math.round(Math.max(32, w.pct * 1.25 + 20));
+    return `radial-gradient(ellipse ${radX}% 115% at ${posX}% 75%,
+      ${rgbToOklchStr(w.color, 0.60)} 0%,
+      ${rgbToOklchStr(w.color, 0.25)} 45%,
+      transparent 80%
     )`;
   });
 
   return {
     background: [
-      ...layers,
-      "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
+      // Luminous White Top Shade: keeps the top crisp, radiant and elegant (never dull)
+      `linear-gradient(180deg,
+        oklch(100% 0 0 / 0.88) 0%,
+        oklch(100% 0 0 / 0.45) 42%,
+        oklch(100% 0 0 / 0.10) 80%,
+        transparent 100%
+      )`,
+      // Organic Aura Depth Blooms in OKLCH
+      ...auraBlooms,
+      // Seamless Linear Spectrum Gradient in OKLCH
+      `linear-gradient(125deg in oklch, ${linearStops.join(", ")})`,
+      "#FFFFFF",
     ].join(",\n"),
     backgroundRepeat: "no-repeat",
   };
@@ -476,62 +544,93 @@ async function generateHighResAuraCard({
 
   const weights = getEmotionColorWeights(flowers, colors);
 
-  // 1. Base Layer (Solid Halo Semi-Circle dome entirely of emotion color)
+  // 1. Base Layer in OKLCH
   if (weights.length === 0) {
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F5F3EC");
-    ctx.fillStyle = baseGrad;
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
   } else if (weights.length === 1) {
     const c1 = weights[0].color;
-    const c1Light = lightenRgb(c1, 0.40);
-    const c1UltraLight = lightenRgb(c1, 0.75);
-
-    // Warm linen paper base
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F5F3EC");
-    ctx.fillStyle = baseGrad;
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
-    // Semi-circle dome ENTIRELY of the emotion color (solid from center, feathering into lighter tint, ZERO white ring, ZERO black)
-    const gDome = ctx.createRadialGradient(W * 0.5, H, 10, W * 0.5, H, W * 0.88);
-    gDome.addColorStop(0, rgbStr(c1, 0.94));
-    gDome.addColorStop(0.35, rgbStr(c1, 0.90));
-    gDome.addColorStop(0.52, rgbStr(c1, 0.78));
-    gDome.addColorStop(0.70, rgbStr(c1Light, 0.46));
-    gDome.addColorStop(0.86, rgbStr(c1UltraLight, 0.16));
-    gDome.addColorStop(1, rgbStr(c1UltraLight, 0));
+    // HALO semi-circle dome from bottom in OKLCH
+    const gDome = ctx.createRadialGradient(W * 0.5, H, 10, W * 0.5, H, W * 0.95);
+    gDome.addColorStop(0, rgbToOklchStr(c1, 0.95));
+    gDome.addColorStop(0.35, rgbToOklchStr(c1, 0.70));
+    gDome.addColorStop(0.65, rgbToOklchStr(c1, 0.30));
+    gDome.addColorStop(0.85, "rgba(255, 255, 255, 0.05)");
+    gDome.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.fillStyle = gDome;
     ctx.fillRect(0, 0, W, H);
-  } else {
-    // 2+ emotions logged: Render radiant blooms for ALL logged emotions, strictly proportional to their percentage
-    const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
-    baseGrad.addColorStop(0, "#FAF9F6");
-    baseGrad.addColorStop(1, "#F5F3EC");
-    ctx.fillStyle = baseGrad;
+
+    // Luminous white top shade
+    const gWhite = ctx.createLinearGradient(0, 0, 0, H * 0.7);
+    gWhite.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+    gWhite.addColorStop(0.4, "rgba(255, 255, 255, 0.35)");
+    gWhite.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = gWhite;
+    ctx.fillRect(0, 0, W, H);
+  } else if (weights.length === 2) {
+    // 2 emotions: Dual HALO semi-circle domes in OKLCH
+    ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(0, 0, W, H);
 
-    weights.forEach((item) => {
-      const cLight = lightenRgb(item.color, 0.40);
-      const cUltraLight = lightenRgb(item.color, 0.75);
+    const gLeft = ctx.createRadialGradient(W * 0.28, H, 10, W * 0.28, H, W * 0.85);
+    gLeft.addColorStop(0, rgbToOklchStr(weights[0].color, 0.92));
+    gLeft.addColorStop(0.55, rgbToOklchStr(weights[0].color, 0.30));
+    gLeft.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = gLeft;
+    ctx.fillRect(0, 0, W, H);
 
-      // Horizontal center corresponds directly to cumulative percentage midpoint
-      const cx = W * item.centerRatio;
-      const cy = H;
-      // Radius strictly scales with percentage share
-      const r = W * Math.max(0.38, (item.pct / 100) * 1.35 + 0.22);
+    const gRight = ctx.createRadialGradient(W * 0.72, H, 10, W * 0.72, H, W * 0.85);
+    gRight.addColorStop(0, rgbToOklchStr(weights[1].color, 0.92));
+    gRight.addColorStop(0.55, rgbToOklchStr(weights[1].color, 0.30));
+    gRight.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = gRight;
+    ctx.fillRect(0, 0, W, H);
 
-      const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, r);
-      g.addColorStop(0, rgbStr(item.color, 0.92));
-      g.addColorStop(0.35, rgbStr(item.color, 0.82));
-      g.addColorStop(0.68, rgbStr(cLight, 0.45));
-      g.addColorStop(0.90, rgbStr(cUltraLight, 0.10));
-      g.addColorStop(1, rgbStr(cUltraLight, 0));
-      ctx.fillStyle = g;
+    const gWhite = ctx.createLinearGradient(0, 0, 0, H * 0.7);
+    gWhite.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+    gWhite.addColorStop(0.4, "rgba(255, 255, 255, 0.35)");
+    gWhite.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = gWhite;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    // 3+ emotions: Linear / Aura Gradient in OKLCH with luminous white shade blending
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillRect(0, 0, W, H);
+
+    // Linear Spectrum Gradient across the card (125deg angle) in OKLCH
+    const gSpectrum = ctx.createLinearGradient(0, H * 0.20, W, H * 0.85);
+    gSpectrum.addColorStop(0, rgbToOklchStr(weights[0].color, 0.90));
+    weights.forEach((w) => {
+      gSpectrum.addColorStop(w.centerRatio, rgbToOklchStr(w.color, 0.88));
+    });
+    gSpectrum.addColorStop(1, rgbToOklchStr(weights[weights.length - 1].color, 0.90));
+    ctx.fillStyle = gSpectrum;
+    ctx.fillRect(0, 0, W, H);
+
+    // Organic Aura Depth Blooms in OKLCH
+    weights.forEach((w) => {
+      const cx = W * w.centerRatio;
+      const cy = H * 0.70;
+      const r = W * Math.max(0.45, (w.pct / 100) * 1.35 + 0.30);
+      const gBloom = ctx.createRadialGradient(cx, cy, 10, cx, cy, r);
+      gBloom.addColorStop(0, rgbToOklchStr(w.color, 0.55));
+      gBloom.addColorStop(0.50, rgbToOklchStr(w.color, 0.20));
+      gBloom.addColorStop(1, "rgba(255, 255, 255, 0)");
+      ctx.fillStyle = gBloom;
       ctx.fillRect(0, 0, W, H);
     });
+
+    // Luminous White Top Shade: eliminates dullness, keeps top airy, clean and crisp
+    const gWhite = ctx.createLinearGradient(0, 0, 0, H * 0.75);
+    gWhite.addColorStop(0, "rgba(255, 255, 255, 0.90)");
+    gWhite.addColorStop(0.42, "rgba(255, 255, 255, 0.45)");
+    gWhite.addColorStop(0.78, "rgba(255, 255, 255, 0.10)");
+    gWhite.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = gWhite;
+    ctx.fillRect(0, 0, W, H);
   }
 
   // 2. Ultra-Fine Tactile Film Grain Texture (1:1 micro pixels)
@@ -546,7 +645,7 @@ async function generateHighResAuraCard({
     buf[i] = v;
     buf[i + 1] = v;
     buf[i + 2] = v;
-    buf[i + 3] = 7; // very soft and fine
+    buf[i + 3] = 4; // whisper soft and clean
   }
   nCtx.putImageData(imgData, 0, 0);
 
@@ -778,7 +877,7 @@ function AestheticAuraCard({
           style={{
             backgroundImage: NOISE_DATA_URI,
             backgroundRepeat: "repeat",
-            opacity: 0.08,
+            opacity: 0.035,
             mixBlendMode: "multiply",
           }}
         />
