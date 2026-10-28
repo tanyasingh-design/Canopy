@@ -2000,6 +2000,16 @@ function EmotionalDriversCard({
   if (moodMix.length === 0) return null;
 
   const topMood = moodMix[0];
+  const count = moodMix.length;
+
+  // Responsive font sizes if more colors/categories are added
+  const nameFontSize = count <= 4 ? 15 : count <= 6 ? 13 : 11;
+  const pctFontSize = count <= 4 ? 26 : count <= 6 ? 20 : 16;
+  const pctOffset = count <= 4 ? 26 : count <= 6 ? 20 : 16;
+
+  const cx = 190;
+  const cy = 170;
+  const r = 80;
 
   // Pie slice calculation
   let accumulatedPieAngle = 0;
@@ -2008,12 +2018,57 @@ function EmotionalDriversCard({
     const startAngle = accumulatedPieAngle;
     const endAngle = accumulatedPieAngle + sweep;
     accumulatedPieAngle += sweep;
-    const path = describePieSlice(100, 100, 84, startAngle, endAngle);
-    const midAngle = startAngle + sweep / 2;
-    const labelPos = polarToCartesian(100, 100, 50, midAngle);
-    return { ...m, sweep, startAngle, endAngle, path, labelPos };
+    const path = describePieSlice(cx, cy, r, startAngle, endAngle);
+    const midAngle = (startAngle + sweep / 2) % 360;
+    const midRad = ((midAngle - 90) * Math.PI) / 180;
+
+    // Translation vector when slice is exploded/popped out
+    const explodeDist = 12;
+    const shiftX = Math.cos(midRad) * explodeDist;
+    const shiftY = Math.sin(midRad) * explodeDist;
+
+    // Callout label coordinates around the pie
+    const isRight = Math.cos(midRad) >= -0.01;
+    let lx: number;
+    let ly: number;
+
+    if (count === 4) {
+      if (isRight) {
+        lx = 352;
+        ly = midAngle < 90 ? 70 : 272;
+      } else {
+        lx = 28;
+        ly = midAngle > 270 ? 70 : 272;
+      }
+    } else {
+      const distOuterX = r + (count <= 6 ? 60 : 50);
+      const distOuterY = r + (count <= 6 ? 48 : 38);
+      lx = cx + Math.cos(midRad) * distOuterX;
+      ly = cy + Math.sin(midRad) * distOuterY;
+      if (isRight) {
+        lx = Math.min(365, Math.max(cx + 55, lx + 16));
+      } else {
+        lx = Math.max(15, Math.min(cx - 55, lx - 16));
+      }
+    }
+
+    return {
+      ...m,
+      sweep,
+      startAngle,
+      endAngle,
+      path,
+      midAngle,
+      shiftX,
+      shiftY,
+      lx,
+      ly,
+      isRight,
+    };
   });
 
+  // Default popped slice is topMood or the selected emotion
+  const poppedMoodName = activeMood || topMood.name;
   const selectedOrTopMood = activeMood
     ? moodMix.find((m) => m.name === activeMood) || topMood
     : topMood;
@@ -2023,115 +2078,172 @@ function EmotionalDriversCard({
       {/* Header with Title and Subtitle */}
       <div className="mb-2">
         <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
-          Emotional drivers & spectrum
+          Emotional drivers
         </h2>
         <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginTop: 2 }}>
           Your inner states before each moment of impulse
         </p>
       </div>
 
-      {/* ── Pie Chart and Legend View ─────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 my-3">
-        {/* Left Column: SVG Pie Chart with On-Slice Percentages */}
-        <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
-          <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
-            <g>
-              {pieSlices.map((slice) => {
-                const isSelected = activeMood === slice.name;
-                return (
-                  <g key={slice.name}>
-                    <path
-                      d={slice.path}
-                      fill={rgbStr(slice.rgb)}
-                      stroke="#FFFFFF"
-                      strokeWidth={2.5}
-                      strokeLinejoin="round"
-                      className="transition-all duration-300 cursor-pointer hover:opacity-95"
-                      style={{
-                        filter: isSelected
-                          ? "drop-shadow(0 6px 14px rgba(0,0,0,0.22))"
-                          : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
-                        transform: isSelected ? "scale(1.05)" : "scale(1)",
-                        transformOrigin: "100px 100px",
-                        opacity: activeMood && !isSelected ? 0.35 : 1,
-                      }}
-                      onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
-                    >
-                      <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
-                    </path>
-
-                    {/* Percentage inside the slice */}
-                    {slice.pct >= 6 && (
-                      <text
-                        x={slice.labelPos.x}
-                        y={slice.labelPos.y}
-                        textAnchor="middle"
-                        dominantBaseline="central"
-                        fill="#FFFFFF"
-                        fontSize="14"
-                        fontWeight="800"
-                        fontFamily={HEAD}
-                        style={{
-                          pointerEvents: "none",
-                          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.55))",
-                          letterSpacing: "0.2px",
-                        }}
-                      >
-                        {slice.pct}%
-                      </text>
-                    )}
-                  </g>
-                );
-              })}
-            </g>
-          </svg>
-        </div>
-
-        {/* Right Column: Clean Emotion Legend - Simple, Compact, No Heavy Box Padding */}
-        <div className="flex flex-col gap-2 shrink-0">
-          {moodMix.map((m) => {
-            const isSelected = activeMood === m.name;
+      {/* ── Centered Pie with Surrounding Callouts ──────────────────────── */}
+      <div className="w-full my-3 flex items-center justify-center">
+        <svg
+          viewBox="0 0 380 340"
+          className="w-full max-w-[380px] overflow-visible select-none"
+        >
+          {/* Layer 1: Dashed Footprint for Popped-Out Slice */}
+          {pieSlices.map((slice) => {
+            const isPopped = slice.name === poppedMoodName;
+            if (!isPopped) return null;
             return (
-              <div
-                key={m.name}
-                onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                className="flex items-center gap-2.5 py-1 px-1.5 rounded-md cursor-pointer transition-all duration-150 select-none hover:opacity-80"
-                style={{
-                  opacity: activeMood && !isSelected ? 0.4 : 1,
-                }}
-              >
-                <span
-                  className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200"
-                  style={{
-                    background: rgbStr(m.rgb),
-                    transform: isSelected ? "scale(1.3)" : "scale(1)",
-                  }}
-                />
-                <span
-                  style={{
-                    fontFamily: BODY,
-                    fontSize: 14,
-                    fontWeight: isSelected ? 700 : 500,
-                    color: INK,
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {m.name}
-                </span>
-              </div>
+              <path
+                key={`dash-${slice.name}`}
+                d={slice.path}
+                fill="none"
+                stroke="var(--gray-8)"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+                strokeLinejoin="round"
+              />
             );
           })}
-        </div>
+
+          {/* Layer 2: Colored Pie Slices */}
+          {pieSlices.map((slice) => {
+            const isPopped = slice.name === poppedMoodName;
+            return (
+              <g
+                key={`slice-${slice.name}`}
+                transform={isPopped ? `translate(${slice.shiftX.toFixed(2)}, ${slice.shiftY.toFixed(2)})` : undefined}
+                className="transition-transform duration-300 cursor-pointer"
+                onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
+              >
+                <path
+                  d={slice.path}
+                  fill={rgbStr(slice.rgb)}
+                  stroke="#FFFFFF"
+                  strokeWidth={3}
+                  strokeLinejoin="round"
+                  className="hover:opacity-95 transition-opacity"
+                  style={{
+                    filter: isPopped ? "drop-shadow(0 4px 10px rgba(0,0,0,0.14))" : "none",
+                  }}
+                >
+                  <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
+                </path>
+              </g>
+            );
+          })}
+
+          {/* Layer 3: External Surrounding Callout Labels */}
+          {pieSlices.map((slice) => {
+            const isPopped = slice.name === poppedMoodName;
+            const dotRadius = Math.max(3.5, nameFontSize * 0.28);
+
+            return (
+              <g
+                key={`label-${slice.name}`}
+                className="cursor-pointer transition-opacity duration-200"
+                style={{ opacity: activeMood && !isPopped ? 0.45 : 1 }}
+                onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
+              >
+                {slice.isRight ? (
+                  <>
+                    {/* Line 1: Emotion Name + Color Dot on Right */}
+                    <text
+                      x={slice.lx - (dotRadius * 2 + 5)}
+                      y={slice.ly}
+                      textAnchor="end"
+                      dominantBaseline="alphabetic"
+                      style={{
+                        fontFamily: HEAD,
+                        fontSize: nameFontSize,
+                        fontWeight: isPopped ? 700 : 600,
+                        fill: INK,
+                      }}
+                    >
+                      {slice.name}
+                    </text>
+                    <circle
+                      cx={slice.lx - dotRadius}
+                      cy={slice.ly - nameFontSize * 0.32}
+                      r={dotRadius}
+                      fill={rgbStr(slice.rgb)}
+                    />
+
+                    {/* Line 2: Large Bold Percentage */}
+                    <text
+                      x={slice.lx}
+                      y={slice.ly + pctOffset}
+                      textAnchor="end"
+                      dominantBaseline="alphabetic"
+                      style={{
+                        fontFamily: HEAD,
+                        fontSize: pctFontSize,
+                        fontWeight: 900,
+                        fill: INK,
+                        letterSpacing: "0.2px",
+                      }}
+                    >
+                      {slice.pct}%
+                    </text>
+                  </>
+                ) : (
+                  <>
+                    {/* Line 1: Color Dot on Left + Emotion Name */}
+                    <circle
+                      cx={slice.lx + dotRadius}
+                      cy={slice.ly - nameFontSize * 0.32}
+                      r={dotRadius}
+                      fill={rgbStr(slice.rgb)}
+                    />
+                    <text
+                      x={slice.lx + (dotRadius * 2 + 5)}
+                      y={slice.ly}
+                      textAnchor="start"
+                      dominantBaseline="alphabetic"
+                      style={{
+                        fontFamily: HEAD,
+                        fontSize: nameFontSize,
+                        fontWeight: isPopped ? 700 : 600,
+                        fill: INK,
+                      }}
+                    >
+                      {slice.name}
+                    </text>
+
+                    {/* Line 2: Large Bold Percentage */}
+                    <text
+                      x={slice.lx}
+                      y={slice.ly + pctOffset}
+                      textAnchor="start"
+                      dominantBaseline="alphabetic"
+                      style={{
+                        fontFamily: HEAD,
+                        fontSize: pctFontSize,
+                        fontWeight: 900,
+                        fill: INK,
+                        letterSpacing: "0.2px",
+                      }}
+                    >
+                      {slice.pct}%
+                    </text>
+                  </>
+                )}
+              </g>
+            );
+          })}
+        </svg>
       </div>
 
-      {/* ── Impulse Trigger Takeaway Box (Updates per selection) ────────── */}
+      {/* ── Impulse Trigger Takeaway Box ──────────────────────────── */}
       {selectedOrTopMood && (
         <div
-          className="mt-4 pt-3.5 border-t flex items-center justify-between gap-3"
+          className="mt-3 pt-3.5 border-t flex items-center justify-between gap-3"
           style={{ borderColor: GRAY_4 }}
         >
           <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, lineHeight: 1.45 }}>
-            {activeMood ? (
+            {activeMood && activeMood !== topMood.name ? (
               <>
                 Selected trigger:{" "}
                 <strong style={{ color: rgbStr(selectedOrTopMood.rgb), fontWeight: 700 }}>
@@ -2143,11 +2255,10 @@ function EmotionalDriversCard({
             ) : (
               <>
                 Primary impulse trigger:{" "}
-                <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
+                <strong style={{ color: rgbStr(topMood.rgb), fontWeight: 700 }}>
                   {topMood.name}
                 </strong>
-                , accounting for {topMood.pct}% ({topMood.count}{" "}
-                {topMood.count === 1 ? "moment" : "moments"}) of all logged moments in this period.
+                , accounting for {topMood.pct}% of all logged moments in this period.
               </>
             )}
           </p>
