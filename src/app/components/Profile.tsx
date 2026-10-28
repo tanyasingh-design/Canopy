@@ -422,10 +422,16 @@ async function generateHighResAuraCard({
   date,
   colors,
   flowers,
+  customTitle,
+  customSubtitle,
+  scope = "day",
 }: {
   date: Date;
   colors: [number, number, number][];
   flowers?: FlowerEntry[];
+  customTitle?: string;
+  customSubtitle?: string;
+  scope?: "day" | "week" | "month";
 }): Promise<string> {
   if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
     try {
@@ -550,46 +556,41 @@ async function generateHighResAuraCard({
   ctx.restore();
 
   // 3. Clean Minimalist Top Header (NO border lines, NO divider lines)
+  const count = flowers?.length || 0;
+  const daySubtitleText =
+    customSubtitle ||
+    (count > 0
+      ? `${count} ${count === 1 ? "drawing" : "drawings"}`
+      : "0 drawings · Stillness");
+
   ctx.save();
   ctx.fillStyle = INK;
-  ctx.font = `bold 30px 'Passion One', sans-serif`;
-  ctx.letterSpacing = "4px";
-  ctx.fillText("CANOPY", 90, 120);
+  ctx.font = `bold 28px 'Passion One', sans-serif`;
+  ctx.letterSpacing = "3px";
+  ctx.fillText(daySubtitleText.toUpperCase(), 90, 120);
 
   ctx.textAlign = "right";
-  ctx.font = `500 16px 'Fraunces', serif`;
-  ctx.fillStyle = INK_SOFT;
+  ctx.font = `600 18px 'Fraunces', serif`;
+  ctx.fillStyle = INK;
   ctx.letterSpacing = "2px";
   ctx.fillText(weekday, W - 90, 118);
   ctx.restore();
 
-  // 4. Day Text Hero Section (Spacious, elegant, editorial dark ink)
+  // 4. Hero Title (Spacious, elegant, editorial dark ink)
   ctx.save();
   ctx.font = `bold 100px 'Passion One', sans-serif`;
   ctx.fillStyle = INK;
   ctx.letterSpacing = "1px";
   ctx.shadowColor = "transparent";
-  ctx.fillText(`${dayNum} ${monthName} ${year}`, 90, 275);
-
-  // 4. Subtitle: Number of drawings (strictly no "logged")
-  const count = flowers?.length || 0;
-  const daySubtitleText =
-    count > 0
-      ? `${count} ${count === 1 ? "drawing" : "drawings"}`
-      : "0 drawings · Stillness";
-
-  ctx.font = `italic 30px 'Fraunces', serif`;
-  ctx.fillStyle = INK_SOFT;
-  ctx.letterSpacing = "0.5px";
-  ctx.fillText(daySubtitleText, 90, 335);
+  ctx.fillText(customTitle || `${dayNum} ${monthName} ${year}`, 90, 260);
   ctx.restore();
 
   // Emotion breakdown indicators (colored dot + name + %) on canvas directly from weights
   if (weights.length > 0) {
     ctx.save();
     let curX = 90;
-    let curY = 385;
-    ctx.font = `500 20px 'Fraunces', serif`;
+    let curY = 325;
+    ctx.font = `600 20px 'Fraunces', serif`;
     ctx.letterSpacing = "0.3px";
 
     weights.forEach((em) => {
@@ -624,22 +625,22 @@ async function generateHighResAuraCard({
     ctx.font = `italic 32px 'Fraunces', serif`;
     ctx.fillStyle = INK;
     ctx.letterSpacing = "0.3px";
-    drawWrappedText(ctx, `“${reflectionQuote}”`, 90, weights.length > 0 ? 590 : 560, W - 180, 52, 6);
+    drawWrappedText(ctx, `“${reflectionQuote}”`, 90, weights.length > 0 ? 510 : 420, W - 180, 52, 6);
     ctx.restore();
   }
 
-  // 6. Minimalist Footer (NO divider line)
+  // 6. Minimalist Footer (NO divider line, high WCAG contrast dark ink)
   ctx.save();
-  ctx.font = `bold 18px 'Passion One', sans-serif`;
-  ctx.fillStyle = INK_SOFT;
+  ctx.font = `bold 22px 'Passion One', sans-serif`;
+  ctx.fillStyle = INK;
   ctx.letterSpacing = "3px";
   ctx.fillText("CANOPY", 90, H - 75);
 
   ctx.textAlign = "right";
-  ctx.font = `14px 'Fraunces', serif`;
-  ctx.fillStyle = INK_SOFT;
+  ctx.font = `600 16px 'Fraunces', serif`;
+  ctx.fillStyle = INK;
   ctx.letterSpacing = "1.5px";
-  ctx.fillText(`${dayNum} ${monthName} ${year}`, W - 90, H - 75);
+  ctx.fillText(customTitle || `${dayNum} ${monthName} ${year}`, W - 90, H - 75);
   ctx.restore();
 
   return canvas.toDataURL("image/png", 1.0);
@@ -707,6 +708,9 @@ function AestheticAuraCard({
         date,
         colors,
         flowers,
+        customTitle,
+        customSubtitle,
+        scope,
       });
       const filename = `canopy-aura-${date.toISOString().slice(0, 10)}.png`;
 
@@ -742,6 +746,9 @@ function AestheticAuraCard({
         date,
         colors,
         flowers,
+        customTitle,
+        customSubtitle,
+        scope,
       });
       setPreviewDataUrl(dataUrl);
       setShowPreview(true);
@@ -785,7 +792,7 @@ function AestheticAuraCard({
               type="button"
               onClick={handleDownload}
               disabled={saving}
-              className="flex items-center gap-1.5 text-xs font-medium transition-opacity opacity-60 hover:opacity-100 active:scale-95 disabled:opacity-30 cursor-pointer"
+              className="flex items-center gap-1.5 text-xs font-semibold transition-opacity opacity-75 hover:opacity-100 active:scale-95 disabled:opacity-30 cursor-pointer"
               style={{
                 color: INK,
                 fontFamily: BODY,
@@ -816,9 +823,9 @@ function AestheticAuraCard({
                 style={{
                   fontFamily: BODY,
                   fontSize: 14,
-                  color: INK_SOFT,
+                  fontWeight: 600,
+                  color: INK,
                   marginTop: 4,
-                  fontStyle: "italic",
                 }}
               >
                 {customSubtitle ||
@@ -826,38 +833,15 @@ function AestheticAuraCard({
                     ? `${count} ${count === 1 ? "drawing" : "drawings"}`
                     : "0 drawings · Stillness")}
               </p>
-
-              {emotionStats.length > 0 && (
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
-                  {emotionStats.map((em) => (
-                    <span
-                      key={em.name}
-                      className="flex items-center gap-1.5 text-xs"
-                      style={{ color: INK, fontFamily: BODY }}
-                    >
-                      <i
-                        style={{
-                          width: 7,
-                          height: 7,
-                          borderRadius: "50%",
-                          background: rgbStr(em.color),
-                          display: "inline-block",
-                        }}
-                      />
-                      <span>{em.name}</span>
-                      <strong style={{ fontFamily: HEAD, fontSize: 13, color: INK }}>{em.pct}%</strong>
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
 
             <span
               style={{
                 fontFamily: HEAD,
-                fontSize: 13,
-                letterSpacing: "1px",
-                color: GRAY_9,
+                fontSize: 14,
+                fontWeight: 700,
+                letterSpacing: "1.5px",
+                color: INK,
                 textTransform: "uppercase",
               }}
             >
