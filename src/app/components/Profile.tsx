@@ -2031,7 +2031,7 @@ function EmotionalDriversCard({
       </div>
 
       {/* ── Pie Chart and Legend View ─────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 my-4">
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10 my-3">
         {/* Left Column: SVG Pie Chart with On-Slice Percentages */}
         <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
           <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
@@ -2087,28 +2087,24 @@ function EmotionalDriversCard({
           </svg>
         </div>
 
-        {/* Right Column: Clean Emotion Legend (Color Dot + Full Emotion Name Only) */}
-        <div className="flex-1 flex flex-col gap-2 w-full max-w-xs">
+        {/* Right Column: Clean Emotion Legend - Simple, Compact, No Heavy Box Padding */}
+        <div className="flex flex-col gap-2 shrink-0">
           {moodMix.map((m) => {
             const isSelected = activeMood === m.name;
             return (
               <div
                 key={m.name}
                 onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
-                  isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
-                }`}
+                className="flex items-center gap-2.5 py-1 px-1.5 rounded-md cursor-pointer transition-all duration-150 select-none hover:opacity-80"
                 style={{
-                  border: isSelected
-                    ? `1.5px solid ${rgbStr(m.rgb, 0.6)}`
-                    : "1.5px solid transparent",
+                  opacity: activeMood && !isSelected ? 0.4 : 1,
                 }}
               >
                 <span
-                  className="w-3 h-3 rounded-full shrink-0 shadow-sm transition-transform"
+                  className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-200"
                   style={{
                     background: rgbStr(m.rgb),
-                    transform: isSelected ? "scale(1.2)" : "scale(1)",
+                    transform: isSelected ? "scale(1.3)" : "scale(1)",
                   }}
                 />
                 <span
