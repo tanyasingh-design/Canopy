@@ -1880,6 +1880,136 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
   );
 }
 
+// ── Emotional Spectrum & Drivers Visual Chart ────────────────────────────────
+function EmotionalDriversCard({
+  moodMix,
+  totalFlowers,
+}: {
+  moodMix: { name: string; count: number; rgb: [number, number, number]; pct: number }[];
+  totalFlowers: number;
+}) {
+  const [activeMood, setActiveMood] = useState<string | null>(null);
+
+  if (moodMix.length === 0) return null;
+
+  const topMood = moodMix[0];
+
+  return (
+    <Card pad={22}>
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-1">
+        <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
+          Emotional drivers & spectrum
+        </h2>
+        <span
+          className="shrink-0 text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1"
+          style={{
+            color: GRAY_11,
+            background: GRAY_3,
+            fontFamily: BODY,
+          }}
+        >
+          {totalFlowers} {totalFlowers === 1 ? "impulse" : "impulses"}
+        </span>
+      </div>
+
+      <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginBottom: 14 }}>
+        Your inner states before each moment of impulse
+      </p>
+
+      {/* 1. Continuous Macro Spectrum Ribbon */}
+      <div
+        className="w-full flex h-3.5 rounded-full overflow-hidden p-[2px] gap-[2px]"
+        style={{ background: GRAY_3 }}
+      >
+        {moodMix.map((m) => {
+          const isSelected = activeMood === m.name;
+          return (
+            <div
+              key={m.name}
+              onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
+              className="h-full rounded-full cursor-pointer transition-all duration-300 hover:opacity-100"
+              style={{
+                width: `${m.pct}%`,
+                backgroundColor: rgbStr(m.rgb),
+                opacity: activeMood && !isSelected ? 0.35 : 1,
+                transform: isSelected ? "scaleY(1.2)" : "scaleY(1)",
+              }}
+              title={`${m.name}: ${m.pct}% (${m.count})`}
+            />
+          );
+        })}
+      </div>
+
+      {/* 2. Micro Driver Progress Breakdown Rows */}
+      <div className="flex flex-col gap-2 mt-4">
+        {moodMix.map((m) => {
+          const isSelected = activeMood === m.name;
+          return (
+            <div
+              key={m.name}
+              onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
+              className={`p-2.5 rounded-2xl transition-all duration-200 cursor-pointer ${
+                isSelected ? "ring-1" : "hover:bg-[var(--gray-2)]"
+              }`}
+              style={{
+                background: isSelected ? GRAY_2 : "transparent",
+                borderColor: isSelected ? rgbStr(m.rgb, 0.4) : "transparent",
+              }}
+            >
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <div className="flex items-center gap-2.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                    style={{ background: rgbStr(m.rgb) }}
+                  />
+                  <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 600 }}>
+                    {m.name}
+                  </span>
+                  <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
+                    · {m.count} {m.count === 1 ? "moment" : "moments"}
+                  </span>
+                </div>
+
+                <span style={{ fontFamily: HEAD, fontSize: 17, color: INK, letterSpacing: "0.3px" }}>
+                  {m.pct}%
+                </span>
+              </div>
+
+              {/* Proportional Driver Bar */}
+              <div className="w-full rounded-full overflow-hidden" style={{ height: 6.5, background: GRAY_3 }}>
+                <div
+                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  style={{
+                    width: `${m.pct}%`,
+                    backgroundColor: rgbStr(m.rgb),
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 3. Primary Impulse Trigger Takeaway Box */}
+      {topMood && (
+        <div
+          className="mt-4 pt-3.5 border-t flex items-center justify-between gap-3"
+          style={{ borderColor: GRAY_4 }}
+        >
+          <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, lineHeight: 1.45 }}>
+            Primary impulse trigger:{" "}
+            <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
+              {topMood.name}
+            </strong>
+            , accounting for {topMood.pct}% of all logged moments in this period.
+          </p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 // ── Settings & Personalization Modal ──────────────────────────────────────────
 function SettingsModal({
   isOpen,
@@ -2786,57 +2916,7 @@ export function Profile() {
         <CategoryDonutChart flowers={activeFlowers} />
 
         {/* ── 6. EMOTIONAL SPECTRUM & DRIVERS ─────────────────────────────────── */}
-        {moodMix.length > 0 && (
-          <Card pad={20}>
-            <Title>
-              Emotional drivers & spectrum
-            </Title>
-            <div className="flex flex-wrap gap-x-3 gap-y-2.5">
-              {moodMix.map((m) => (
-                <span
-                  key={m.name}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm"
-                  style={{
-                    fontFamily: BODY,
-                    background: GRAY_3,
-                    border: `1px solid ${BORDER}`,
-                    color: GRAY_12,
-                  }}
-                >
-                  <i
-                    style={{
-                      width: 11,
-                      height: 11,
-                      borderRadius: 4,
-                      background: rgbStr(m.rgb),
-                      display: "inline-block",
-                    }}
-                  />
-                  <span>{m.name}</span>
-                  <strong style={{ fontFamily: HEAD, fontSize: 16, color: GRAY_12 }}>{m.pct}%</strong>
-                  <span style={{ color: GRAY_10, fontSize: 12 }}>({m.count})</span>
-                </span>
-              ))}
-            </div>
-            {moodMix[0] && (
-              <p
-                style={{
-                  fontFamily: BODY,
-                  fontSize: 13,
-                  color: INK_SOFT,
-                  marginTop: 14,
-                  lineHeight: 1.5,
-                }}
-              >
-                Primary impulse trigger:{" "}
-                <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
-                  {moodMix[0].name}
-                </strong>
-                , accounting for {moodMix[0].pct}% of all logged moments in this period.
-              </p>
-            )}
-          </Card>
-        )}
+        <EmotionalDriversCard moodMix={moodMix} totalFlowers={activeFlowers.length} />
 
         {/* ── 7. FAVORITE IMPULSE SPECIES (FOREST-STYLE RANKED HABITS) ───────── */}
         <FavoriteImpulsesCard flowers={activeFlowers} />
