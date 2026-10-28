@@ -2024,9 +2024,7 @@ function EmotionalDriversCard({
     const endAngle = accumulatedPieAngle + sweep;
     accumulatedPieAngle += sweep;
     const path = describePieSlice(100, 100, 84, startAngle, endAngle);
-    const midAngle = startAngle + sweep / 2;
-    const labelPos = polarToCartesian(100, 100, 52, midAngle);
-    return { ...m, sweep, startAngle, endAngle, path, labelPos };
+    return { ...m, sweep, startAngle, endAngle, path };
   });
 
   const selectedOrTopMood = activeMood
@@ -2123,7 +2121,7 @@ function EmotionalDriversCard({
                   }}
                 >
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <span
                         className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
                         style={{ background: rgbStr(m.rgb) }}
@@ -2131,7 +2129,7 @@ function EmotionalDriversCard({
                       <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 600 }}>
                         {m.name}
                       </span>
-                      <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
+                      <span className="whitespace-nowrap" style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
                         · {m.count} {m.count === 1 ? "moment" : "moments"}
                       </span>
                     </div>
@@ -2176,7 +2174,9 @@ function EmotionalDriversCard({
                     transformOrigin: "100px 100px",
                   }}
                   onClick={() => setActiveMood(activeMood === arc.name ? null : arc.name)}
-                />
+                >
+                  <title>{`${arc.name}: ${arc.pct}% (${arc.count})`}</title>
+                </path>
               ))}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -2190,32 +2190,37 @@ function EmotionalDriversCard({
           </div>
 
           {/* Donut Legend */}
-          <div className="flex-1 flex flex-col gap-2 w-full">
+          <div className="flex-1 flex flex-col gap-1.5 w-full min-w-0">
             {moodMix.map((m) => {
               const isSelected = activeMood === m.name;
               return (
                 <div
                   key={m.name}
                   onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className={`flex items-center justify-between text-xs p-2 rounded-xl cursor-pointer transition-colors ${
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                     isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
                   }`}
+                  style={{
+                    border: isSelected ? `1px solid ${rgbStr(m.rgb, 0.5)}` : "1px solid transparent",
+                  }}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-110"
                       style={{ background: rgbStr(m.rgb) }}
                     />
-                    <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 600 }}>
+                    <span className="text-sm font-semibold truncate" style={{ fontFamily: BODY, color: INK }}>
                       {m.name}
                     </span>
-                    <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
-                      ({m.count})
+                  </div>
+                  <div className="flex items-center gap-3.5 shrink-0 ml-3">
+                    <span className="text-xs whitespace-nowrap" style={{ fontFamily: BODY, color: INK_SOFT }}>
+                      {m.count} {m.count === 1 ? "moment" : "moments"}
+                    </span>
+                    <span className="text-base font-bold text-right min-w-[36px]" style={{ fontFamily: HEAD, color: INK }}>
+                      {m.pct}%
                     </span>
                   </div>
-                  <span style={{ fontFamily: HEAD, fontSize: 16, color: INK }}>
-                    {m.pct}%
-                  </span>
                 </div>
               );
             })}
@@ -2226,87 +2231,83 @@ function EmotionalDriversCard({
       {/* ── TAB 3: PIE CHART VIEW ───────────────────────────────────────── */}
       {tabMode === "pie" && (
         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 my-4">
-          {/* SVG Pie Chart */}
+          {/* SVG Pie Chart - Clean, elegant proportion wedges without noisy on-slice clutter */}
           <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
             <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
               <g>
                 {pieSlices.map((slice) => {
                   const isSelected = activeMood === slice.name;
                   return (
-                    <g key={slice.name}>
-                      <path
-                        d={slice.path}
-                        fill={rgbStr(slice.rgb)}
-                        stroke="#FFFFFF"
-                        strokeWidth={2}
-                        strokeLinejoin="round"
-                        className="transition-all duration-300 cursor-pointer hover:opacity-95"
-                        style={{
-                          filter: isSelected ? "drop-shadow(0 4px 12px rgba(0,0,0,0.25))" : "none",
-                          transform: isSelected ? "scale(1.05)" : "scale(1)",
-                          transformOrigin: "100px 100px",
-                          opacity: activeMood && !isSelected ? 0.4 : 1,
-                        }}
-                        onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
-                      />
-                      {/* Direct on-slice percentage label for significant slices */}
-                      {slice.pct >= 14 && (
-                        <text
-                          x={slice.labelPos.x}
-                          y={slice.labelPos.y}
-                          textAnchor="middle"
-                          dominantBaseline="central"
-                          fill="#FFFFFF"
-                          fontSize="13"
-                          fontWeight="700"
-                          fontFamily={HEAD}
-                          style={{
-                            pointerEvents: "none",
-                            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.45))",
-                            letterSpacing: "0.2px",
-                          }}
-                        >
-                          {slice.pct}%
-                        </text>
-                      )}
-                    </g>
+                    <path
+                      key={slice.name}
+                      d={slice.path}
+                      fill={rgbStr(slice.rgb)}
+                      stroke="#FFFFFF"
+                      strokeWidth={2.5}
+                      strokeLinejoin="round"
+                      className="transition-all duration-300 cursor-pointer hover:opacity-95"
+                      style={{
+                        filter: isSelected
+                          ? "drop-shadow(0 6px 14px rgba(0,0,0,0.22))"
+                          : "drop-shadow(0 1px 3px rgba(0,0,0,0.06))",
+                        transform: isSelected ? "scale(1.06)" : "scale(1)",
+                        transformOrigin: "100px 100px",
+                        opacity: activeMood && !isSelected ? 0.35 : 1,
+                      }}
+                      onClick={() => setActiveMood(activeMood === slice.name ? null : slice.name)}
+                    >
+                      <title>{`${slice.name}: ${slice.pct}% (${slice.count} ${slice.count === 1 ? "moment" : "moments"})`}</title>
+                    </path>
                   );
                 })}
               </g>
             </svg>
           </div>
 
-          {/* Pie Legend */}
-          <div className="flex-1 flex flex-col gap-2 w-full">
+          {/* Pie Clean Structured Data Legend */}
+          <div className="flex-1 flex flex-col gap-1.5 w-full min-w-0">
             {moodMix.map((m) => {
               const isSelected = activeMood === m.name;
               return (
                 <div
                   key={m.name}
                   onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                  className={`flex items-center justify-between text-xs p-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
-                    isSelected ? "ring-1" : "hover:bg-[var(--gray-2)]"
+                  className={`group flex items-center justify-between px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                    isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
                   }`}
                   style={{
-                    background: isSelected ? GRAY_2 : "transparent",
-                    borderColor: isSelected ? rgbStr(m.rgb, 0.4) : "transparent",
+                    border: isSelected ? `1px solid ${rgbStr(m.rgb, 0.5)}` : "1px solid transparent",
                   }}
                 >
-                  <div className="flex items-center gap-2.5">
+                  {/* Left: Swatch + Emotion Name */}
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm"
+                      className="w-2.5 h-2.5 rounded-full shrink-0 shadow-sm transition-transform group-hover:scale-110"
                       style={{ background: rgbStr(m.rgb) }}
                     />
-                    <span style={{ fontFamily: BODY, fontSize: 14, color: INK, fontWeight: 600 }}>
+                    <span
+                      className="text-sm font-semibold truncate"
+                      style={{ fontFamily: BODY, color: INK }}
+                    >
                       {m.name}
                     </span>
-                    <span style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT }}>
-                      · {m.count} {m.count === 1 ? "moment" : "moments"}
+                  </div>
+
+                  {/* Right: Moments Count + Aligned Percentage */}
+                  <div className="flex items-center gap-3.5 shrink-0 ml-3">
+                    <span
+                      className="text-xs whitespace-nowrap"
+                      style={{ fontFamily: BODY, color: INK_SOFT }}
+                    >
+                      {m.count} {m.count === 1 ? "moment" : "moments"}
+                    </span>
+                    <span
+                      className="text-base font-bold text-right min-w-[36px]"
+                      style={{ fontFamily: HEAD, color: INK, letterSpacing: "0.2px" }}
+                    >
+                      {m.pct}%
                     </span>
                   </div>
-                  <span style={{ fontFamily: HEAD, fontSize: 16, color: INK }}>
-                    {m.pct}%
-                  </span>
                 </div>
               );
             })}
