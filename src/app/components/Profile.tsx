@@ -253,53 +253,59 @@ function getAuraGradientStyle(colors: [number, number, number][]) {
     };
   }
 
-  const c1 = uniqueColors[0];
-  const c1Light = lightenRgb(c1, 0.40);
-  const c1UltraLight = lightenRgb(c1, 0.75);
+  const N = uniqueColors.length;
 
-  if (uniqueColors.length === 1) {
-    return {
-      background: `
-        /* 1. Solid radiant soft atmospheric bloom rising from bottom center */
-        radial-gradient(ellipse 90% 150% at 50% 100%,
-          ${rgbStr(c1, 0.90)} 0%,
-          ${rgbStr(c1, 0.68)} 28%,
-          ${rgbStr(c1Light, 0.32)} 55%,
-          ${rgbStr(c1UltraLight, 0.08)} 78%,
-          transparent 96%
-        ),
-        /* 2. Pure tactile linen paper base */
-        linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
-      `,
-      backgroundRepeat: "no-repeat",
-    };
-  }
+  // Dynamically render a radiant bloom for EVERY logged emotion color
+  const layers = uniqueColors.map((color, i) => {
+    const cLight = lightenRgb(color, 0.40);
+    const cUltraLight = lightenRgb(color, 0.75);
 
-  // 2+ emotions logged: Soft atmospheric dual blooms blending across the bottom (exact match to opened card)
-  const c2 = uniqueColors[1];
-  const c2Light = lightenRgb(c2, 0.40);
-  const c2UltraLight = lightenRgb(c2, 0.75);
+    let posX = 50;
+    let posY = 100;
+    let radX = 70;
+    let radY = 150;
+
+    if (N === 1) {
+      posX = 50;
+      posY = 100;
+      radX = 90;
+      radY = 150;
+    } else if (N === 2) {
+      posX = i === 0 ? 26 : 74;
+      posY = 100;
+      radX = 70;
+      radY = 150;
+    } else if (N === 3) {
+      posX = i === 0 ? 18 : i === 1 ? 50 : 82;
+      posY = i === 1 ? 94 : 100;
+      radX = 60;
+      radY = 145;
+    } else if (N === 4) {
+      posX = i === 0 ? 14 : i === 1 ? 38 : i === 2 ? 62 : 86;
+      posY = (i === 1 || i === 2) ? 93 : 100;
+      radX = 52;
+      radY = 140;
+    } else {
+      posX = Math.round(12 + (i / (N - 1)) * 76);
+      posY = (i % 2 === 1) ? 93 : 100;
+      radX = Math.round(Math.max(40, 190 / N));
+      radY = 135;
+    }
+
+    return `radial-gradient(ellipse ${radX}% ${radY}% at ${posX}% ${posY}%,
+      ${rgbStr(color, 0.88)} 0%,
+      ${rgbStr(color, 0.65)} 28%,
+      ${rgbStr(cLight, 0.30)} 55%,
+      ${rgbStr(cUltraLight, 0.08)} 78%,
+      transparent 96%
+    )`;
+  });
+
   return {
-    background: `
-      /* Emotion 1 soft atmospheric bloom (bottom-left) */
-      radial-gradient(ellipse 70% 150% at 26% 100%,
-        ${rgbStr(c1, 0.88)} 0%,
-        ${rgbStr(c1, 0.65)} 28%,
-        ${rgbStr(c1Light, 0.30)} 55%,
-        ${rgbStr(c1UltraLight, 0.08)} 78%,
-        transparent 96%
-      ),
-      /* Emotion 2 soft atmospheric bloom (bottom-right) */
-      radial-gradient(ellipse 70% 150% at 74% 100%,
-        ${rgbStr(c2, 0.88)} 0%,
-        ${rgbStr(c2, 0.65)} 28%,
-        ${rgbStr(c2Light, 0.30)} 55%,
-        ${rgbStr(c2UltraLight, 0.08)} 78%,
-        transparent 96%
-      ),
-      /* Warm paper base */
-      linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)
-    `,
+    background: [
+      ...layers,
+      "linear-gradient(165deg, #FAF9F6 0%, #F5F3EC 100%)",
+    ].join(",\n"),
     backgroundRepeat: "no-repeat",
   };
 }
@@ -434,35 +440,47 @@ async function generateHighResAuraCard({
     ctx.fillStyle = gDome;
     ctx.fillRect(0, 0, W, H);
   } else {
-    // 2+ emotions logged: Dual semi-circle domes blending across the bottom
-    const c1 = uniqueColors[0];
-    const c2 = uniqueColors[1];
-    const c1Light = lightenRgb(c1, 0.40);
-    const c1UltraLight = lightenRgb(c1, 0.75);
-    const c2Light = lightenRgb(c2, 0.40);
-    const c2UltraLight = lightenRgb(c2, 0.75);
-
+    // 2+ emotions logged: Render radiant blooms for ALL unique logged emotion colors
     const baseGrad = ctx.createLinearGradient(0, 0, 0, H);
     baseGrad.addColorStop(0, "#FAF9F6");
     baseGrad.addColorStop(1, "#F5F3EC");
     ctx.fillStyle = baseGrad;
     ctx.fillRect(0, 0, W, H);
 
-    const g1 = ctx.createRadialGradient(W * 0.32, H, 10, W * 0.32, H, W * 0.75);
-    g1.addColorStop(0, rgbStr(c1, 0.92));
-    g1.addColorStop(0.35, rgbStr(c1, 0.82));
-    g1.addColorStop(0.68, rgbStr(c1Light, 0.45));
-    g1.addColorStop(1, rgbStr(c1UltraLight, 0));
-    ctx.fillStyle = g1;
-    ctx.fillRect(0, 0, W, H);
+    const N = uniqueColors.length;
+    uniqueColors.forEach((color, i) => {
+      const cLight = lightenRgb(color, 0.40);
+      const cUltraLight = lightenRgb(color, 0.75);
 
-    const g2 = ctx.createRadialGradient(W * 0.68, H, 10, W * 0.68, H, W * 0.75);
-    g2.addColorStop(0, rgbStr(c2, 0.92));
-    g2.addColorStop(0.35, rgbStr(c2, 0.82));
-    g2.addColorStop(0.68, rgbStr(c2Light, 0.45));
-    g2.addColorStop(1, rgbStr(c2UltraLight, 0));
-    ctx.fillStyle = g2;
-    ctx.fillRect(0, 0, W, H);
+      let cx = W * 0.5;
+      let cy = H;
+      let r = W * 0.75;
+      if (N === 2) {
+        cx = i === 0 ? W * 0.30 : W * 0.70;
+        cy = H;
+        r = W * 0.75;
+      } else if (N === 3) {
+        cx = i === 0 ? W * 0.20 : i === 1 ? W * 0.50 : W * 0.80;
+        cy = i === 1 ? H * 0.94 : H;
+        r = W * 0.65;
+      } else if (N === 4) {
+        cx = i === 0 ? W * 0.16 : i === 1 ? W * 0.38 : i === 2 ? W * 0.62 : W * 0.84;
+        cy = (i === 1 || i === 2) ? H * 0.93 : H;
+        r = W * 0.60;
+      } else {
+        cx = W * (0.14 + (i / (N - 1)) * 0.72);
+        cy = (i % 2 === 1) ? H * 0.93 : H;
+        r = W * Math.max(0.45, 2.0 / N);
+      }
+
+      const g = ctx.createRadialGradient(cx, cy, 10, cx, cy, r);
+      g.addColorStop(0, rgbStr(color, 0.92));
+      g.addColorStop(0.35, rgbStr(color, 0.82));
+      g.addColorStop(0.68, rgbStr(cLight, 0.45));
+      g.addColorStop(1, rgbStr(cUltraLight, 0));
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    });
   }
 
   // 2. Ultra-Fine Tactile Film Grain Texture (1:1 micro pixels)
@@ -521,6 +539,52 @@ async function generateHighResAuraCard({
   ctx.fillText(daySubtitleText, 90, 335);
   ctx.restore();
 
+  // Emotion breakdown indicators (colored dot + name + %) on canvas
+  const emotionStats: { name: string; count: number; pct: number; color: [number, number, number] }[] = [];
+  const emotionCounts: Record<string, { count: number; color: [number, number, number] }> = {};
+  flowers?.forEach((f) => {
+    const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
+    if (!emName) return;
+    const col = resolveEmotionRgb(f.emotion) || [106, 181, 169];
+    if (!emotionCounts[emName]) {
+      emotionCounts[emName] = { count: 0, color: col };
+    }
+    emotionCounts[emName].count += 1;
+  });
+  const totalEm = Object.values(emotionCounts).reduce((s, c) => s + c.count, 0) || 1;
+  Object.entries(emotionCounts).forEach(([name, data]) => {
+    emotionStats.push({
+      name,
+      count: data.count,
+      pct: Math.round((data.count / totalEm) * 100),
+      color: data.color,
+    });
+  });
+
+  if (emotionStats.length > 0) {
+    ctx.save();
+    let curX = 90;
+    const curY = 385;
+    ctx.font = `500 20px 'Fraunces', serif`;
+    ctx.letterSpacing = "0.3px";
+
+    emotionStats.forEach((em) => {
+      // Draw circular color dot
+      ctx.beginPath();
+      ctx.arc(curX + 6, curY - 6, 6, 0, Math.PI * 2);
+      ctx.fillStyle = rgbStr(em.color);
+      ctx.fill();
+
+      // Text: Name + Percentage
+      ctx.fillStyle = INK;
+      const label = `${em.name} ${em.pct}%`;
+      ctx.fillText(label, curX + 18, curY);
+
+      curX += ctx.measureText(label).width + 32;
+    });
+    ctx.restore();
+  }
+
   // 5. Day Reflection (if available and not just the emotion word repeated)
   const isEmotionWord = emotionNames.some(
     (em) => em.toLowerCase() === reflectionQuote.toLowerCase()
@@ -530,7 +594,7 @@ async function generateHighResAuraCard({
     ctx.font = `italic 32px 'Fraunces', serif`;
     ctx.fillStyle = INK;
     ctx.letterSpacing = "0.3px";
-    drawWrappedText(ctx, `“${reflectionQuote}”`, 90, 560, W - 180, 52, 6);
+    drawWrappedText(ctx, `“${reflectionQuote}”`, 90, emotionStats.length > 0 ? 590 : 560, W - 180, 52, 6);
     ctx.restore();
   }
 
@@ -597,6 +661,28 @@ function AestheticAuraCard({
       if (em) names.add(em);
     });
     return Array.from(names);
+  }, [flowers]);
+
+  // Emotion breakdown with colors and percentages
+  const emotionStats = useMemo(() => {
+    if (!flowers || flowers.length === 0) return [];
+    const counts: Record<string, { count: number; color: [number, number, number] }> = {};
+    flowers.forEach((f) => {
+      const emName = typeof f.emotion === "string" ? f.emotion : f.emotion?.name;
+      if (!emName) return;
+      const col = resolveEmotionRgb(f.emotion) || [106, 181, 169];
+      if (!counts[emName]) {
+        counts[emName] = { count: 0, color: col };
+      }
+      counts[emName].count += 1;
+    });
+    const total = Object.values(counts).reduce((s, c) => s + c.count, 0) || 1;
+    return Object.entries(counts).map(([name, data]) => ({
+      name,
+      count: data.count,
+      pct: Math.round((data.count / total) * 100),
+      color: data.color,
+    }));
   }, [flowers]);
 
   const handleDownload = async (e?: React.MouseEvent) => {
@@ -727,6 +813,30 @@ function AestheticAuraCard({
                     ? `${count} ${count === 1 ? "drawing" : "drawings"}`
                     : "0 drawings · Stillness")}
               </p>
+
+              {emotionStats.length > 0 && (
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
+                  {emotionStats.map((em) => (
+                    <span
+                      key={em.name}
+                      className="flex items-center gap-1.5 text-xs"
+                      style={{ color: INK, fontFamily: BODY }}
+                    >
+                      <i
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: "50%",
+                          background: rgbStr(em.color),
+                          display: "inline-block",
+                        }}
+                      />
+                      <span>{em.name}</span>
+                      <strong style={{ fontFamily: HEAD, fontSize: 13, color: INK }}>{em.pct}%</strong>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <span
