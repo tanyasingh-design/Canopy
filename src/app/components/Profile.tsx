@@ -1987,7 +1987,7 @@ function FavoriteImpulsesCard({ flowers }: { flowers: FlowerEntry[] }) {
   );
 }
 
-// ── Emotional Spectrum & Drivers Visual Chart ────────────────────────────────
+// ── Emotional Drivers & Spectrum Pie Chart ────────────────────────────────
 function EmotionalDriversCard({
   moodMix,
   totalFlowers,
@@ -2014,9 +2014,13 @@ function EmotionalDriversCard({
     return { ...m, sweep, startAngle, endAngle, path, labelPos };
   });
 
+  const selectedOrTopMood = activeMood
+    ? moodMix.find((m) => m.name === activeMood) || topMood
+    : topMood;
+
   return (
     <Card pad={22}>
-      {/* Header with Title */}
+      {/* Header with Title and Subtitle */}
       <div className="mb-2">
         <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
           Emotional drivers & spectrum
@@ -2026,9 +2030,9 @@ function EmotionalDriversCard({
         </p>
       </div>
 
-      {/* Main Pie Chart & Legend View */}
+      {/* ── Pie Chart and Legend View ─────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 my-4">
-        {/* Left Column: SVG Pie Chart with Percentages inside */}
+        {/* Left Column: SVG Pie Chart with On-Slice Percentages */}
         <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
           <svg viewBox="0 0 200 200" className="w-full h-full overflow-visible">
             <g>
@@ -2083,15 +2087,15 @@ function EmotionalDriversCard({
           </svg>
         </div>
 
-        {/* Right Column: Clean Emotion Legend (Color Dot + Name + Moments) */}
-        <div className="flex-1 flex flex-col gap-2 w-full max-w-sm">
+        {/* Right Column: Clean Emotion Legend (Color Dot + Full Emotion Name Only) */}
+        <div className="flex-1 flex flex-col gap-2 w-full max-w-xs">
           {moodMix.map((m) => {
             const isSelected = activeMood === m.name;
             return (
               <div
                 key={m.name}
                 onClick={() => setActiveMood(activeMood === m.name ? null : m.name)}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl cursor-pointer transition-all duration-200 ${
                   isSelected ? "bg-[var(--gray-3)]" : "hover:bg-[var(--gray-2)]"
                 }`}
                 style={{
@@ -2100,32 +2104,23 @@ function EmotionalDriversCard({
                     : "1.5px solid transparent",
                 }}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span
-                    className="w-3 h-3 rounded-full shrink-0 shadow-sm transition-transform"
-                    style={{
-                      background: rgbStr(m.rgb),
-                      transform: isSelected ? "scale(1.2)" : "scale(1)",
-                    }}
-                  />
-                  <span
-                    style={{
-                      fontFamily: BODY,
-                      fontSize: 14,
-                      fontWeight: isSelected ? 700 : 600,
-                      color: INK,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {m.name}
-                  </span>
-                </div>
-
                 <span
-                  className="text-xs whitespace-nowrap ml-4 shrink-0"
-                  style={{ fontFamily: BODY, color: INK_SOFT }}
+                  className="w-3 h-3 rounded-full shrink-0 shadow-sm transition-transform"
+                  style={{
+                    background: rgbStr(m.rgb),
+                    transform: isSelected ? "scale(1.2)" : "scale(1)",
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: BODY,
+                    fontSize: 14,
+                    fontWeight: isSelected ? 700 : 500,
+                    color: INK,
+                    whiteSpace: "nowrap",
+                  }}
                 >
-                  {m.count} {m.count === 1 ? "moment" : "moments"}
+                  {m.name}
                 </span>
               </div>
             );
@@ -2133,18 +2128,32 @@ function EmotionalDriversCard({
         </div>
       </div>
 
-      {/* ── Primary Impulse Trigger Takeaway Box ──────────────────────────── */}
-      {topMood && (
+      {/* ── Impulse Trigger Takeaway Box (Updates per selection) ────────── */}
+      {selectedOrTopMood && (
         <div
           className="mt-4 pt-3.5 border-t flex items-center justify-between gap-3"
           style={{ borderColor: GRAY_4 }}
         >
           <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, lineHeight: 1.45 }}>
-            Primary impulse trigger:{" "}
-            <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
-              {topMood.name}
-            </strong>
-            , accounting for {topMood.pct}% of all logged moments in this period.
+            {activeMood ? (
+              <>
+                Selected trigger:{" "}
+                <strong style={{ color: rgbStr(selectedOrTopMood.rgb), fontWeight: 700 }}>
+                  {selectedOrTopMood.name}
+                </strong>
+                , accounting for {selectedOrTopMood.pct}% ({selectedOrTopMood.count}{" "}
+                {selectedOrTopMood.count === 1 ? "moment" : "moments"}) of all logged moments in this period.
+              </>
+            ) : (
+              <>
+                Primary impulse trigger:{" "}
+                <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
+                  {topMood.name}
+                </strong>
+                , accounting for {topMood.pct}% ({topMood.count}{" "}
+                {topMood.count === 1 ? "moment" : "moments"}) of all logged moments in this period.
+              </>
+            )}
           </p>
         </div>
       )}
