@@ -730,16 +730,16 @@ async function generateHighResAuraCard({
 
   // 6. Minimalist Footer (NO divider line, high WCAG contrast dark ink)
   ctx.save();
-  ctx.font = `bold 22px 'Passion One', sans-serif`;
+  ctx.font = `bold 28px 'Passion One', sans-serif`;
   ctx.fillStyle = INK;
-  ctx.letterSpacing = "3px";
-  ctx.fillText("CANOPY", 90, H - 75);
+  ctx.letterSpacing = "0.5px";
+  ctx.fillText(customTitle || `${dayNum} ${monthName} ${year}`, 90, H - 75);
 
   ctx.textAlign = "right";
-  ctx.font = `600 16px 'Fraunces', serif`;
+  ctx.font = `600 20px 'Fraunces', serif`;
   ctx.fillStyle = INK;
-  ctx.letterSpacing = "1.5px";
-  ctx.fillText(customTitle || `${dayNum} ${monthName} ${year}`, W - 90, H - 75);
+  ctx.letterSpacing = "0.5px";
+  ctx.fillText(daySubtitleText, W - 90, H - 75);
   ctx.restore();
 
   return canvas.toDataURL("image/png", 1.0);
@@ -903,48 +903,33 @@ function AestheticAuraCard({
             </button>
           </div>
 
-          {/* Bottom row: Title & Canopy watermark */}
+          {/* Bottom row: Title on left & Drawings count on right (CANOPY removed) */}
           <div className="mt-4 flex items-end justify-between">
-            <div>
-              <p
-                style={{
-                  fontFamily: HEAD,
-                  fontSize: customTitle ? 28 : 32,
-                  lineHeight: 1.05,
-                  color: INK,
-                  letterSpacing: "0.5px",
-                  textShadow: "none",
-                }}
-              >
-                {customTitle || `${dayNum} ${monthName} ${year}`}
-              </p>
-              <p
-                style={{
-                  fontFamily: BODY,
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: INK,
-                  marginTop: 4,
-                }}
-              >
-                {customSubtitle ||
-                  (count > 0
-                    ? `${count} ${count === 1 ? "drawing" : "drawings"}`
-                    : "0 drawings · Stillness")}
-              </p>
-            </div>
+            <p
+              style={{
+                fontFamily: HEAD,
+                fontSize: customTitle ? 28 : 32,
+                lineHeight: 1.05,
+                color: INK,
+                letterSpacing: "0.5px",
+                textShadow: "none",
+              }}
+            >
+              {customTitle || `${dayNum} ${monthName} ${year}`}
+            </p>
 
             <span
               style={{
-                fontFamily: HEAD,
+                fontFamily: BODY,
                 fontSize: 14,
-                fontWeight: 700,
-                letterSpacing: "1.5px",
+                fontWeight: 600,
                 color: INK,
-                textTransform: "uppercase",
               }}
             >
-              Canopy
+              {customSubtitle ||
+                (count > 0
+                  ? `${count} ${count === 1 ? "drawing" : "drawings"}`
+                  : "0 drawings")}
             </span>
           </div>
         </div>
