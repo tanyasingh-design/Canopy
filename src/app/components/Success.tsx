@@ -58,9 +58,7 @@ export function Success() {
               width: "100%",
               height: "100%",
               objectFit: "contain",
-              filter: boughtAnyway
-                ? "grayscale(0.7) brightness(0.8) drop-shadow(0px 6px 18px rgba(28,46,42,0.18))"
-                : `drop-shadow(0px 6px 20px ${emotion?.hex ? emotion.hex + "80" : GREEN + "80"})`,
+              filter: `drop-shadow(0px 6px 20px ${emotion?.hex ? emotion.hex + "80" : GREEN + "80"})`,
             }}
           />
         ) : (
@@ -99,7 +97,7 @@ export function Success() {
           }}
         >
           {boughtAnyway
-            ? "Anterior insula pain acknowledged — awareness breaks mindless autopilot."
+            ? "Placed in your garden with awareness — every mindful pause counts."
             : "Your urge was released and secured into your Locked Savings Pot."}
         </p>
 

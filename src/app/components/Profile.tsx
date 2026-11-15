@@ -1034,9 +1034,7 @@ function DiptychCard({
                             isExport ? "max-w-[46px] max-h-[46px]" : "max-w-[32px] sm:max-w-[38px] max-h-[32px] sm:max-h-[38px]"
                           } object-contain pointer-events-none`}
                           style={{
-                            filter: wilted
-                              ? "grayscale(1) brightness(0.65) opacity(0.55)"
-                              : "none",
+                            filter: "none",
                           }}
                         />
                       ) : (
@@ -1093,9 +1091,7 @@ function DiptychCard({
                           height: "auto",
                           maxHeight: size,
                           objectFit: "contain",
-                          filter: wilted
-                            ? "grayscale(1) brightness(0.65) opacity(0.55)"
-                            : "none",
+                          filter: "none",
                         }}
                       />
                     ) : (
@@ -1958,27 +1954,34 @@ const BOTANICAL_COLORS = [
 ];
 
 // ── Most Vulnerable Day of The Week (Line Chart matching Forest App) ──────────
-function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
+function VulnerableDayOfWeekChart({
+  flowers,
+  scope,
+}: {
+  flowers: FlowerEntry[];
+  scope: "day" | "week" | "month";
+}) {
   const dowNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const counts = useMemo(() => {
     const c = [0, 0, 0, 0, 0, 0, 0];
-    allFlowers.forEach((f) => {
+    flowers.forEach((f) => {
       const d = new Date(f.date);
       if (!isNaN(d.getTime())) {
         c[d.getDay()]++;
       }
     });
     return c;
-  }, [allFlowers]);
+  }, [flowers]);
 
+  const hasData = flowers.length > 0 && Math.max(...counts) > 0;
   const max = Math.max(1, ...counts);
-  const peakIndex = counts.indexOf(Math.max(...counts));
-  const peakDayName = dowNames[peakIndex];
+  const peakIndex = hasData ? counts.indexOf(Math.max(...counts)) : -1;
+  const peakDayName = peakIndex >= 0 ? dowNames[peakIndex] : "—";
 
   // Width 320, Height 110
   const points = counts.map((cnt, i) => {
     const x = 24 + i * ((320 - 48) / 6);
-    const y = 84 - (cnt / max) * 58;
+    const y = hasData ? 84 - (cnt / max) * 58 : 84;
     return { x, y, cnt, name: dowNames[i] };
   });
 
@@ -1986,17 +1989,26 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
     return i === 0 ? `M ${p.x} ${p.y}` : `${acc} L ${p.x} ${p.y}`;
   }, "");
 
+  const scopeText =
+    scope === "month" ? "this month" : scope === "week" ? "this week" : "today";
+
   return (
     <Card pad={20}>
       <Title>
         Most Vulnerable Day of The Week
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
-        Most impulses on{" "}
-        <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
-          {allFlowers.length > 0 ? peakDayName : "—"}
-        </strong>{" "}
-        every week in general
+        {hasData ? (
+          <>
+            Most impulses on{" "}
+            <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
+              {peakDayName}
+            </strong>{" "}
+            {scopeText}
+          </>
+        ) : (
+          `No impulses logged ${scopeText} yet.`
+        )}
       </p>
 
       <div className="w-full relative mt-1">
@@ -2007,7 +2019,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
           <line x1="16" y1="84" x2="304" y2="84" stroke={GRAY_4} />
 
           {/* Vertical dashed line at peak day */}
-          {allFlowers.length > 0 && (
+          {hasData && peakIndex >= 0 && (
             <line
               x1={points[peakIndex].x}
               y1={points[peakIndex].y}
@@ -2023,7 +2035,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
           <path
             d={pathD}
             fill="none"
-            stroke={GRAY_8}
+            stroke={hasData ? GRAY_8 : GRAY_4}
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -2031,7 +2043,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
 
           {/* Node points on each day */}
           {points.map((p, i) => {
-            const isPeak = i === peakIndex && allFlowers.length > 0;
+            const isPeak = hasData && i === peakIndex;
             return (
               <g key={i}>
                 <circle
@@ -2039,7 +2051,7 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
                   cy={p.y}
                   r={isPeak ? 5.5 : 3.5}
                   fill={isPeak ? GRAY_CONTRAST : GRAY_3}
-                  stroke={isPeak ? SECONDARY_HIGHLIGHT : GRAY_8}
+                  stroke={isPeak ? SECONDARY_HIGHLIGHT : hasData && p.cnt > 0 ? GRAY_8 : GRAY_6}
                   strokeWidth={isPeak ? 3 : 1.5}
                 />
                 {isPeak && (
@@ -2076,10 +2088,16 @@ function VulnerableDayOfWeekChart({ allFlowers }: { allFlowers: FlowerEntry[] })
 }
 
 // ── Peak Period of The Day (Continuous 24h Curve matching Forest App) ─────────
-function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
+function PeakPeriodOfDayChart({
+  flowers,
+  scope,
+}: {
+  flowers: FlowerEntry[];
+  scope: "day" | "week" | "month";
+}) {
   const hourlyCounts = useMemo(() => {
     const c = Array(24).fill(0);
-    allFlowers.forEach((f) => {
+    flowers.forEach((f) => {
       const d = new Date(f.date);
       if (!isNaN(d.getTime())) {
         const h = d.getHours();
@@ -2087,16 +2105,17 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
       }
     });
     return c;
-  }, [allFlowers]);
+  }, [flowers]);
 
+  const hasData = flowers.length > 0 && Math.max(...hourlyCounts) > 0;
   const max = Math.max(1, ...hourlyCounts);
-  const peakHour = hourlyCounts.indexOf(Math.max(...hourlyCounts));
-  const peakHourLabel = `${String(peakHour).padStart(2, "0")}:00`;
+  const peakHour = hasData ? hourlyCounts.indexOf(Math.max(...hourlyCounts)) : -1;
+  const peakHourLabel = peakHour >= 0 ? `${String(peakHour).padStart(2, "0")}:00` : "—";
 
   // Width 320, Height 110, padding left/right 24
   const points = hourlyCounts.map((cnt, h) => {
     const x = 24 + h * ((320 - 48) / 23);
-    const y = 84 - (cnt / max) * 58;
+    const y = hasData ? 84 - (cnt / max) * 58 : 84;
     return { x, y, cnt, h };
   });
 
@@ -2108,17 +2127,26 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
 
   const tickHours = [0, 6, 12, 18, 23];
 
+  const scopeText =
+    scope === "month" ? "this month" : scope === "week" ? "this week" : "today";
+
   return (
     <Card pad={20}>
       <Title>
         Most Vulnerable Period of The Day
       </Title>
       <p style={{ fontFamily: BODY, fontSize: 14, color: INK_SOFT, marginBottom: 12 }}>
-        Most impulses around{" "}
-        <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
-          {allFlowers.length > 0 ? peakHourLabel : "—"}
-        </strong>{" "}
-        every day in general
+        {hasData ? (
+          <>
+            Most impulses around{" "}
+            <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>
+              {peakHourLabel}
+            </strong>{" "}
+            {scopeText}
+          </>
+        ) : (
+          `No impulses logged ${scopeText} yet.`
+        )}
       </p>
 
       <div className="w-full relative mt-1">
@@ -2134,10 +2162,10 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
           <line x1="16" y1="84" x2="304" y2="84" stroke={GRAY_4} />
 
           {/* Area fill (grey contrast glow) */}
-          {allFlowers.length > 0 && <path d={areaD} fill="url(#forestAreaGrad)" />}
+          {hasData && <path d={areaD} fill="url(#forestAreaGrad)" />}
 
           {/* Vertical dashed line at peak hour */}
-          {allFlowers.length > 0 && (
+          {hasData && peakHour >= 0 && (
             <line
               x1={points[peakHour].x}
               y1={points[peakHour].y}
@@ -2153,14 +2181,14 @@ function PeakPeriodOfDayChart({ allFlowers }: { allFlowers: FlowerEntry[] }) {
           <path
             d={pathD}
             fill="none"
-            stroke={GRAY_8}
+            stroke={hasData ? GRAY_8 : GRAY_4}
             strokeWidth={2.2}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
 
           {/* Peak dot (secondary highlight accent) */}
-          {allFlowers.length > 0 && (
+          {hasData && peakHour >= 0 && (
             <circle
               cx={points[peakHour].x}
               cy={points[peakHour].y}
@@ -3571,10 +3599,10 @@ export function Profile() {
         )}
 
         {/* ── 3. MOST VULNERABLE DAY OF THE WEEK (FOREST-STYLE LINE CHART) ──── */}
-        <VulnerableDayOfWeekChart allFlowers={allFlowers} />
+        <VulnerableDayOfWeekChart flowers={activeFlowers} scope={timeScope} />
 
         {/* ── 4. PEAK IMPULSE PERIOD OF THE DAY (FOREST-STYLE 24H AREA CHART) ── */}
-        <PeakPeriodOfDayChart allFlowers={allFlowers} />
+        <PeakPeriodOfDayChart flowers={activeFlowers} scope={timeScope} />
 
         {/* ── 5. TAG & CATEGORY DISTRIBUTION (FOREST-STYLE DONUT CHART) ──────── */}
         <CategoryDonutChart flowers={activeFlowers} />

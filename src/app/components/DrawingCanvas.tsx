@@ -702,7 +702,13 @@ export function DrawingCanvas() {
   const [popover, setPopover] = useState<
     "color" | "width" | "zoom" | null
   >(null);
-  const [hasDrawn, setHasDrawn] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(() => {
+    try {
+      return sessionStorage.getItem("bloom_has_drawn") === "true";
+    } catch {
+      return false;
+    }
+  });
   const [hasStarted, setHasStarted] = useState(false);
   const [timeLeft, setTimeLeft] = useState(duration);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -751,16 +757,71 @@ export function DrawingCanvas() {
   brushModeRef.current = brushMode;
   hasStartedRef.current = hasStarted;
 
-  // ── Canvas init ──
+  // ── Canvas init & ResizeObserver ──
   useEffect(() => {
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvasLogicalWidth.current = rect.width;
-    canvasLogicalHeight.current = rect.height;
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
-    canvas.getContext("2d")!.scale(dpr, dpr);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const setupCanvas = () => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+      const dpr = window.devicePixelRatio || 1;
+      const targetW = Math.round(rect.width * dpr);
+      const targetH = Math.round(rect.height * dpr);
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        // If the canvas already had content, preserve it across the resize
+        let temp: HTMLCanvasElement | null = null;
+        if (canvas.width > 0 && canvas.height > 0) {
+          temp = document.createElement("canvas");
+          temp.width = canvas.width;
+          temp.height = canvas.height;
+          temp.getContext("2d")?.drawImage(canvas, 0, 0);
+        }
+
+        canvasLogicalWidth.current = rect.width;
+        canvasLogicalHeight.current = rect.height;
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.scale(dpr, dpr);
+          if (temp) {
+            ctx.drawImage(temp, 0, 0, rect.width, rect.height);
+          }
+        }
+      }
+    };
+
+    setupCanvas();
+
+    // If there is an active drawing in sessionStorage, restore it
+    try {
+      const savedDrawing = sessionStorage.getItem("bloom_active_drawing");
+      if (savedDrawing) {
+        const img = new Image();
+        img.onload = () => {
+          const rect = canvas.getBoundingClientRect();
+          const ctx = canvas.getContext("2d");
+          if (ctx && rect.width > 0 && rect.height > 0) {
+            ctx.drawImage(img, 0, 0, rect.width, rect.height);
+            saveSnapshot();
+          }
+        };
+        img.src = savedDrawing;
+      }
+    } catch {}
+
+    const ro = new ResizeObserver(() => {
+      setupCanvas();
+    });
+    ro.observe(canvas);
+    window.addEventListener("resize", setupCanvas);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", setupCanvas);
+    };
   }, []);
 
   // Multi-touch pinch-to-zoom tracking
@@ -907,6 +968,9 @@ export function DrawingCanvas() {
       lastPt.current = pt;
       currentPts.current = [pt];
       setHasDrawn(true);
+      try {
+        sessionStorage.setItem("bloom_has_drawn", "true");
+      } catch {}
 
       const diameter = radiusRef.current;
       versaRef.current = {
@@ -1101,6 +1165,12 @@ export function DrawingCanvas() {
       currentPts.current = [];
       firstPt.current = null;
       lastPt.current = null;
+
+      try {
+        const dataUrl = canvas.toDataURL("image/png");
+        sessionStorage.setItem("bloom_active_drawing", dataUrl);
+        sessionStorage.setItem("bloom_has_drawn", "true");
+      } catch {}
     }
 
     canvas.addEventListener("touchstart", onTouchStart, { passive: false });
@@ -1147,10 +1217,24 @@ export function DrawingCanvas() {
     const ctx = canvas.getContext("2d")!;
     if (snapshots.current.length > 0) {
       ctx.putImageData(snapshots.current.pop()!, 0, 0);
-      if (vecStrokes.current.length === 0) setHasDrawn(false);
+      if (vecStrokes.current.length === 0) {
+        setHasDrawn(false);
+        try {
+          sessionStorage.removeItem("bloom_has_drawn");
+          sessionStorage.removeItem("bloom_active_drawing");
+        } catch {}
+      } else {
+        try {
+          sessionStorage.setItem("bloom_active_drawing", canvas.toDataURL("image/png"));
+        } catch {}
+      }
     } else {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       setHasDrawn(false);
+      try {
+        sessionStorage.removeItem("bloom_has_drawn");
+        sessionStorage.removeItem("bloom_active_drawing");
+      } catch {}
     }
   }
 
@@ -1166,11 +1250,20 @@ export function DrawingCanvas() {
     vecStrokes.current = [];
     snapshots.current = [];
     setHasDrawn(false);
+    try {
+      sessionStorage.removeItem("bloom_has_drawn");
+      sessionStorage.removeItem("bloom_active_drawing");
+    } catch {}
   }
 
   async function handleDone() {
     const canvas = canvasRef.current!;
     let drawingDataUrl = "";
+
+    try {
+      sessionStorage.removeItem("bloom_has_drawn");
+      sessionStorage.removeItem("bloom_active_drawing");
+    } catch {}
 
     if (hasDrawn) {
       drawingDataUrl = cropCanvasToArtwork(canvas);
@@ -2000,6 +2093,10 @@ export function DrawingCanvas() {
                 <button
                   onClick={() => {
                     setShowExitConfirm(false);
+                    try {
+                      sessionStorage.removeItem("bloom_has_drawn");
+                      sessionStorage.removeItem("bloom_active_drawing");
+                    } catch {}
                     navigate(-1);
                   }}
                   className="w-full py-3.5 rounded-2xl"

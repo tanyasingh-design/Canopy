@@ -271,6 +271,8 @@ interface HeaderProps {
   viewMode?: "day" | "week";
   onToggleMode?: () => void;
   hideDivider?: boolean;
+  filterMode?: "all" | "saved" | "spent";
+  onFilterChange?: (mode: "all" | "saved" | "spent") => void;
 }
 
 export function GardenHeader({
@@ -283,6 +285,8 @@ export function GardenHeader({
   viewMode = "day",
   onToggleMode,
   hideDivider = false,
+  filterMode = "all",
+  onFilterChange,
 }: HeaderProps) {
   const navigate = useNavigate();
   const shortDate = selectedDate.toLocaleDateString("en-US", {
@@ -388,7 +392,7 @@ export function GardenHeader({
                   </button>
                   <button
                     onClick={() => onSelectDate(new Date())}
-                    className="rounded-full px-2.5 py-1"
+                    className="inline-flex items-center justify-center rounded-full px-2.5 py-1 transition-transform active:scale-95 cursor-pointer"
                     style={{
                       background: TEAL,
                       boxShadow:
@@ -398,10 +402,12 @@ export function GardenHeader({
                     <span
                       style={{
                         fontFamily: BODY,
-                        fontSize: 9,
+                        fontSize: 9.5,
+                        lineHeight: 1,
                         color: "#FAFAFA",
-                        letterSpacing: "0.06em",
+                        letterSpacing: "0.05em",
                         whiteSpace: "nowrap",
+                        transform: "translateY(-1px)",
                       }}
                     >
                       this week
@@ -412,11 +418,33 @@ export function GardenHeader({
           </div>
 
           <div
-            onClick={() => navigate("/profile")}
-            className="flex items-center gap-[8px] shrink-0 cursor-pointer active:scale-95 transition-transform"
-            title="View Profile & Insights"
+            className="flex items-center gap-[8px] shrink-0"
+            title="Filter by saved or spent"
           >
-            <div className="flex flex-col items-end">
+            <button
+              type="button"
+              onClick={() => {
+                if (onFilterChange) {
+                  onFilterChange(filterMode === "saved" ? "all" : "saved");
+                } else {
+                  navigate("/profile");
+                }
+              }}
+              className="flex flex-col items-end cursor-pointer active:scale-95 transition-all text-right select-none"
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                outline: "none",
+                opacity: filterMode === "spent" ? 0.32 : 1,
+                cursor: "pointer",
+              }}
+              title={
+                filterMode === "saved"
+                  ? "Showing saved urges (click to show all)"
+                  : "Filter by saved"
+              }
+            >
               <AnimatePresence mode="wait">
                 <motion.p
                   key={`saved-${daySaved}`}
@@ -439,14 +467,16 @@ export function GardenHeader({
               <p
                 style={{
                   fontSize: 8,
-                  color: "rgba(28,46,42,0.42)",
+                  color: filterMode === "saved" ? GREEN : "rgba(28,46,42,0.42)",
+                  fontWeight: filterMode === "saved" ? 600 : 400,
                   letterSpacing: "0.07em",
                   textTransform: "uppercase",
+                  transition: "color 0.15s ease",
                 }}
               >
                 saved
               </p>
-            </div>
+            </button>
             <div
               style={{
                 width: 1,
@@ -454,7 +484,30 @@ export function GardenHeader({
                 background: "rgba(28,46,42,0.1)",
               }}
             />
-            <div className="flex flex-col items-end">
+            <button
+              type="button"
+              onClick={() => {
+                if (onFilterChange) {
+                  onFilterChange(filterMode === "spent" ? "all" : "spent");
+                } else {
+                  navigate("/profile");
+                }
+              }}
+              className="flex flex-col items-end cursor-pointer active:scale-95 transition-all text-right select-none"
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: 0,
+                outline: "none",
+                opacity: filterMode === "saved" ? 0.32 : 1,
+                cursor: "pointer",
+              }}
+              title={
+                filterMode === "spent"
+                  ? "Showing spent urges (click to show all)"
+                  : "Filter by spent"
+              }
+            >
               <AnimatePresence mode="wait">
                 <motion.p
                   key={`spent-${daySpent}`}
@@ -481,16 +534,20 @@ export function GardenHeader({
                 style={{
                   fontSize: 8,
                   color:
-                    daySpent > 0
-                      ? "rgba(180,50,30,0.45)"
-                      : "rgba(28,46,42,0.35)",
+                    filterMode === "spent"
+                      ? "rgba(180,50,30,0.85)"
+                      : daySpent > 0
+                        ? "rgba(180,50,30,0.45)"
+                        : "rgba(28,46,42,0.35)",
+                  fontWeight: filterMode === "spent" ? 600 : 400,
                   letterSpacing: "0.07em",
                   textTransform: "uppercase",
+                  transition: "color 0.15s ease",
                 }}
               >
                 spent
               </p>
-            </div>
+            </button>
           </div>
         </div>
 
@@ -652,6 +709,7 @@ export function Garden() {
   const [selectedFlower, setSelectedFlower] =
     useState<Flower | null>(null);
   const [activeDate, setActiveDate] = useState(new Date());
+  const [filterMode, setFilterMode] = useState<"all" | "saved" | "spent">("all");
   // Display mode — "day" shows one day, "week" shows the whole ISO week.
   // Always starts in day mode (e.g. when returning from PlantFlower).
   const [viewMode, setViewMode] = useState<"day" | "week">(
@@ -742,20 +800,30 @@ export function Garden() {
 
   // Day mode → flowers from the selected day. Week mode → all flowers
   // in the same Monday-anchored ISO week as the selected day.
-  const visibleFlowers = allFlowers.filter((f) =>
+  const periodFlowers = allFlowers.filter((f) =>
     (f.state === "bloomed" || f.state === "wilted" || !f.state) &&
     (viewMode === "week"
       ? sameWeek(new Date(f.date), activeDate)
       : sameDay(new Date(f.date), activeDate))
   );
 
-  const daySaved = visibleFlowers
-    .filter((f) => f.state === "bloomed")
+  const daySaved = periodFlowers
+    .filter((f) => f.state === "bloomed" || !f.state)
     .reduce((s, f) => s + (f.amount || 0), 0);
-  const daySpent = visibleFlowers
+  const daySpent = periodFlowers
     .filter((f) => f.state === "wilted")
     .reduce((s, f) => s + (f.amount || 0), 0);
   const isToday = sameDay(activeDate, new Date());
+
+  const displayedFlowers = periodFlowers.filter((f) => {
+    if (filterMode === "saved") {
+      return f.state === "bloomed" || !f.state;
+    }
+    if (filterMode === "spent") {
+      return f.state === "wilted";
+    }
+    return true;
+  });
 
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1007,7 +1075,7 @@ export function Garden() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28, ease: "easeInOut" }}
           >
-            {visibleFlowers.length === 0 && (
+            {displayedFlowers.length === 0 && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                 <p
                   style={{
@@ -1018,22 +1086,26 @@ export function Garden() {
                     textAlign: "center",
                   }}
                 >
-                  {viewMode === "week"
-                    ? "nothing planted this week · tap to start"
-                    : isToday
-                      ? "your garden is waiting to bloom"
-                      : "nothing planted this day"}
+                  {filterMode === "spent"
+                    ? "no spent urges logged"
+                    : filterMode === "saved"
+                      ? "no saved urges logged"
+                      : viewMode === "week"
+                        ? "nothing planted this week · tap to start"
+                        : isToday
+                          ? "your garden is waiting to bloom"
+                          : "nothing planted this day"}
                 </p>
               </div>
             )}
             {(() => {
               const zMap = buildZIndexMap(
-                visibleFlowers.map((f) => ({
+                displayedFlowers.map((f) => ({
                   id: f.id,
                   sortY: flowerPct(f).y,
                 })),
               );
-              return visibleFlowers.map((flower, idx) => (
+              return displayedFlowers.map((flower, idx) => (
                 <GardenFlower
                   key={flower.id}
                   flower={flower}
@@ -1067,6 +1139,8 @@ export function Garden() {
               setViewMode((m) => (m === "day" ? "week" : "day"))
             }
             hideDivider={!!selectedFlower}
+            filterMode={filterMode}
+            onFilterChange={setFilterMode}
           />
         </div>
       </div>
@@ -1188,7 +1262,7 @@ function GardenFlower({
         left: `${xPct}%`,
         top: `${yPct}%`,
         transform: "translate(-50%, -50%)",
-        opacity: wilted ? 0.55 : 1,
+        opacity: 1,
         lineHeight: 0,
         zIndex,
       }}
@@ -1231,13 +1305,9 @@ function GardenFlower({
                 display: "block",
                 position: "relative",
                 zIndex: 2,
-                filter: wilted
-                  ? "grayscale(1) brightness(0.62) sepia(0.1)"
-                  : "none",
+                filter: "none",
               }}
             />
-
-            {wilted && <ScribbleOverlay size={size} />}
           </div>
         ) : (
           <div

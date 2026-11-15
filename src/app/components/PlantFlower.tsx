@@ -16,7 +16,7 @@ interface Pos {
   x: number;
   y: number;
 }
-type Phase = "idle" | "asking" | "composting" | "wilting";
+type Phase = "idle" | "asking" | "closing";
 
 // Same tokens as Garden
 const BG = "#FAFAFA";
@@ -148,76 +148,144 @@ export function PlantFlower() {
     ? `${daysOfWork} day${daysOfWork === 1 ? "" : "s"} of work`
     : `${parseFloat(laborHours) || (cost > 0 ? (cost / 500).toFixed(1) : "1")}h of work`;
 
-  const [compostReason, setCompostReason] = useState(userProblemsList[0] || userProblem || "Quick dopamine spike");
-  const [customCompost, setCustomCompost] = useState("");
-
-  const tailoredReflection = useMemo(() => {
-    const goalPhrase = userGoal ? `your ${userGoal.toLowerCase()}` : "what truly matters to you";
-    const itemPhrase = urgeItem && urgeItem !== "this item" ? `"${urgeItem}"` : "this purchase";
-    const costPhrase = cost > 0 ? `₹${cost.toLocaleString("en-IN")}` : "this amount";
-
-    const hasKey = (k: string) => userProblemKeys.includes(k);
-
-    if (hasKey("late_night") || userProblem.toLowerCase().includes("night") || userProblem.toLowerCase().includes("scroll")) {
-      return {
-        tag: "Breaking Late-Night Urges",
-        prompt: `Is ${itemPhrase} solving a real daylight need, or is it late-night fatigue and scrolling craving a quick dopamine salve?`,
-        tradeoff: `Letting this go saves ${costPhrase} (${workDurationText}) straight towards ${goalPhrase}.`,
-        closing: `Does buying this now serve your future self, or just a sleepy impulse?`,
-      };
-    }
-    if (hasKey("stress") || userProblem.toLowerCase().includes("stress") || userProblem.toLowerCase().includes("exhaust")) {
-      return {
-        tag: "Stress & Exhaustion Check",
-        prompt: `Work was demanding, but buying ${itemPhrase} won't undo that stress — it trades away ${workDurationText} of the very labor that tired you.`,
-        tradeoff: `Keep this ${costPhrase} to fund ${goalPhrase} instead of soothing temporary exhaustion.`,
-        closing: `Give yourself real rest and peace instead of a checkout screen.`,
-      };
-    }
-    if (hasKey("discount") || userProblem.toLowerCase().includes("discount") || userProblem.toLowerCase().includes("sale") || userProblem.toLowerCase().includes("fomo")) {
-      return {
-        tag: "Sale & Discount Reality Check",
-        prompt: `A discount is only a saving if you were already looking for ${itemPhrase}. Were you planning on this before seeing the price tag?`,
-        tradeoff: `Skipping it keeps ${costPhrase} (${workDurationText}) intact for ${goalPhrase}.`,
-        closing: `100% off is what you save when you choose not to buy at all.`,
-      };
-    }
-    if (hasKey("boredom") || userProblem.toLowerCase().includes("bored") || userProblem.toLowerCase().includes("dopamine")) {
-      return {
-        tag: "Dopamine & Boredom Pause",
-        prompt: `The fleeting excitement of ordering ${itemPhrase} fades in minutes, but the ${workDurationText} spent working for it is gone permanently.`,
-        tradeoff: `Direct this ${costPhrase} into growing ${goalPhrase}.`,
-        closing: `Sit with the boredom for a few moments — notice how the urge dissolves.`,
-      };
-    }
-    if (hasKey("fantasy_self") || userProblem.toLowerCase().includes("fantasy")) {
-      return {
-        tag: "Fantasy Self vs Reality",
-        prompt: `Will ${itemPhrase} genuinely fit your daily routine, or is it for an idealized version of yourself that lives in your imagination?`,
-        tradeoff: `Real progress comes from protecting ${goalPhrase} with this ${costPhrase} (${workDurationText}).`,
-        closing: `Honor where you are today before buying gear for an imaginary tomorrow.`,
-      };
-    }
-    if (userProblemsList.length > 0) {
-      const displayProblems = userProblemsList.slice(0, 2).join(" & ");
-      return {
-        tag: `Conquering ${displayProblems}`,
-        prompt: `You stepped into Canopy to soften impulse spending (${displayProblems}). Does buying ${itemPhrase} repeat that familiar cycle?`,
-        tradeoff: `Letting it go keeps ${costPhrase} (${workDurationText}) to protect ${goalPhrase}.`,
-        closing: `The pause you took today is proof you are already in control.`,
-      };
-    }
-    return {
-      tag: "Future Utility Reflection",
-      prompt: `Will ${itemPhrase} bring you meaningful value 30 days from now, or is it a 15-minute dopamine salve?`,
-      tradeoff: `Letting this go saves ${costPhrase} (${workDurationText}) for ${goalPhrase}.`,
-      closing: `Take a deep breath and decide with full clarity.`,
-    };
-  }, [userProblemKeys, userProblemsList, userProblem, userGoal, urgeItem, cost, workDurationText]);
+  const [compostReason] = useState(buyingReason || userProblemsList[0] || userProblem || "Impulse");
+  const [decisionMade, setDecisionMade] = useState<"saved" | "bought" | null>(null);
 
   const emotion = localStorage.getItem("currentEmotion")
     ? JSON.parse(localStorage.getItem("currentEmotion")!)
     : null;
+
+  const tailoredReflection = useMemo(() => {
+    const r = (buyingReason || "").toLowerCase();
+    const eName = (emotion?.name || "").toLowerCase();
+    const eLabel = (emotion?.label || "").toLowerCase();
+    const combined = `${r} ${eName} ${eLabel}`;
+    const hasKey = (k: string) => userProblemKeys.includes(k);
+
+    if (
+      combined.includes("reward") ||
+      (combined.includes("work") && !combined.includes("stress") && !combined.includes("tired"))
+    ) {
+      return {
+        prompt: "You worked hard for this money — will buying this still feel rewarding tomorrow, or would keeping what you earned feel better?",
+        savedClosing: "Keeping what you worked hard for. Placing your flower in the garden…",
+        boughtClosing: "Enjoy it mindfully — you paused and chose with awareness…",
+      };
+    }
+
+    if (
+      combined.includes("tired") ||
+      combined.includes("stress") ||
+      combined.includes("exhaust") ||
+      combined.includes("overwhelm") ||
+      combined.includes("burnout") ||
+      combined.includes("anxiety") ||
+      combined.includes("cool blue") ||
+      hasKey("stress")
+    ) {
+      return {
+        prompt: "You've had a long, draining day — do you truly want this right now, or do you just need a moment to rest and unwind?",
+        savedClosing: "Taking a quiet breath instead. Your peace and savings stay with you…",
+        boughtClosing: "Be gentle with yourself today. Placing your flower in the garden…",
+      };
+    }
+
+    if (
+      combined.includes("bored") ||
+      combined.includes("scroll") ||
+      combined.includes("idle") ||
+      combined.includes("bright yellow") ||
+      hasKey("boredom") ||
+      hasKey("late_night")
+    ) {
+      return {
+        prompt: "Now that you've stepped away from scrolling for a minute, do you still genuinely want this, or was it just to pass the time?",
+        savedClosing: "The boredom wave passed. Saving this for something that truly matters…",
+        boughtClosing: "Logged with awareness. Placing your flower in the garden…",
+      };
+    }
+
+    if (
+      combined.includes("fomo") ||
+      combined.includes("sale") ||
+      combined.includes("deal") ||
+      combined.includes("discount") ||
+      combined.includes("flash") ||
+      combined.includes("excite") ||
+      combined.includes("warm orange") ||
+      hasKey("discount")
+    ) {
+      return {
+        prompt: "If there were no sale or rush right now, would you still want to buy this today?",
+        savedClosing: "Letting the hype pass by. Keeping your money safe with you…",
+        boughtClosing: "Chosen mindfully without the rush. Placing your flower in the garden…",
+      };
+    }
+
+    if (combined.includes("crav")) {
+      return {
+        prompt: "After taking a slow breath and drawing your flower, does this craving still feel as strong as a minute ago?",
+        savedClosing: "You rode out the craving. Letting it go and saving…",
+        boughtClosing: "Logged without judgment. Placing your flower in the garden…",
+      };
+    }
+
+    if (
+      combined.includes("aesthetic") ||
+      combined.includes("comfort") ||
+      combined.includes("sad") ||
+      combined.includes("low mood") ||
+      combined.includes("soft pink") ||
+      combined.includes("deep purple") ||
+      hasKey("fantasy_self")
+    ) {
+      return {
+        prompt: "It's lovely to look at — do you truly need to own it today, or was appreciating it for a moment enough?",
+        savedClosing: "Appreciated and gently released. Keeping your savings intact…",
+        boughtClosing: "Holding space for how you feel. Placing your flower in the garden…",
+      };
+    }
+
+    if (
+      combined.includes("social") ||
+      combined.includes("share") ||
+      combined.includes("sharing") ||
+      combined.includes("obligation") ||
+      combined.includes("gift") ||
+      combined.includes("friend") ||
+      combined.includes("pressure") ||
+      combined.includes("anxious")
+    ) {
+      return {
+        prompt: "Are you buying this because it truly feels right to you, or mostly out of pressure in the moment?",
+        savedClosing: "Choosing what feels honest for you. Saving this instead…",
+        boughtClosing: "Logged with clarity. Placing your flower in the garden…",
+      };
+    }
+
+    if (
+      combined.includes("intent") ||
+      combined.includes("need") ||
+      combined.includes("plan") ||
+      combined.includes("essential") ||
+      combined.includes("grounded") ||
+      combined.includes("calm") ||
+      combined.includes("forest green")
+    ) {
+      return {
+        prompt: "Now that you've taken a calm pause to reflect, does this still feel like something you genuinely need right now?",
+        savedClosing: "Realized it can wait. Keeping your savings safe instead…",
+        boughtClosing: "A thoughtful, intentional choice. Placing your flower in the garden…",
+      };
+    }
+
+    return {
+      prompt: "Now that you've taken a quiet moment to pause, do you still feel like buying this right now?",
+      savedClosing: "Letting it go feels lighter. Placing your flower in the garden…",
+      boughtClosing: "Logged without judgment. Placing your flower in the garden…",
+    };
+  }, [buyingReason, emotion, userProblemKeys]);
+
   const allFlowers: any[] = JSON.parse(
     localStorage.getItem("gardenFlowers") || "[]",
   );
@@ -251,8 +319,6 @@ export function PlantFlower() {
     emotion.hex.startsWith("#")
       ? emotion.hex
       : "#4DAA57";
-
-  const wilting = phase === "wilting" || phase === "composting";
 
   // Convert a pointer event to % of the canvas element.
   function pctFromEvent(
@@ -288,6 +354,13 @@ export function PlantFlower() {
   function handlePlantHere() {
     if (!pos || planted || phase !== "idle") return;
     setPhase("asking");
+  }
+
+  function handleDecision(bought: boolean) {
+    if (!pos || planted) return;
+    setDecisionMade(bought ? "bought" : "saved");
+    setPhase("closing");
+    plantNow(bought);
   }
 
   function plantNow(bought: boolean, compost?: string) {
@@ -343,12 +416,9 @@ export function PlantFlower() {
       "currentCategory",
       "currentCategories",
       "currentWhoFor",
-      "currentEmotion",
-      "purchaseCost",
       "laborHours",
       "buyingReason",
       "currentVoiceNote",
-      "currentPhotos",
       "currentLink",
       "coolingHours",
     ].forEach((k) => localStorage.removeItem(k));
@@ -368,7 +438,7 @@ export function PlantFlower() {
     bd.flowersGrown = (bd.flowersGrown || 0) + 1;
     bd.totalEntries = (bd.totalEntries || 0) + 1;
     localStorage.setItem("bloomData", JSON.stringify(bd));
-    setTimeout(() => navigate("/success"), 700);
+    setTimeout(() => navigate("/success"), 1500);
   }
 
   // z-index map: sort by y% (deeper = in front), then id (newer = in front)
@@ -446,9 +516,6 @@ export function PlantFlower() {
                       display: "block",
                     }}
                   />
-                  {f.state === "wilted" && (
-                    <ScribbleOverlay size={sz} />
-                  )}
                 </div>
               ) : (
                 <div
@@ -513,17 +580,9 @@ export function PlantFlower() {
                         width: previewSize,
                         height: "auto",
                         display: "block",
-                        filter: wilting
-                          ? "grayscale(0.8) brightness(0.65)"
-                          : "none",
+                        filter: "none",
                       }}
                     />
-                    {wilting && (
-                      <ScribbleOverlay
-                        size={previewSize}
-                        animate
-                      />
-                    )}
                   </div>
                 ) : (
                   <div
@@ -754,9 +813,9 @@ export function PlantFlower() {
         </motion.button>
       </div>
 
-      {/* ── Decision & Composting modal ── */}
+      {/* ── Decision modal ── */}
       <AnimatePresence>
-        {(phase === "asking" || phase === "composting" || phase === "wilting") && (
+        {(phase === "asking" || phase === "closing") && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -764,12 +823,13 @@ export function PlantFlower() {
             className="fixed inset-0 flex items-end justify-center px-4 pb-6"
             style={{
               zIndex: 100000,
-              background: phase === "composting" ? "rgba(18,22,20,0.72)" : "rgba(250,250,250,0.85)",
+              background: "rgba(250,250,250,0.85)",
               backdropFilter: "blur(14px)",
             }}
             onPointerDown={(e) => e.stopPropagation()}
           >
             <motion.div
+              layout
               initial={{ y: 90, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 90, opacity: 0 }}
@@ -783,330 +843,93 @@ export function PlantFlower() {
                 background: "#FAFAFA",
                 boxShadow: "0 24px 72px rgba(28,46,42,0.22)",
                 border: "1px solid rgba(28,46,42,0.08)",
-                maxHeight: "90vh",
-                overflowY: "auto",
               }}
             >
-              {phase === "wilting" ? (
-                <div className="flex flex-col items-center gap-4 py-8">
+              <AnimatePresence mode="wait">
+                {phase === "closing" ? (
                   <motion.div
-                    animate={{
-                      scale: [1, 0.85, 0.65],
-                      rotate: [0, -8, -18],
-                      opacity: [1, 0.9, 0.6],
-                    }}
-                    transition={{
-                      duration: 1.5,
-                      ease: "easeIn",
-                    }}
+                    key="closing-text"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.25 }}
+                    className="py-4 text-center"
                   >
-                    <WiltSVG />
-                  </motion.div>
-                  <p
-                    style={{
-                      fontFamily: HEAD,
-                      fontSize: 18,
-                      color: TEAL,
-                    }}
-                  >
-                    Composting into soil…
-                  </p>
-                  <p
-                    style={{
-                      fontFamily: BODY,
-                      fontSize: 12,
-                      color: "rgba(28,46,42,0.55)",
-                      textAlign: "center",
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    Anterior insula pain signal registered. Every paused urge builds neurological strength.
-                  </p>
-                </div>
-              ) : phase === "composting" ? (
-                <div>
-                  {/* Insula Pain Activation Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span
-                      className="px-2.5 py-1 rounded-full text-[11px]"
-                      style={{
-                        background: "rgba(180,50,40,0.08)",
-                        color: "#9A3428",
-                        border: "1px solid rgba(180,50,40,0.18)",
-                        fontFamily: BODY,
-                        fontWeight: 600,
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      Anterior Insula Activated
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: BODY,
-                        fontSize: 12,
-                        color: "rgba(28,46,42,0.4)",
-                      }}
-                    >
-                      Artwork Withered
-                    </span>
-                  </div>
-
-                  <h3
-                    style={{
-                      fontFamily: HEAD,
-                      fontSize: 22,
-                      color: TEAL,
-                      marginBottom: 4,
-                    }}
-                  >
-                    Compost the Urge
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: BODY,
-                      fontSize: 12.5,
-                      color: "rgba(28,46,42,0.65)",
-                      lineHeight: 1.5,
-                      marginBottom: 16,
-                    }}
-                  >
-                    What emotional need did this purchase serve?
-                  </p>
-
-                  {/* Emotion chips */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {[
-                      ...(userProblemsList.length > 0 ? userProblemsList : (userProblem ? [userProblem] : [])),
-                      "Tired & low energy",
-                      "Reward after work",
-                      "Social obligation",
-                      "Boredom & stimulation",
-                      "Idealized self fantasy",
-                      "Quick dopamine salve",
-                    ].filter((v, i, a) => a.indexOf(v) === i).map((reason) => {
-                      const selected = compostReason === reason && !customCompost;
-                      return (
-                        <button
-                          key={reason}
-                          type="button"
-                          onClick={() => {
-                            setCompostReason(reason);
-                            setCustomCompost("");
-                          }}
-                          className="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer"
-                          style={{
-                            background: selected ? TEAL : "rgba(28,46,42,0.05)",
-                            color: selected ? "#FAFAFA" : TEAL,
-                            border: `1px solid ${selected ? TEAL : "rgba(28,46,42,0.1)"}`,
-                            fontFamily: BODY,
-                          }}
-                        >
-                          {reason}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <input
-                    type="text"
-                    value={customCompost}
-                    onChange={(e) => setCustomCompost(e.target.value)}
-                    placeholder="Or describe the underlying feeling..."
-                    className="w-full px-3.5 py-2.5 rounded-xl text-xs outline-none mb-5"
-                    style={{
-                      background: "rgba(28,46,42,0.04)",
-                      border: "1px solid rgba(28,46,42,0.12)",
-                      fontFamily: BODY,
-                      color: TEAL,
-                    }}
-                  />
-
-                  <div className="flex flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPhase("wilting");
-                        setTimeout(() => plantNow(true, customCompost.trim() || compostReason), 1500);
-                      }}
-                      className="w-full py-3.5 rounded-2xl cursor-pointer"
-                      style={{
-                        background: TEAL,
-                        color: "#FAFAFA",
-                        fontFamily: BODY,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        letterSpacing: "0.03em",
-                      }}
-                    >
-                      Compost Urge & Record Purchase
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhase("asking")}
-                      className="w-full py-2.5 rounded-2xl cursor-pointer"
-                      style={{
-                        background: "transparent",
-                        color: "rgba(28,46,42,0.6)",
-                        fontFamily: BODY,
-                        fontSize: 12,
-                      }}
-                    >
-                      Wait, I'll let it go instead
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* phase === "asking" Tailored Reflection & Decision Generator */
-                <div>
-                  <div className="flex items-center justify-between mb-3.5">
-                    <div className="flex items-center gap-2">
-                      <div
-                        style={{
-                          width: 8,
-                          height: 8,
-                          borderRadius: "50%",
-                          background: GREEN,
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontFamily: BODY,
-                          fontSize: 11,
-                          color: "rgba(28,46,42,0.55)",
-                          letterSpacing: "0.05em",
-                        }}
-                      >
-                        {userName ? `${userName} · Pause Complete` : "Pause Complete"}
-                      </span>
-                    </div>
-
-                    <span
-                      className="px-2.5 py-0.5 rounded-full text-[11px]"
-                      style={{
-                        background: `${GREEN}18`,
-                        color: "#286634",
-                        border: `1px solid ${GREEN}40`,
-                        fontFamily: BODY,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {workDurationText}
-                    </span>
-                  </div>
-
-                  {/* Tailored Reflection Card */}
-                  <div
-                    className="p-4 rounded-2xl mb-4 transition-all"
-                    style={{
-                      background: "rgba(47,107,94,0.06)",
-                      border: "1px solid rgba(47,107,94,0.18)",
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <p
-                        style={{
-                          fontFamily: BODY,
-                          fontSize: 10,
-                          color: FOREST,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          fontWeight: 700,
-                        }}
-                      >
-                        {tailoredReflection.tag}
-                      </p>
-                      {userGoal && (
-                        <span
-                          style={{
-                            fontFamily: BODY,
-                            fontSize: 10.5,
-                            color: "rgba(28,46,42,0.5)",
-                          }}
-                        >
-                          Target: {userGoal}
-                        </span>
-                      )}
-                    </div>
-
                     <p
                       style={{
                         fontFamily: BODY,
-                        fontSize: 13.5,
+                        fontSize: 16,
                         color: TEAL,
-                        lineHeight: 1.5,
+                        lineHeight: 1.55,
                         fontWeight: 500,
+                      }}
+                    >
+                      {decisionMade === "saved"
+                        ? tailoredReflection.savedClosing
+                        : tailoredReflection.boughtClosing}
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="asking-content"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.22 }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: BODY,
+                        fontSize: 16,
+                        color: TEAL,
+                        lineHeight: 1.55,
+                        fontWeight: 500,
+                        textAlign: "center",
+                        marginBottom: 22,
                       }}
                     >
                       {tailoredReflection.prompt}
                     </p>
 
-                    <p
-                      style={{
-                        fontFamily: BODY,
-                        fontSize: 12,
-                        color: "rgba(28,46,42,0.7)",
-                        lineHeight: 1.45,
-                        marginTop: 8,
-                        paddingTop: 8,
-                        borderTop: "1px dashed rgba(47,107,94,0.2)",
-                      }}
-                    >
-                      {tailoredReflection.tradeoff}
-                    </p>
-                  </div>
+                    {/* Dual Action Choices */}
+                    <div className="flex flex-col gap-2.5">
+                      <button
+                        type="button"
+                        onClick={() => handleDecision(false)}
+                        className="w-full py-3.5 px-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]"
+                        style={{
+                          background: GREEN,
+                          color: "#FAFAFA",
+                          fontFamily: BODY,
+                          boxShadow: `0 4px 18px ${GREEN}40`,
+                        }}
+                      >
+                        <span style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "0.02em" }}>
+                          Let it go & save
+                        </span>
+                        <span className="opacity-90 text-xs font-medium">
+                          {cost > 0 ? `+₹${cost.toLocaleString("en-IN")}` : `Keep ${workDurationText}`}
+                        </span>
+                      </button>
 
-                  <p
-                    style={{
-                      fontFamily: HEAD,
-                      fontSize: 16,
-                      color: TEAL,
-                      textAlign: "center",
-                      marginBottom: 12,
-                      letterSpacing: "0.02em",
-                    }}
-                  >
-                    Do you still buy it?
-                  </p>
-
-                  {/* Dual Action Choices */}
-                  <div className="flex flex-col gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => plantNow(false)}
-                      className="w-full py-3.5 px-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all active:scale-[0.98]"
-                      style={{
-                        background: GREEN,
-                        color: "#FAFAFA",
-                        fontFamily: BODY,
-                        boxShadow: `0 4px 18px ${GREEN}40`,
-                      }}
-                    >
-                      <span style={{ fontSize: 13.5, fontWeight: 600, letterSpacing: "0.02em" }}>
-                        Let it go & save
-                      </span>
-                      <span className="opacity-90 text-xs font-medium">
-                        {cost > 0 ? `+₹${cost.toLocaleString("en-IN")}` : `Keep ${workDurationText}`}
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPhase("composting")}
-                      className="w-full py-2.5 px-4 rounded-2xl flex items-center justify-center gap-1.5 cursor-pointer transition-all"
-                      style={{
-                        background: "rgba(28,46,42,0.05)",
-                        color: "rgba(28,46,42,0.75)",
-                        fontFamily: BODY,
-                        fontSize: 12,
-                        border: "1px solid rgba(28,46,42,0.1)",
-                      }}
-                    >
-                      <span>I still buy it</span>
-                      <span style={{ opacity: 0.55 }}>(compost urge)</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+                      <button
+                        type="button"
+                        onClick={() => handleDecision(true)}
+                        className="w-full py-3 px-4 rounded-2xl flex items-center justify-center cursor-pointer transition-all active:scale-[0.98]"
+                        style={{
+                          background: "rgba(28,46,42,0.05)",
+                          color: "rgba(28,46,42,0.75)",
+                          fontFamily: BODY,
+                          fontSize: 13,
+                          border: "1px solid rgba(28,46,42,0.1)",
+                        }}
+                      >
+                        <span>I still buy it</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </motion.div>
         )}

@@ -33,15 +33,15 @@ export const router = createMemoryRouter([
   },
   {
     path: "/draw",
-    Component: withLayout(DrawingCanvas),
+    Component: DrawingCanvas,
   },
   {
     path: "/plant",
-    Component: withLayout(PlantFlower),
+    Component: PlantFlower,
   },
   {
     path: "/success",
-    Component: withLayout(Success),
+    Component: Success,
   },
   {
     path: "/profile",

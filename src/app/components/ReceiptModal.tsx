@@ -395,7 +395,7 @@ export function ReceiptModal({
                       objectFit: "contain",
                       filter: isBloomed
                         ? "drop-shadow(0px 6px 18px rgba(77,170,87,0.25))"
-                        : "grayscale(1) brightness(0.65) drop-shadow(0px 6px 16px rgba(32,70,84,0.15))",
+                        : "drop-shadow(0px 6px 16px rgba(32,70,84,0.15))",
                     }}
                   />
                 </div>
