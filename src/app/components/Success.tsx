@@ -135,21 +135,6 @@ export function Success() {
             >
               ₹{savedAmount.toLocaleString()}
             </p>
-            <p
-              style={{
-                fontFamily: BODY,
-                fontSize: "12px",
-                color: TEAL,
-                marginTop: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "4px",
-              }}
-            >
-              <Zap size={13} className="text-emerald-700 shrink-0" />
-              <span>+{(savedAmount / (parseFloat(localStorage.getItem("userHourlyWage") || "500") || 500)).toFixed(1)}h of work saved</span>
-            </p>
           </motion.div>
         )}
 

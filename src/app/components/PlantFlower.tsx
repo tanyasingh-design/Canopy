@@ -908,7 +908,7 @@ export function PlantFlower() {
                           Let it go & save
                         </span>
                         <span className="opacity-90 text-xs font-medium">
-                          {cost > 0 ? `+₹${cost.toLocaleString("en-IN")}` : `Keep ${workDurationText}`}
+                          {cost > 0 ? `+₹${cost.toLocaleString("en-IN")}` : "Save"}
                         </span>
                       </button>
 

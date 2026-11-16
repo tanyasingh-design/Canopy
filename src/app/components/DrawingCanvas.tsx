@@ -1416,7 +1416,7 @@ export function DrawingCanvas() {
               letterSpacing: "0.01em",
             }}
           >
-            That's {workDurationText} to earn {userGoal ? `· Saving towards ${userGoal}` : "· Take a slow breath"}
+            {userGoal ? `Saving towards ${userGoal} · Take a slow breath` : "Take a slow breath and start drawing"}
           </p>
         </div>
       )}

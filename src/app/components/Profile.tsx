@@ -2772,7 +2772,7 @@ function SettingsModal({
           <div>
             <h2 style={{ fontFamily: HEAD, fontSize: 26, color: INK }}>Settings & Profile</h2>
             <p style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
-              Personalize your Canopy reflections and value conversions
+              Personalize your Canopy reflections and goals
             </p>
           </div>
           <button
@@ -2799,37 +2799,6 @@ function SettingsModal({
               className="w-full mt-1 px-3.5 py-2.5 rounded-xl border border-[var(--gray-6)] bg-white outline-none"
               style={{ fontFamily: BODY, fontSize: 15 }}
             />
-          </div>
-
-          {/* Monthly Salary */}
-          <div>
-            <div className="flex items-baseline justify-between">
-              <label style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, fontWeight: 500 }}>
-                Monthly Take-Home Salary
-              </label>
-              {parsedSalary > 0 && (
-                <span style={{ fontFamily: BODY, fontSize: 12, color: SECONDARY_HIGHLIGHT, fontWeight: 600 }}>
-                  @ ₹{derivedWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr · ≈ ₹{Math.round(parsedSalary / 22).toLocaleString("en-IN")}/day
-                </span>
-              )}
-            </div>
-            <div className="relative mt-1">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ fontFamily: HEAD, fontSize: 18, color: INK_SOFT }}>
-                ₹
-              </span>
-              <input
-                type="number"
-                inputMode="numeric"
-                value={salary}
-                onChange={(e) => setSalary(e.target.value)}
-                placeholder="e.g. 50000"
-                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl border border-[var(--gray-6)] bg-white outline-none"
-                style={{ fontFamily: HEAD, fontSize: 18 }}
-              />
-            </div>
-            <p style={{ fontFamily: BODY, fontSize: 12, color: INK_SOFT, marginTop: 4 }}>
-              Used to calculate the hours and days of work every impulse purchase costs. (Based on 22 days × 8h).
-            </p>
           </div>
 
           {/* Impulse problem to soften */}
@@ -3466,19 +3435,8 @@ export function Profile() {
           <Card pad={20}>
             <div className="flex items-start justify-between gap-3 mb-3">
               <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
-                Diverted Spending & Time
+                Diverted Spending
               </h2>
-              <span
-                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1 px-2.5 py-1 rounded-full"
-                style={{
-                  color: SECONDARY_HIGHLIGHT,
-                  background: GRAY_3,
-                  fontFamily: BODY,
-                }}
-              >
-                <Zap size={13} />
-                {fmtWork(activeKeptHours)} saved
-              </span>
             </div>
 
             <div className="flex items-baseline justify-between mb-4">
@@ -3517,19 +3475,8 @@ export function Profile() {
           <Card pad={20}>
             <div className="flex items-start justify-between gap-3 mb-3">
               <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
-                Diverted Spending & Time
+                Diverted Spending
               </h2>
-              <span
-                className="shrink-0 whitespace-nowrap text-xs font-semibold flex items-center gap-1 mt-1 px-2.5 py-1 rounded-full"
-                style={{
-                  color: SECONDARY_HIGHLIGHT,
-                  background: GRAY_3,
-                  fontFamily: BODY,
-                }}
-              >
-                <Zap size={13} />
-                {fmtWork(weekKeptHours)} saved
-              </span>
             </div>
 
             <div className="flex items-baseline justify-between mb-4">
@@ -3613,81 +3560,7 @@ export function Profile() {
         {/* ── 7. FAVORITE IMPULSE SPECIES (FOREST-STYLE RANKED HABITS) ───────── */}
         <FavoriteImpulsesCard flowers={activeFlowers} />
 
-        {/* ── 8. LABOR & VALUE BALANCE ────────────────────────────────────────── */}
-        <Card pad={22}>
-          <div className="flex items-start justify-between gap-3 mb-3">
-            <h2 style={{ fontFamily: HEAD, fontSize: 24, color: INK, letterSpacing: "0.4px", lineHeight: 1.15 }}>
-              Labor & value balance
-            </h2>
-            <span
-              className="shrink-0 whitespace-nowrap text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1"
-              style={{
-                color: GRAY_11,
-                background: GRAY_3,
-                fontFamily: BODY,
-              }}
-            >
-              @ ₹{hourlyWage.toLocaleString("en-IN", { maximumFractionDigits: 2 })}/hr
-            </span>
-          </div>
-
-          <div className="flex items-baseline justify-between mb-2">
-            <div>
-              <span style={{ fontFamily: HEAD, fontSize: 28, color: SECONDARY_HIGHLIGHT }}>
-                {activeKeptHours}h
-              </span>
-              <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                life preserved
-              </span>
-            </div>
-            <div>
-              <span style={{ fontFamily: HEAD, fontSize: 20, color: SPENT }}>
-                {activeSpentHours}h
-              </span>
-              <span style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT, marginLeft: 6 }}>
-                traded away
-              </span>
-            </div>
-          </div>
-
-          <div className="w-full rounded-full overflow-hidden flex" style={{ height: 12, background: GRAY_4 }}>
-            {activeKeptHours > 0 && (
-              <div
-                className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
-                style={{
-                  width: `${(activeKeptHours / (activeKeptHours + activeSpentHours || 0.01)) * 100}%`,
-                  background: SECONDARY_HIGHLIGHT,
-                  fontFamily: HEAD,
-                }}
-              >
-                {Math.round((activeKeptHours / (activeKeptHours + activeSpentHours || 0.01)) * 100)}%
-              </div>
-            )}
-            {activeSpentHours > 0 && (
-              <div
-                className="h-full transition-all duration-500 flex items-center justify-center text-[10px] text-white font-semibold"
-                style={{
-                  width: `${(activeSpentHours / (activeKeptHours + activeSpentHours || 0.01)) * 100}%`,
-                  background: SPENT,
-                  fontFamily: HEAD,
-                }}
-              >
-                {Math.round((activeSpentHours / (activeKeptHours + activeSpentHours || 0.01)) * 100)}%
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-between items-center mt-3 pt-2 border-t border-[rgba(0,0,0,0.06)]" style={{ fontFamily: BODY, fontSize: 13, color: INK_SOFT }}>
-            <span>
-              Saved: <strong style={{ color: SECONDARY_HIGHLIGHT, fontWeight: 700 }}>{fmt(stats.kept)}</strong>
-            </span>
-            <span>
-              Spent: <strong style={{ color: INK, fontWeight: 600 }}>{fmt(stats.spent)}</strong>
-            </span>
-          </div>
-        </Card>
-
-        {/* ── 9. DAY REFLECTIONS (FOR DAY VIEW ONLY) ───────────────────────────── */}
+        {/* ── 8. DAY REFLECTIONS (FOR DAY VIEW ONLY) ───────────────────────────── */}
         {timeScope === "day" && dayFlowers.length > 0 && (
           <Card pad={20}>
             <Title>

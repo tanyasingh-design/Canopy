@@ -1769,66 +1769,6 @@ export function LogUrgeSheet({
                   </span>
                 </button>
               )}
-
-              {/* Time-cost conversion */}
-              {totalCost > 0 && (
-                <div className="pt-1.5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        style={{
-                          fontFamily: BODY,
-                          fontSize: 12.5,
-                          color: INK,
-                        }}
-                      >
-                        {monthlySalary > 0 ? (
-                          <>That's about <strong style={{ color: "#697472", fontWeight: 600 }}>{formatWorkTime(totalCost)} of work</strong> to earn this</>
-                        ) : (
-                          <>See how many days of work this costs</>
-                        )}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowWageEdit(!showWageEdit)}
-                      className="text-[11px] underline opacity-60 hover:opacity-100 cursor-pointer"
-                      style={{ fontFamily: BODY, color: INK }}
-                    >
-                      {monthlySalary > 0 ? `₹${monthlySalary.toLocaleString("en-IN")}/month · change` : "Add salary"}
-                    </button>
-                  </div>
-
-                  {(showWageEdit || monthlySalary <= 0) && (
-                    <div
-                      className="mt-1.5 flex items-center justify-between text-xs"
-                      style={{ fontFamily: BODY, color: INK }}
-                    >
-                      <span className="opacity-75">Your monthly salary:</span>
-                      <div className="flex items-center gap-1">
-                        <span style={{ fontFamily: HEAD, color: FOREST }}>₹</span>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          placeholder="e.g. 40000"
-                          value={monthlySalary || ""}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            setMonthlySalary(val);
-                            localStorage.setItem("userMonthlySalary", val.toString());
-                            if (val > 0) {
-                              const hw = Math.round((val / 22 / 8) * 100) / 100;
-                              setHourlyWage(hw);
-                              localStorage.setItem("userHourlyWage", hw.toString());
-                            }
-                          }}
-                          className="w-24 bg-transparent border-b border-[rgba(28,46,42,0.25)] text-xs text-center outline-none py-0.5"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* ── Category row ── */}
@@ -1977,9 +1917,7 @@ export function LogUrgeSheet({
                     letterSpacing: "0.3px",
                   }}
                 >
-                  {totalCost > 0
-                    ? `Begin Somatic Pause · ${laborHours}h life`
-                    : "Begin Somatic Pause"}
+                  Begin Somatic Pause
                 </span>
               </div>
               <div
